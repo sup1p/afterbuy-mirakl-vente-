@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     mirakl_shop_id: int
     mirakl_connect: str
     check_image_existence: bool = False
+    use_real_html_desc: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,62 +1,32 @@
-from bs4 import BeautifulSoup, Tag
-import re
+from bs4 import BeautifulSoup
 
-def _clean_text_lines(text: str) -> str:
-    """Чистим пустые строки и одиночные ':' из текста."""
-    lines = [ln.strip() for ln in text.splitlines()]
-    lines = [ln for ln in lines if ln]
-    merged = []
-    for ln in lines:
-        if ln == ":" and merged:
-            merged[-1] = merged[-1] + ":"
-        else:
-            merged.append(ln)
-    return "\n".join(merged)
+from logs.config_logs import setup_logging
+import logging
 
-def extract_text_from_html(html_str: str) -> str:
-    """Извлекаем текст из HTML (без script/style) — универсальный фолбэк."""
-    if not html_str:
-        return ""
-    soup = BeautifulSoup(html_str, "html.parser")
-    for t in soup(["script", "style"]):
-        t.decompose()
-    return _clean_text_lines(soup.get_text(separator="\n"))
+setup_logging()
+logger = logging.getLogger(__name__)
 
-def extract_productdetails(html_str: str) -> str:
+
+def extract_product_description(html: str) -> str:
+    logger.debug(f"Extracting product description from HTML of length {len(html) if html else 0}")
     """
-    Пытаемся достать блок 'Produktdetails' из HTML.
-    Если не найдено — чистим весь текст.
+    Извлекает текстовое описание из блока 'Produktbeschreibung'.
     """
-    if not html_str:
-        return ""
-    soup = BeautifulSoup(html_str, "html.parser")
-    for t in soup(["script", "style"]):
-        t.decompose()
+    soup = BeautifulSoup(html, "html.parser")
 
-    # ищем заголовок "Produktdetails"
-    heading = soup.find(
-        string=lambda t: isinstance(t, str) and re.search(r"produkt\s*details", t, re.I)
-    )
+    # Находим заголовок "Produktbeschreibung"
+    heading = soup.find("div", class_="panel-heading", string="Produktbeschreibung")
     if not heading:
-        return extract_text_from_html(html_str)
+        return ""
 
-    # start_node = heading сам по себе, если это Tag, иначе parent
-    start_node = heading if isinstance(heading, Tag) else heading.parent
-    if start_node is None:
-        return extract_text_from_html(html_str)
+    # Блок с описанием сразу после заголовка
+    description_block = heading.find_next("div", class_="text-section")
+    if not description_block:
+        return ""
 
-    container = None
-    # оригинальная логика: find_all_next, ищем первый элемент после заголовка с текстом >20 символов
-    for el in start_node.find_all_next(["div", "section", "table", "td"], limit=600):
-        if not isinstance(el, Tag):
-            continue
-        txt = el.get_text(strip=True)
-        if txt and len(txt) > 20:
-            container = el
-            break
+    # Убираем теги <img>, пустые параграфы и пробелы
+    for tag in description_block.find_all(["img", "script", "style"]):
+        tag.decompose()
 
-    if not container:
-        return extract_text_from_html(html_str)
-
-    raw_text = container.get_text(separator="\n")
-    return _clean_text_lines(raw_text)
+    text = description_block.get_text(separator=" ", strip=True)
+    return " ".join(text.split())

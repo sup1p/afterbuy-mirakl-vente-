@@ -20,7 +20,7 @@ async def check_image_existence(image_url: str) -> bool:
         
     try:
         response = await client.head(image_url)
-    except httpx.RequestError as e:
+    except Exception as e:
         logger.error(f"Error while checking image at {image_url}: {e}")
         return False
     

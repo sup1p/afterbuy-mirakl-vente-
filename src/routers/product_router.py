@@ -22,11 +22,25 @@ router = APIRouter()
 
 @router.post("/import-product/{ean}", tags=["product"])
 async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_client)):
-    data = await get_product_data(ean=ean, client=client)
+    
+    try:
+        data = await get_product_data(ean=ean, client=client)
+    except Exception as e:
+        logger.error(f"Error fetching data for ean {ean}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
     
     logger.info(f"Fetched data for ean {ean}: {len(data)} items")
-
-    mapped_data = await map_attributes(data)
+    try:
+        mapped_data = await map_attributes(data)
+    except Exception as e:
+        logger.error(f"Error mapping attributes for ean {ean}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
     
     if mapped_data is None or mapped_data in ["", {}, []]:
         logger.error(f"Mapping failed or returned empty for ean {ean}")
@@ -82,8 +96,13 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
     
         single_product = res
         logger.info(f"Fetched data for ean {ean}")
-
-        mapped_data = await map_attributes(single_product)
+        
+        try:
+            mapped_data = await map_attributes(single_product)
+        except Exception as e:
+            logger.error(f"Error mapping attributes for ean {ean}: {e}")
+            not_added_eans.append(ean)
+            continue
         
         if not mapped_data:
             logger.error(f"Mapping failed or returned empty for ean {ean}")
@@ -109,7 +128,14 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
             detail=f"Creating big csv failed",
         )
         
-    mirakl_answer = await import_product_mirakl(csv_content, client=client)
+    try:
+        mirakl_answer = await import_product_mirakl(csv_content, client=client)
+    except Exception as e:
+        logger.error(f"Error importing products to Mirakl: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
 
     return {
         "mirakl_response": mirakl_answer,
@@ -120,8 +146,23 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
 
 @router.post("/test-import-product/{ean}", tags=["product"])
 async def test_import_product(ean: int, client: httpx.AsyncClient = Depends(get_client)):
-    data = await get_product_data(ean=ean, client=httpx.AsyncClient())
-
-    mapped_data = await map_attributes(data)
+    
+    try:
+        data = await get_product_data(ean=ean, client=client)
+    except Exception as e:
+        logger.error(f"Error fetching data for ean {ean}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+        
+    try:
+        mapped_data = await map_attributes(data)
+    except Exception as e:
+        logger.error(f"Error mapping attributes for ean {ean}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
 
     return mapped_data

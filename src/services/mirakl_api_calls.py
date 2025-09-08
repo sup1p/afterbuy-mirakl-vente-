@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from src.core.settings import settings
 from logs.config_logs import setup_logging
 
@@ -14,6 +13,58 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
+
+async def check_offer_import_error(import_parameter: str, client: httpx.AsyncClient):
+    logger.info(f"Checking offer import error for parameter: {import_parameter}")
+    headers = {
+        "Authorization": settings.mirakl_api_key,
+    }
+    url = f"{settings.mirakl_url}/api/offers/imports/{import_parameter}/error_report"
+
+    try:
+        response = await client.get(url, headers=headers)
+    except Exception as e:
+        logger.error(f"Error while requesting offer import error report: {e}")
+        raise Exception("Error while requesting offer import error report from Mirakl") from e
+
+    if response.status_code == 200:
+        df = pd.read_csv(BytesIO(response.content), sep=";")
+        logger.info(f"Offer error report fetched successfully: {import_parameter}")
+
+        # Извлекаем EAN (из product-id, если product-id-type == 'EAN')
+        eans = None
+        if "product-id" in df.columns and "product-id-type" in df.columns:
+            eans_list = (
+                df.loc[df["product-id-type"].str.upper() == "EAN", "product-id"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+            eans = eans_list if eans_list else None
+            logger.debug(f"EANs for {import_parameter}: {eans}")
+
+        # Извлекаем ошибки
+        errors = None
+        if "error-message" in df.columns:
+            errors_list = df["error-message"].dropna().astype(str).tolist()
+            errors = errors_list if errors_list else None
+            logger.info(f"Errors for {import_parameter}: {errors}")
+
+        return {"status": 200, "ean": eans, "errors": errors}
+
+    elif response.status_code == 404:
+        logger.debug(f"Ответ: {response.status_code} - {response.text}")
+        return {"status": 200, "message": "Not found, probably no errors"}
+
+    else:
+        logger.error(f"Ошибка: {response.status_code} - {response.text}")
+        try:
+            error_json = response.json()
+        except Exception:
+            error_json = {"message": response.text}
+        return {"status": response.status_code, "message": error_json.get("message", "Unknown error")}
+
+
 async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
     logger.info(f"Checking import error for parameter: {import_parameter}")
     headers = {
@@ -27,12 +78,9 @@ async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
 
     try:
         response = await client.get(url, headers=headers)
-    except httpx.RequestError as e:
+    except Exception as e:
         logger.error(f"Error while requesting import error report: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error while requesting import error report from Mirakl",
-        )
+        raise e("Error while requesting import error report from Mirakl")
 
     if response.status_code == 200:
         df = pd.read_csv(
@@ -88,12 +136,9 @@ async def check_non_integrated_products(import_parameter: str, client: httpx.Asy
 
     try:
         response = await client.get(url, headers=headers)
-    except httpx.RequestError as e:
+    except Exception as e:
         logger.error(f"Error while requesting non-integrated products: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error while requesting non-integrated products from Mirakl",
-        )
+        raise e("Error while requesting non-integrated products from Mirakl")
         
 
     if response.status_code == 200:
@@ -147,12 +192,9 @@ async def check_platform_settings(client: httpx.AsyncClient):
     
     try:
         response = await client.get(url, headers=headers)
-    except httpx.RequestError as e:
+    except Exception as e:
         logger.error(f"Error while requesting Mirakl platform settings: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error while requesting platform settings from Mirakl",
-        )
+        raise e("Error while requesting platform settings from Mirakl")
     
     if response.status_code != 200:
         logger.error(f"Failed to get platform settings: {response.status_code} - {response.text}")
@@ -162,10 +204,7 @@ async def check_platform_settings(client: httpx.AsyncClient):
     
     if not data:
         logger.error("No data received when obtaining platform settings")
-        raise HTTPException(
-            status_code=404,
-            detail="No data received when obtaining platform settings from Mirakl",
-        )
+        raise Exception("No data received when obtaining platform settings from Mirakl")
     
     logger.info("Platform settings fetched successfully")
 
@@ -188,8 +227,11 @@ async def import_product(csv_content, client: httpx.AsyncClient):
     payload = {
         "conversion_options[ai_enrichment][status]": "ENABLED",
         "conversion_options[ai_rewrite][status]": "ENABLED",
-        "operator_format": "false",
+        "operator_format": "true",
         "shop": settings.mirakl_shop_id,
+        
+        "import_mode": "NORMAL",
+        "with_products": "true",
     }
 
     headers = {
@@ -197,11 +239,11 @@ async def import_product(csv_content, client: httpx.AsyncClient):
         "Accept": "application/json",
     }
     
-    url = f"{settings.mirakl_url}/api/products/imports"
+    url = f"{settings.mirakl_url}/api/offers/imports"
     
     try:
         response = await client.post(url=url, data=payload, files=files, headers=headers)
-    except httpx.RequestError as exc:
+    except Exception as exc:
         logger.error(f"Request error while importing product: {exc}")
         results.append({f"product {product_num} error": str(exc)})
         return {"status": "error", "results": results}
@@ -214,31 +256,3 @@ async def import_product(csv_content, client: httpx.AsyncClient):
         results.append({"product {product_num} result": response.json()})
 
     return {"status": "done", "results": results}
-
-
-# async def delete_product(product_ids: list[int]):
-#     logger.info(f"Deleting products with ids: {product_ids}")
-#     url = settings.mirakl_connect
-    
-#     payload = {
-#         "products": [{"id": pid} for pid in product_ids]
-#     }
-
-#     headers = {
-#         "Content-Type": "application/json",
-#         "Authorization": "Bearer <YOUR_JWT_HERE>"
-#     }
-        
-#     try:
-#         async with httpx.AsyncClient(timeout=30.0) as client:
-#             response = await client.delete(url, json=payload, headers=headers)
-#     except httpx.RequestError as e: 
-#         logger.error(f"Error while requesting product deletion: {e}")
-#         raise HTTPException(
-#             status_code=500,
-#             detail="Error while requesting product deletion from Mirakl Connect",
-#         )
-
-#     data = response.json()
-    
-#     return data

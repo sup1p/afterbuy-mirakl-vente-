@@ -1,16 +1,16 @@
-from fastapi import HTTPException
 from src.const.constants import (
     mapping_attr,
     category_attrs_map,
     mapping_attr_to_def_fallback,
     mapping_attr_with_no_map_to_def_value,
     mapping_categories_current,
-    mapping_extra_attrs
+    mapping_extra_attrs,
+    default_html_description
 )
 from src.utils.substitute_formatter import substitute_attr
-# from src.utils.format_html import extract_productdetails
 from src.utils.image_worker import check_image_existence
 from logs.config_logs import setup_logging
+from src.utils.format_html import extract_product_description
 
 import json
 import logging
@@ -37,10 +37,7 @@ async def map_attributes(data: dict) -> dict:
     
     if not main_image or not await check_image_existence(main_image):
         logger.error(f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}")
-        raise HTTPException(
-            status_code=404,
-            detail=f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}",
-        )
+        raise Exception(f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}")
     
     extra_images_not_checked = str(data.get("pics", "")).split()
     extra_images = [img for img in extra_images_not_checked if await check_image_existence(img)]
@@ -54,14 +51,27 @@ async def map_attributes(data: dict) -> dict:
         filtered_properties = {}
 
     logger.info("Свойства товара: %s", filtered_properties)
+    
+    html_desc = extract_product_description(data.get("html_description"))
+    if not html_desc or len(html_desc) < 51:
+        html_desc = None
+    elif len(html_desc) < 100:
+        html_desc = html_desc * 2
+    logger.debug(f"Extracted HTML description length: {len(html_desc)}")
+    
 
     # --- базовые поля ---
     data_for_mirakl = {
         "sku": data.get("ean"),
+        "product-id": data.get("ean"),
+        # "product-id": data.get("product_num"),
+        "product-id-type": "EAN",
+        "price": data.get("price", "0.00"),
+        "state": 11,
+        "quantity": "20",
+        
         "brand": "407",
         "internal-description": "",
-        "product-id": data.get("product_num"),
-        "price": data.get("price"),
         "title_de": data.get("article"),
         "image_1": data.get("pic_main"),
         "image_2": safe_get(extra_images, 0),
@@ -74,10 +84,9 @@ async def map_attributes(data: dict) -> dict:
         "image_9": safe_get(extra_images, 7),
         "image_10": safe_get(extra_images, 8),
         "category": map_categories(int(data.get("category", 0))),
-        "product-safety-media-link": data.get("link"),
         "ean": data.get("ean"),
-        "description": data.get("html_description"),
-        "description_de": data.get("html_description"),
+        "description": html_desc if html_desc else default_html_description,
+        "description_de": html_desc if html_desc else default_html_description
     }
     
     if not data_for_mirakl.get("description") or not data_for_mirakl.get("description_de"):

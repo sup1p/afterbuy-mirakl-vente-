@@ -4973,6 +4973,8 @@ mapping_format_85 = {
         "650": "42983"
     }
 
+default_html_description = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
+
 mapping_extra_attrs = {
     "Stil" : "ATTR_19",
 }
