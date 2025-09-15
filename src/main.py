@@ -30,6 +30,6 @@ def root():
     logger.info("Root endpoint accessed")
     return "We are live!"
 
-# app.include_router(product_router)
-# app.include_router(mirakl_system_router)
+app.include_router(product_router)
+app.include_router(mirakl_system_router)
 app.include_router(test_router)

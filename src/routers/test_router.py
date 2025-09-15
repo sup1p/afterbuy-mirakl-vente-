@@ -32,7 +32,8 @@ async def test_import_product(ean: int, get_httpx_client: httpx.AsyncClient = De
         )
         
     try:
-        mapped_data = await map_attributes(data, get_httpx_client)
+        mapped_data_result = await map_attributes(data, get_httpx_client)
+        mapped_data = mapped_data_result.get('data_for_mirakl')
     except Exception as e:
         logger.error(f"Error mapping attributes for ean {ean}: {e}")
         raise HTTPException(

@@ -37,7 +37,9 @@ async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get
     
     logger.info(f"Fetched data for ean {ean}: {len(data)} items")
     try:
-        mapped_data = await map_attributes(data=data, httpx_client=httpx_client, ftp_client=ftp_client)
+        mapped_data_result = await map_attributes(data=data, httpx_client=httpx_client, ftp_client=ftp_client)
+        mapped_data = mapped_data_result.get('data_for_mirakl')
+        logger.debug(f"MAPPED DATA IN THE MAP_ATTRIBUTES: {mapped_data}")
         
     except Exception as e:
         logger.error(f"Error mapping attributes for ean {ean}: {e}")
@@ -102,7 +104,8 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
         logger.info(f"Fetched data for ean {ean}")
         
         try:
-            mapped_data = await map_attributes(data=single_product, httpx_client=httpx_client, ftp_client=ftp_client)
+            mapped_data_results = await map_attributes(data=single_product, httpx_client=httpx_client, ftp_client=ftp_client)
+            mapped_data = mapped_data_results.get('data_for_mirakl')
         except Exception as e:
             logger.error(f"Error mapping attributes for ean {ean}: {e}")
             not_added_eans.append(ean)
