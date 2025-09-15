@@ -195,7 +195,7 @@ async def file_exists_on_ftp(filename: str, remote_dir: str, ftp_client: aioftp.
     """
     if remote_dir:
         try:
-            await ftp_client.change_directory(f"{remote_dir}_{filename}")
+            await ftp_client.change_directory(remote_dir)
         except aioftp.StatusCodeError as e:
             # Если директории нет, то файла точно нет
             if "550" in str(e):
