@@ -37,7 +37,7 @@ async def _prepare_images(
 ):
     """
     Validates and processes product images. Returns tuple:
-      (main_image_url, extra_images_urls_list, amount_of_resized_images)
+    (main_image_url, extra_images_urls_list, amount_of_resized_images)
     """
     # --- main image ---
     main_image = data.get("pic_main", "")
@@ -52,9 +52,12 @@ async def _prepare_images(
 
     amount_of_resized_images = 0
     process_images_result = await process_images([main_image], httpx_client)
+    errors = process_images_result.get("errors", [])
 
-    if process_images_result.get("errors") is None:
-        main_image = await resize_image_and_upload(main_image)
+
+    if errors:
+        logger.debug(f"Main image has ERRORS, {main_image}")
+        main_image = await resize_image_and_upload(url=main_image,ean=data.get("ean"),ftp_client=ftp_client,httpx_client=httpx_client)
         amount_of_resized_images = amount_of_resized_images + 1
 
     # --- extra images ---

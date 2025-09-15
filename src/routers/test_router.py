@@ -20,10 +20,10 @@ router = APIRouter()
 
 
 @router.post("/test-import-product/{ean}", tags=["test"])
-async def test_import_product(ean: int, get_httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def test_import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
     
     try:
-        data = await get_product_data(ean=ean, client=get_httpx_client)
+        data = await get_product_data(ean=ean, client=httpx_client)
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(
@@ -32,7 +32,7 @@ async def test_import_product(ean: int, get_httpx_client: httpx.AsyncClient = De
         )
         
     try:
-        mapped_data_result = await map_attributes(data, get_httpx_client)
+        mapped_data_result = await map_attributes(data=data, httpx_client=httpx_client, ftp_client=ftp_client)
         mapped_data = mapped_data_result.get('data_for_mirakl')
     except Exception as e:
         logger.error(f"Error mapping attributes for ean {ean}: {e}")
