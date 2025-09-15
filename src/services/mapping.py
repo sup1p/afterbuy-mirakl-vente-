@@ -16,6 +16,7 @@ from src.utils.format_html import extract_product_properties_from_html
 import json
 import logging
 import httpx
+import aioftp
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def safe_get(images, idx):
     return images[idx] if idx < len(images) else ""
 
 
-async def map_attributes(data: dict, client: httpx.AsyncClient) -> dict:
+async def map_attributes(data: dict, httpx_client: httpx.AsyncClient, ftp_client = aioftp.Client) -> dict:
     """
     Подготавливает словарь для Mirakl.
     - Обрабатывает изображения (до 10).
@@ -37,12 +38,12 @@ async def map_attributes(data: dict, client: httpx.AsyncClient) -> dict:
     # --- изображения ---
     main_image = data.get("pic_main", "")
     
-    if not main_image or not await check_image_existence(main_image):
+    if not main_image or not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}")
         raise Exception(f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}")
     
     amount_of_resized_images = 0
-    process_images_result = await process_images([main_image], client)
+    process_images_result = await process_images([main_image], httpx_client)
     
     if process_images_result.get("errors") is None:
         main_image = resize_image_and_upload(main_image)
@@ -50,14 +51,14 @@ async def map_attributes(data: dict, client: httpx.AsyncClient) -> dict:
     
     
     extra_images_not_checked_for_existence = str(data.get("pics", "")).split()
-    extra_images_not_checked_for_size = [img for img in extra_images_not_checked_for_existence if await check_image_existence(img)]
+    extra_images_not_checked_for_size = [img for img in extra_images_not_checked_for_existence if await check_image_existence(image_url=img, httpx_client=httpx_client)]
     
-    processed_images_errors_result = await process_images(extra_images_not_checked_for_size, client)
-    processed_images_errors = processed_images_errors_result.get("errors", [])
-    extra_images = [img for img in extra_images_not_checked_for_size if img not in [err[0] for err in processed_images_errors]]
+    processed_images_error_sizes_result = await process_images(extra_images_not_checked_for_size, httpx_client)
+    processed_images_error_sizes = processed_images_error_sizes_result.get("errors", [])
+    extra_images = [img for img in extra_images_not_checked_for_size if img not in [err[0] for err in processed_images_error_sizes]]
     
     # ПОТОМ ПЕРЕДЕЛАТЬ ПОД ASYNCIO.GATHER
-    resized_error_images = [resize_image_and_upload(img[0]) for img in processed_images_errors if img[1] == "small"]
+    resized_error_images = [resize_image_and_upload(url=img[0], ean=data.get("ean"), ftp_client=ftp_client, httpx_client=httpx_client) for img in processed_images_error_sizes if img[1] == "small"]
     
     extra_images.extend(resized_error_images)
     

@@ -5,12 +5,13 @@ from src.services.mirakl_api_calls import import_product as import_product_mirak
 from src.schemas import ProductEan, TestImageResize
 from src.services.csv_converter import make_csv, make_big_csv
 from src.services.mapping import map_attributes
-from src.core.dependencies import get_httpx_client
+from src.core.dependencies import get_httpx_client, get_ftp_client
 from logs.config_logs import setup_logging
 
 import asyncio
 import logging
 import httpx
+import aioftp
 
 from src.utils.image_worker import resize_image_and_upload
 
@@ -23,10 +24,10 @@ router = APIRouter()
 
 
 @router.post("/import-product/{ean}", tags=["product"])
-async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
     
     try:
-        data = await get_product_data(ean=ean, client=client)
+        data = await get_product_data(ean=ean, client=httpx_client)
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(
@@ -36,7 +37,7 @@ async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_httpx
     
     logger.info(f"Fetched data for ean {ean}: {len(data)} items")
     try:
-        mapped_data = await map_attributes(data, client)
+        mapped_data = await map_attributes(data=data, httpx_client=httpx_client, ftp_client=ftp_client)
         
     except Exception as e:
         logger.error(f"Error mapping attributes for ean {ean}: {e}")
@@ -71,11 +72,11 @@ async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_httpx
             detail=f"Product with ean {ean} not found or make_csv failed",
         )
 
-    return await import_product_mirakl(csv_content, client=client)
+    return await import_product_mirakl(csv_content, client=httpx_client)
 
 
 @router.post("/import-products", tags=["product"])
-async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
     
     ean_list = eans.ean_list
     if not ean_list:
@@ -85,7 +86,7 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
         )
         
         
-    tasks = [get_product_data(ean=ean, client=client) for ean in ean_list]
+    tasks = [get_product_data(ean=ean, client=httpx_client) for ean in ean_list]
     results = await asyncio.gather(*tasks, return_exceptions=True)    
     
     data = []
@@ -101,7 +102,7 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
         logger.info(f"Fetched data for ean {ean}")
         
         try:
-            mapped_data = await map_attributes(single_product, client)
+            mapped_data = await map_attributes(data=single_product, httpx_client=httpx_client, ftp_client=ftp_client)
         except Exception as e:
             logger.error(f"Error mapping attributes for ean {ean}: {e}")
             not_added_eans.append(ean)
@@ -132,7 +133,7 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
         )
         
     try:
-        mirakl_answer = await import_product_mirakl(csv_content, client=client)
+        mirakl_answer = await import_product_mirakl(csv_content, client=httpx_client)
     except Exception as e:
         logger.error(f"Error importing products to Mirakl: {e}")
         raise HTTPException(

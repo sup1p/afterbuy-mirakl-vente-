@@ -17,7 +17,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-async def check_image_existence(image_url: str) -> bool:
+async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient) -> bool:
     if settings.check_image_existence is False:
         return True
     
@@ -26,7 +26,7 @@ async def check_image_existence(image_url: str) -> bool:
     
         
     try:
-        response = await client.head(image_url)
+        response = await httpx_client.head(image_url)
     except Exception as e:
         logger.error(f"Error while checking image at {image_url}: {e}")
         return False
@@ -117,6 +117,7 @@ async def download_image_bytes(url: str, client: httpx.AsyncClient):
         return None, e
 
 
+
 def resize_image_bytes(img_bytes: bytes):
     try:
         with Image.open(io.BytesIO(img_bytes)) as im:
@@ -125,6 +126,7 @@ def resize_image_bytes(img_bytes: bytes):
                 logger.error("Некорректные размеры изображения")
                 return None, "Некорректные размеры изображения"
 
+            # Масштабирование (увеличиваем, если меньше минимума)
             scale_h = settings.min_image_height / h
             scale_w = settings.min_image_width / w
             scale = max(scale_h, scale_w)
@@ -134,10 +136,16 @@ def resize_image_bytes(img_bytes: bytes):
 
             im = im.resize((new_w, new_h), Image.LANCZOS)
 
+            # Конвертация в RGB, если нужно (JPEG не поддерживает P/RGBA)
+            if im.mode in ("P", "RGBA", "LA"):
+                im = im.convert("RGB")
+
             out = io.BytesIO()
-            ext = (im.format or "JPEG").lower()
-            im.save(out, format=im.format or "JPEG")
-            return out.getvalue(), ext
+            # Всегда сохраняем в JPEG
+            im.save(out, format="JPEG", quality=85)
+
+            return out.getvalue(), "jpg"
+
     except UnidentifiedImageError:
         logger.error("Переданные байты не являются изображением")
         return None, "Переданные байты не являются изображением"
@@ -157,13 +165,8 @@ async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ftp_client:
         await ftp_client.change_directory(remote_dir)
 
     logger.debug("Start of file upload")
-    
-    # Создаем временный файл в текущей рабочей директории
-    import uuid
+
     temp_filename = filename
-    
-    print(filename)
-    
     filename = os.path.basename(filename)
     current_dir = await ftp_client.get_current_directory()
     print("Current FTP directory:", current_dir)
@@ -174,7 +177,7 @@ async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ftp_client:
             temp_file.write(data)
         
         # Загружаем файл - aioftp увидит только имя файла без слешей
-        await ftp_client.upload(temp_filename, filename)
+        await ftp_client.upload(temp_filename)
     finally:
         # Удаляем временный файл
         if os.path.exists(temp_filename):
@@ -192,7 +195,7 @@ async def file_exists_on_ftp(filename: str, remote_dir: str, ftp_client: aioftp.
     """
     if remote_dir:
         try:
-            await ftp_client.change_directory(remote_dir)
+            await ftp_client.change_directory(f"{remote_dir}_{filename}")
         except aioftp.StatusCodeError as e:
             # Если директории нет, то файла точно нет
             if "550" in str(e):
