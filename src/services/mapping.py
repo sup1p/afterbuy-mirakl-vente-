@@ -8,12 +8,14 @@ from src.const.constants import (
     default_html_description
 )
 from src.utils.substitute_formatter import substitute_attr
-from src.utils.image_worker import check_image_existence
+from src.utils.format_attr import product_quantity_check
+from src.utils.image_worker import check_image_existence, process_images, resize_image_and_upload
 from logs.config_logs import setup_logging
-from src.utils.format_html import extract_product_description
+from src.utils.format_html import extract_product_properties_from_html
 
 import json
 import logging
+import httpx
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ def safe_get(images, idx):
     return images[idx] if idx < len(images) else ""
 
 
-async def map_attributes(data: dict) -> dict:
+async def map_attributes(data: dict, client: httpx.AsyncClient) -> dict:
     """
     Подготавливает словарь для Mirakl.
     - Обрабатывает изображения (до 10).
@@ -39,8 +41,29 @@ async def map_attributes(data: dict) -> dict:
         logger.error(f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}")
         raise Exception(f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}")
     
-    extra_images_not_checked = str(data.get("pics", "")).split()
-    extra_images = [img for img in extra_images_not_checked if await check_image_existence(img)]
+    amount_of_resized_images = 0
+    process_images_result = await process_images([main_image], client)
+    
+    if process_images_result.get("errors") is None:
+        main_image = resize_image_and_upload(main_image)
+        amount_of_resized_images = amount_of_resized_images + 1
+    
+    
+    extra_images_not_checked_for_existence = str(data.get("pics", "")).split()
+    extra_images_not_checked_for_size = [img for img in extra_images_not_checked_for_existence if await check_image_existence(img)]
+    
+    processed_images_errors_result = await process_images(extra_images_not_checked_for_size, client)
+    processed_images_errors = processed_images_errors_result.get("errors", [])
+    extra_images = [img for img in extra_images_not_checked_for_size if img not in [err[0] for err in processed_images_errors]]
+    
+    # ПОТОМ ПЕРЕДЕЛАТЬ ПОД ASYNCIO.GATHER
+    resized_error_images = [resize_image_and_upload(img[0]) for img in processed_images_errors if img[1] == "small"]
+    
+    extra_images.extend(resized_error_images)
+    
+    amount_of_resized_images = amount_of_resized_images + len(resized_error_images)
+    
+    logger.info(f"Total amount of came images: {len(extra_images_not_checked_for_size)}.  Total amount of resized images: {amount_of_resized_images}")
 
     # --- свойства товара ---
     properties_raw = data.get("properties", "{}")
@@ -52,13 +75,14 @@ async def map_attributes(data: dict) -> dict:
 
     logger.info("Свойства товара: %s", filtered_properties)
     
-    html_desc = extract_product_description(data.get("html_description"))
+    # --- html описание ---
+    html_desc = extract_product_properties_from_html(data.get("html_description"))
+    
     if not html_desc or len(html_desc) < 51:
         html_desc = None
     elif len(html_desc) < 100:
         html_desc = html_desc * 2
-    logger.debug(f"Extracted HTML description length: {len(html_desc)}")
-    
+    logger.debug("Extracted HTML description length: %s", len(html_desc) if html_desc else 0)
 
     # --- базовые поля ---
     data_for_mirakl = {
@@ -68,12 +92,12 @@ async def map_attributes(data: dict) -> dict:
         "product-id-type": "EAN",
         "price": data.get("price", "0.00"),
         "state": 11,
-        "quantity": "20",
+        "quantity": product_quantity_check(data.get("article", "")),
         
         "brand": "407",
         "internal-description": "",
         "title_de": data.get("article"),
-        "image_1": data.get("pic_main"),
+        "image_1": main_image,
         "image_2": safe_get(extra_images, 0),
         "image_3": safe_get(extra_images, 1),
         "image_4": safe_get(extra_images, 2),
@@ -171,9 +195,12 @@ async def map_attributes(data: dict) -> dict:
     data_for_mirakl.update(filled_attrs)
     logger.info("Ready product product-id=%s, category=%s", data_for_mirakl["product-id"], data_for_mirakl["category"])
     
-    logger.debug("Filled ATTRibutes for Mirakl: %s \n", filled_attrs)
+    logger.debug("Filled Attributes for Mirakl: %s \n", filled_attrs)
 
-    return data_for_mirakl
+    return {
+        "ean": data_for_mirakl.get("ean"),
+        "data_for_mirakl": data_for_mirakl
+        }
 
 
 def map_categories(afterbuy_category_num: int) -> str | list[str]:

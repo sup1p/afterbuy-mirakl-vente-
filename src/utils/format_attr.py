@@ -1,8 +1,10 @@
 import logging
 import re
+import unicodedata
 from typing import Union, List, Optional, Any
 from src.const.attrs import ATTR_175, ATTR_2, ATTR_795, ATTR_927, ATTR_7
 from src.const.constants import mapping_format_85
+from src.core.settings import settings
 from logs.config_logs import setup_logging
 
 setup_logging()
@@ -1413,3 +1415,24 @@ def format_175(input_value: List[str]) -> Optional[str]:
     except (KeyError, AttributeError) as e:
         logger.error(f"Error processing ATTR_175 lookup: {e}, returning default value")
         return "11147"
+    
+    
+def product_quantity_check(product_article: str) -> int:
+    """
+    Проверка количества товара.
+    Возвращает 1, если товар особый(env), иначе 20.
+    """
+    
+    if not isinstance(product_article, str) or not product_article:
+        logger.warning("Invalid product article for quantity check, returning default value 20")
+        return 20
+    
+    article = unicodedata.normalize("NFKC", product_article).casefold().strip()
+    special_word =  unicodedata.normalize("NFKC", settings.special_quantity_word).casefold().strip()
+    
+    pattern = rf"\b{re.escape(special_word)}\b"
+    
+    if re.search(pattern, article, flags=re.UNICODE) is not None:
+        return 1
+    else:
+        return 20

@@ -1,16 +1,18 @@
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.services.afterbuy_api_calls import get_product_data, get_product_data_loaded
+from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mirakl_api_calls import import_product as import_product_mirakl
-from src.schemas import ProductEan, ProductId
+from src.schemas import ProductEan, TestImageResize
 from src.services.csv_converter import make_csv, make_big_csv
 from src.services.mapping import map_attributes
-from src.core.dependencies import get_client
+from src.core.dependencies import get_httpx_client
 from logs.config_logs import setup_logging
 
 import asyncio
 import logging
 import httpx
+
+from src.utils.image_worker import resize_image_and_upload
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -21,7 +23,7 @@ router = APIRouter()
 
 
 @router.post("/import-product/{ean}", tags=["product"])
-async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_client)):
+async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_httpx_client)):
     
     try:
         data = await get_product_data(ean=ean, client=client)
@@ -34,7 +36,8 @@ async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_clien
     
     logger.info(f"Fetched data for ean {ean}: {len(data)} items")
     try:
-        mapped_data = await map_attributes(data)
+        mapped_data = await map_attributes(data, client)
+        
     except Exception as e:
         logger.error(f"Error mapping attributes for ean {ean}: {e}")
         raise HTTPException(
@@ -49,7 +52,7 @@ async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_clien
             detail=f"Product with ean {ean} not found or mapping failed",
         )
     
-    logger.info(f"Mapped data for product_num {ean}: {mapped_data}")
+    logger.info(f"Mapped data for ean {ean}: {mapped_data}")
 
     if mapped_data.get("category") == "No mapping":
         print(data.get("category"))
@@ -72,7 +75,7 @@ async def import_product(ean: int, client: httpx.AsyncClient = Depends(get_clien
 
 
 @router.post("/import-products", tags=["product"])
-async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(get_client)):
+async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(get_httpx_client)):
     
     ean_list = eans.ean_list
     if not ean_list:
@@ -98,7 +101,7 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
         logger.info(f"Fetched data for ean {ean}")
         
         try:
-            mapped_data = await map_attributes(single_product)
+            mapped_data = await map_attributes(single_product, client)
         except Exception as e:
             logger.error(f"Error mapping attributes for ean {ean}: {e}")
             not_added_eans.append(ean)
@@ -114,7 +117,7 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
             not_added_eans.append(ean)
             continue
         
-        logger.info(f"Mapped data for product_num {ean}: {mapped_data}")
+        logger.info(f"Mapped data for ean {ean}: {mapped_data}")
 
         data.append(mapped_data)
 
@@ -144,25 +147,27 @@ async def import_products(eans: ProductEan, client: httpx.AsyncClient = Depends(
     }
 
 
-@router.post("/test-import-product/{ean}", tags=["product"])
-async def test_import_product(ean: int, client: httpx.AsyncClient = Depends(get_client)):
-    
+@router.post("/import-products-by-fabric/{fabric_id}", tags=["product"])
+async def import_products_by_fabric(fabric_id: int, client: httpx.AsyncClient = Depends(get_httpx_client)):
     try:
-        data = await get_product_data(ean=ean, client=client)
+        data = await get_products_by_fabric(fabric_id=fabric_id, client=client)
     except Exception as e:
-        logger.error(f"Error fetching data for ean {ean}: {e}")
+        logger.error(f"Error fetching data for fabric {fabric_id}: {e}")
         raise HTTPException(
             status_code=500,
             detail=str(e),
+        )
+    
+    if not data or not isinstance(data, list):
+        logger.error(f"No products found for fabric {fabric_id}")
+        raise HTTPException(
+            status_code=404,
+            detail=f"No products found for fabric {fabric_id}",
         )
         
-    try:
-        mapped_data = await map_attributes(data)
-    except Exception as e:
-        logger.error(f"Error mapping attributes for ean {ean}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
 
-    return mapped_data
+    products = data.get("products", [])
+    not_added_eans = data.get("not_added_eans", [])
+    
+    logger.info(f"Fetched {len(products)} products for fabric {fabric_id}")
+    return
