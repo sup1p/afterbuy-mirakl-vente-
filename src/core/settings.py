@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     afterbuy_url: str
     afterbuy_login: str
     afterbuy_password: str
+    image_base_url: str
     #mirakl
     mirakl_url: str
     mirakl_api_key: str

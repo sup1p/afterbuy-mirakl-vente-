@@ -154,7 +154,7 @@ def resize_image_bytes(img_bytes: bytes):
         return None, f"Ошибка при обработке изображения: {e}"
 
 
-async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ftp_client: aioftp.Client) -> str:
+async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ean: str,ftp_client: aioftp.Client) -> str:
     """Асинхронная загрузка на FTP через aioftp."""
     if remote_dir:
         try:
@@ -185,11 +185,11 @@ async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ftp_client:
     
     logger.debug("End of file upload")
     
-    path = f"{remote_dir.rstrip('/')}/{filename}" if remote_dir else filename
-    return "https://example.com"
+    
+    return f"{settings.image_base_url}/{ean}/{filename}"
 
 
-async def file_exists_on_ftp(filename: str, remote_dir: str, ftp_client: aioftp.Client) -> bool:
+async def file_exists_on_ftp(filename: str, remote_dir: str, ean: str, ftp_client: aioftp.Client) -> bool:
     """
     Проверяет, существует ли файл на FTP.
     """
@@ -204,7 +204,7 @@ async def file_exists_on_ftp(filename: str, remote_dir: str, ftp_client: aioftp.
 
     try:
         await ftp_client.stat(filename)
-        return True
+        return f"{settings.image_base_url}/{ean}/{filename}"
     except aioftp.StatusCodeError as e:
         # код 550 — файл не найден
         if "550" in str(e):
@@ -254,11 +254,14 @@ async def resize_image_and_upload(
 
     
     # 4. Проверка на существование
-    exists = await file_exists_on_ftp(filename=orig_file_name, remote_dir=f"/afterbuy_resized_images_for_mirakl/{ean}", ftp_client=ftp_client)
-    if exists:
-        return "it already exists"
+    existing_url = await file_exists_on_ftp(filename=orig_file_name, remote_dir=f"/xlmoebel.at/image/afterbuy_resized_images_for_mirakl/{ean}", ean=ean,ftp_client=ftp_client)
+    if existing_url:
+        logger.info(f"Image {orig_file_name} already exists in ftp server, returning its address")
+        return existing_url
+    
+    logger.debug(f"Image {orig_file_name} does not exist in ftp server, importing there")
 
     # 5. Загрузка на FTP
-    ftp_url = await upload_to_ftp(resized_bytes, orig_file_name, f"/afterbuy_resized_images_for_mirakl/{ean}", ftp_client=ftp_client)
+    ftp_url = await upload_to_ftp(data=resized_bytes, filename=orig_file_name, remote_dir=f"/xlmoebel.at/image/afterbuy_resized_images_for_mirakl/{ean}", ean=ean,ftp_client=ftp_client)
 
     return ftp_url
