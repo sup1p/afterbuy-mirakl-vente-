@@ -1540,8 +1540,24 @@ def format_150_151_152(
         normalized_value = re.sub(r"\d+\s*ft\.?", "", normalized_value)
         logger.debug(f"Normalized value: '{value}' -> '{normalized_value}'")
 
-        # Извлечение чисел
-        numbers = [round(float(m), 2) for m in re.findall(r"[-+]?\d*\.?\d+", normalized_value)]
+        # mm -> mm, cm -> cm
+        normalized_value = normalized_value.replace("мм", "mm").replace("см", "cm")
+
+        # Преобразуем "число + ед. изм."
+        tokens = re.findall(r"(\d*\.?\d+)\s*(mm|cm)?", normalized_value)
+
+        numbers = []
+        for num, unit in tokens:
+            try:
+                val = float(num)
+                if unit == "mm":
+                    logger.debug(f"Converting mm to cm: {val}")
+                    val = val / 10.0   # перевод мм -> см
+                # если cm или unit пустой – оставляем как есть
+                numbers.append(round(val, 2))
+            except ValueError:
+                continue
+
         if not numbers:
             logger.warning(f"No numeric value found in '{value}', returning default value")
             return 50.0

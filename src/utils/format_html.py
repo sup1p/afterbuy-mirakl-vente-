@@ -41,32 +41,30 @@ def extract_product_description_from_html(html: str) -> str:
 
 def extract_product_properties_from_html(html: str) -> str:
     """
-    Extracts product properties from HTML tab content.
+    Extracts product properties from HTML tab content and returns them as a single string.
+    Example output:
+    "Höhe: 2066 mm Tiefe: 626 mm Breite: 1300 mm Farbe: Farbwahl Material: Holzwerkstoff Lieferzustand: Zerlegt"
     """
-    soup = BeautifulSoup(html, "html.parser")
-
+    clean_html = re.sub(r"^<!\[CDATA\[|\]\]>$", "", html.strip())
+    soup = BeautifulSoup(clean_html, "html.parser")
     tab1 = soup.find("div", {"id": "tab-content1"})
     if not tab1:
+        logger.warning("No tab1-content found in html")
         return ""
 
     details = []
 
-    # Remove empty and "nbsp" content
-    paragraphs = [
-        p.get_text(" ", strip=True)
-        for p in tab1.find_all(["p", "font"])
-        if p.get_text(strip=True) and p.get_text(strip=True) != "\xa0"
-    ]
-
-    for text in paragraphs:
-        clean_text = re.sub(r"\s+", " ", text).strip()
-
-        if ":" in clean_text:
-            # Split by first colon
-            key, value = clean_text.split(":", 1)
-            details.append(f"{key.strip()}: {value.strip()}")
-        else:
-            # Add as is (e.g., "oder ca: 202 x 287 cm")
+    # Разбиваем по <br/> внутри абзацев
+    for p in tab1.find_all("p"):
+        parts = p.decode_contents().split("<br/>")
+        for part in parts:
+            clean_text = BeautifulSoup(part, "html.parser").get_text(" ", strip=True)
+            if not clean_text or clean_text == "\xa0":
+                continue
+            clean_text = re.sub(r"\s+", " ", clean_text).strip()
             details.append(clean_text)
 
+    # Соединяем в одну строку
+
+    logger.debug(f"Product extracted from html properties: {details}")
     return " ".join(details)
