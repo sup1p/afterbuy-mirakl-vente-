@@ -7,8 +7,8 @@ import logging
 import re
 import unicodedata
 from typing import Union, List, Optional, Any
-from src.const.attrs import ATTR_175, ATTR_2, ATTR_795, ATTR_927, ATTR_7, ATTR_106
-from src.const.constants import mapping_format_85
+from src.const.attrs import ATTR_175, ATTR_928, ATTR_795, ATTR_927, ATTR_7, ATTR_106
+from src.const.constants import mapping_format_85, mapping_format_717
 from src.core.settings import settings
 from logs.config_logs import setup_logging
 
@@ -78,6 +78,8 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Silber-Transparent": "5",
         "Matt Chrome": "5",
         "White Patina": "9",
+        "White + Black":"21",
+        "Blue": "11",
         "Lila": "19",
         "Orange": "35",
         "White - chrome": "9",
@@ -113,6 +115,10 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Braun/Grau": "15",
         "Grau-Gold": "21",
         "Grau": "21",
+        "Grey": "21",
+        "Light Gray": "21",
+        "Gray": "21",
+        "Dark Gray": "21",
         "Dunkelbraun": "15",
         "Gelb": "23",
         "Azurblau": "11",
@@ -163,6 +169,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Champagner": "17",
         "Weiß/Grau": "9",
         "cream": "13063",
+        "Cream": "13063",
         "Amber -Transparent": "43",
         "Transparent-Amber": "43",
         "Messing": "17",
@@ -219,10 +226,13 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "wie abgebildet": "5",
         "Bronze": "79",
         "White": "9",
-        "Weiß-Grau": "9"
+        "Weiß-Grau": "9",
+        "Whte": "9",
+        "Coral": "118529"
     }
     
     second_mapping = {
+        "copper": "89",
         "Grau": "21",
         "Turkis": "13089",
         "Violett": "19",
@@ -251,7 +261,8 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Hellgrün": "51",
         "Lila": "19",
         "Burgund": "53",
-        "Türkis": "13089"
+        "Türkis": "13089",
+        "Yellow": "23"
     }
     
     third_mapping = {
@@ -273,7 +284,45 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Geblümt": "87",             # цветочный -> Multicolore
         "Mehrfarbig": "87",          # явное попадание -> Multicolore
         "Gemustert": "87",           # общий узор -> Multicolore
-        "Freie Farbwahl": None
+        "Freie Farbwahl": None,
+        "Riviera Oak/Black": None,   # нет прямого совпадения
+        "Transparent-Silver": "5",   # есть в color_map ("Silber-Transparent": "5")
+        "Black + Orange": "33",      # черный в color_map → "33"
+        "Blue,Black": "11",          # Blue → "11"
+        "White,Blue": "9",           # White → "9"
+        "Beige- Brown": "7",         # Beige → "7"
+        "Blue + White": "11",        # Blue → "11"
+        "Silver-Transparent": "5",   # есть в color_map
+        "Black / Red": "33",         # Schwarz/Rot → "33"
+        "Green": "101",              # Grün → "101"
+        "Black / White": "33",       # Schwarz/Weiß → "33"
+        "Brown + Orange": "15",      # Braun → "15"
+        "White,Purple": "9",         # White → "9"
+        "Mocha Gray": "21",          # Gray → "21"
+        "Green +Orange": "101",      # Grün → "101"
+        "Beige": "7",                # Beige → "7"
+        "JVFurniture": None,         # бренд, не цвет
+        "White+Yellow": "9",         # White → "9"
+        "Amber": "43",               # Amber → "43"
+        "White-Gold": "9",           # Weiß-Gold → "9"
+        "Brown": "15",               # Braun → "15"
+        "White + Brown": "9",        # Weiß/Braun → "9"
+        "Yellow": "23",              # Gelb → "23"
+        "Colourful": "87",           # Mehrfarbig → "87"
+        "Beige+Dark Brown": "7",     # Beige → "7"
+        "Dark Brown, Red": "15",     # Dunkelbraun → "15"
+        "Red Handle": "39",          # Rot → "39"
+        "Gray": "21",                # Grau → "21"
+        "Transparent-Black": "43",   # Transparent-Schwarz → "43"
+        "Matte-Gold": "17",          # Matt-Gold → "17"
+        "Braun": "15",               # Braun → "15"
+        "White-Gray": "9",           # Weiß-Grau → "9"
+        "Beige / Brown": "7",        # Beige / Braun → "7"
+        "Bordeaux": "53",            # Bordeaux → "53"
+        "Transparent-Gold": "43",    # Transparent-Gold → "43"
+        "Silver matte": "5",         # Silber Matt → "5"
+        "Orange / Black": "35",      # Orange → "35"
+        "Black,Brown": "33",         
     }
     if color_map.get(get_first_value(input_value)) is None:
         logger.info(f"Color '{get_first_value(input_value)}' not found in primary mapping, returning secondary mapping")
@@ -456,20 +505,128 @@ def format_17(input_value: List[str]) -> Optional[str]:
         logger.warning("Invalid input for format_17, returning default value")
         return "375"
         
-    shape_mapping = {
-        "78 cm": None,
-        "Rechteck": "377",
-        "Rund": "379", 
+    form_mapping = {
+        # --- квадрат/прямоугольник ---
         "Rechteckig": "377",
+        "Rectangular": "377",
+        "Rectangle": "377",
+        "Rectungle": "377",
+        "Rechtekcig": "377",
+        "Rechteck": "377",
+        "Rechteckiq": "377",
+        "Rechtek": "377",
+        "REchteckig": "377",
+        "Rechtreckig": "377",
         "Quadratisch": "375",
-        "Oval": "381",
+        "Quadratischer": "375",
+        "Qudrat": "375",
+        "Quadrratisch": "375",
+        "Square": "375",
         "Quadrat": "375",
+
+        # --- круг/овал ---
+        "Rund": "379",
+        "Round": "379",
+        "runde": "379",
+        "runder": "379",
+        "Kreis": "379",
+        "Kreisförmig": "379",
+        "Circular": "379",
+        "Circle": "379",
+        "Oval": "381",
+        "Ovale": "381",
+        "Rund-Oval": "381",
+        "Rund-Platz": "381",
+        "OvalUnregelmäßig": "381",
+        "Ellipse": "381",
+        "Elliptisch": "381",
+        "Semicircle": "381",
+        "Halbkreis": "381",
+        "Halbmond": "381",
+        "Spiralförmig": "381",
+        "Tropfenform": "381",
+
+        # --- асимметрия ---
+        "Asymmetrisch": "24951",
+        "Asymmetrische Form": "24951",
+        "Asymmetrische": "24951",
+
+        # --- четверть круга ---
+        "Viertelkreis": "24953",
+        "Versetzter Viertelkreis": "24953",
+
+        # --- многоугольники ---
+        "Sechseckig": "40357",
+        "Sechseck": "40357",
+        "Hexagon": "40357",
+        "Achteck": None,        # нет в списке → None
+        "Achteckig": None,
+        "Oktagonal": None,
+        "Oktagon": None,
+        "Fünfeck": None,
+        "Dreieckig": "119780",
+        "Dreieck": "119780",
+        "Triangle": "119780",
+
+        # --- коническое ---
+        "Kegel": "113431",
+        "Conique": "113431",
+
+        # --- цилиндр ---
+        "Zylinder": "113433",
+        "Cylindrical": "113433",
+
+        # --- песочные часы ---
+        "Sanduhr": "113432",
+        "Hourglass": "113432",
+
+        # --- грушевидная/каплевидная ---
+        "Nierenförmig": "114010",
+        "Poire": "114010",
+        "Tropfen": "114010",
+
+        # --- особые ---
+        "Hand": "125600",
+        "Main": "125600",
+        "Ei": "125601",
+        "Oeuf": "125601",
+        "Muschel": "125602",
+        "Coquillage": "125602",
+
+        # --- всё остальное, без маппинга ---
+        "L-Form": None,
+        "U-Form": None,
+        "Ecksofa": None,
+        "Sofa Set": None,
+        "Sessel": None,
+        "Eck": None,
+        "Tier": None,
+        "Mensch": None,
+        "Kind": None,
+        "Frau": None,
+        "Mann": None,
+        "Hund": None,
+        "Katze": None,
+        "Vogel": None,
+        "Pferd": None,
+        "Elefant": None,
+        "Tiger": None,
+        "Buddha": None,
+        "Pharao": None,
+        "Nefertiti": None,
+        "Anubis": None,
+        "Sphinx": None,
+        "Engel": None,
+        "Mond": None,
+        "Sonne": "40361",
+        "Blume": "40363",
     }
-    if shape_mapping.get(get_first_value(input_value)) is None:
+    
+    if form_mapping.get(get_first_value(input_value)) is None:
         logger.warning(f"Shape '{get_first_value(input_value)}' not found in mapping, returning default '375'")
         return "375"
     
-    return shape_mapping.get(get_first_value(input_value))
+    return form_mapping.get(get_first_value(input_value))
 
 
 @safe_execute("format_19", "input_value")
@@ -532,9 +689,66 @@ def format_32(input_value: List[str]) -> Optional[str]:
     }
     
     extra_map = {
-        "Boden": "24965",
+            # Явные совпадения
+        "Freistehend": "40371",           # Autoportant / Freistehend
+        "Freistehen": "40371",
+        "Freisthend": "40371",
+        "Freistegend": "40371",
+        "Freisehend": "40371",
+        "Freistend": "40371",
+        "Freostehend": "40371",
+        "Feistehend": "40371",
+        "Fresitehend": "40371",
+        
+        "Wandmontage": "24961",           # A fixer au mur / An der Wand zu befestigen
+        "Wandmontage, Freistehend": None, # смесь
+        "Wandmontage / Freistehend": None,
+        
+        "Eckmontage": None,               # нет прямого аналога
+        "Fußboden": "24965",              # Auf dem Boden
+        "Fußmontage": "24965",
         "Auf dem Boden": "24965",
-        "Auf Sockel": "40371"
+        "Boden": "24965",
+        
+        "Unterbau": "24967",              # Zum Einbauen
+        "Einbau": "24967",
+        
+        "Hängend": "24969",               # Zum Aufhängen
+        "Deckenmontage": "40375",         # An der Decke zu befestigen
+        "Aufgesetzt": "50847",            # en applique
+        "Montage": None,                  # слишком общее
+        "benötigt": None,
+        "Vorhang": None,
+        "Über der Tür": None,
+        "An Kommode befestigt": None,
+        
+        # Остальные "Ja/Nein/Angaben" явно не совпадают
+        "Ja": None,
+        "Nein": None,
+        "Ja80": None,
+        "NeinNein": None,
+        "Erwachsene": None,
+        "2 Jahre": None,
+        "59 cm": None,
+        "200 cm": None,
+        "52 cm": None,
+        "56 cm": None,
+        "77 cm": None,
+        
+        # Montagezustand (отдельный справочник, здесь не мапим)
+        "Keine Montage erforderlich": None,
+        "Vormontiert": None,
+        "Montage erforderlich": None,
+        "Halbmontiert": None,
+        "Vollständig montiert": None,
+        "vollständig montiert": None,
+        "zerlegt": None,
+        "Zerlegt": None,
+        
+        # Installationsart (частично совпадает)
+        "Ecke": None,
+        "Walk-In": None,
+        "Auf Sockel": None,
     }
     
     if type_pose_map.get(get_first_value(input_value)) is not None:
@@ -640,23 +854,93 @@ def format_68(input_value: List[str]) -> Optional[str]:
         return "879"
     
     mapping = {
-        "Mehr als 8": "24977",   # ближе всего "Lot de 8"
-        "5": "24973",            # Lot de 5
-        "3": "871",              # Lot de 3
-        "4": "873",              # Lot de 4
-        "9": "24979",            # Lot de 9
-        "8": "24977",            # Lot de 8
-        "Mehr als 6": "875",     # ближе всего "Lot de 6"
-        "7": "24975",            # Lot de 7
-        "4-teilig": "873",       # Lot de 4
-        "1": "879",              # A l'unité
-        "Einteilig": "879",      # A l'unité
-        "Dreiteilig": "871",     # Lot de 3
-        "11": "75445",           # Lot de 11
-        "Zweiteilig": "869",     # Lot de 2
-        "2": "869",              # Lot de 2
-        "6": "875",              # Lot de 6
-        "10": "877"              # Lot de 10
+        "1": "879",        # A l'unité (Pro Stück)
+        "Einteilig": "879",
+        "1-teilig": "879",
+
+        "2": "869",        # Lot de 2
+        "Zweiteilig": "869",
+        "2-teilig": "869",
+
+        "3": "871",        # Lot de 3
+        "Dreiteilig": "871",
+        "3-teilig": "871",
+
+        "4": "873",        # Lot de 4
+        "Vierteilig": "873",
+        "4-teilig": "873",
+
+        "5": "24973",      # Lot de 5
+        "Fünfteilig": "24973",
+        "5-teilig": "24973",
+
+        "6": "875",        # Lot de 6
+        "Sechsteilig": "875",
+        "6-teilig": "875",
+
+        "7": "24975",      # Lot de 7
+        "Siebenteilig": "24975",
+        "7-teilig": "24975",
+
+        "8": "24977",      # Lot de 8
+        "8-teilig": "24977",
+
+        "9": "24979",      # Lot de 9
+        "9-teilig": "24979",
+
+        "10": "877",       # Lot de 10
+        "10-teilig": "877",
+
+        "11": "75445",     # Lot de 11
+        "11-teilig": "75445",
+
+        "12": "75447",     # Lot de 12
+        "12-teilig": "75447",
+
+        "13": "75449",     # Lot de 13
+        "13-teilig": "75449",
+
+        "14": "75451",     # Lot de 14
+        "14-teilig": "75451",
+
+        "15": "75453",     # Lot de 15
+        "15-teilig": "75453",
+
+        "16": "75455",     # Lot de 16
+        "16-teilig": "75455",
+
+        "17": "81647",     # Lot de 17
+        "17-teilig": "81647",
+
+        "18": "81649",     # Lot de 18
+        "19": "81651",     # Lot de 19
+        "20": "81653",     # Lot de 20
+        "21": "81655",     # Lot de 21
+        "22": "81657",     # Lot de 22
+        "23": "81659",     # Lot de 23
+        "24": "81661",     # Lot de 24
+        "25": "81663",     # Lot de 25
+        "26": "81665",     # Lot de 26
+        "27": "81667",     # Lot de 27
+        "28": "81669",     # Lot de 28
+        "29": "81671",     # Lot de 29
+        "30": "81673",     # Lot de 30
+        "31": "81675",     # Lot de 31
+        "32": "81677",     # Lot de 32
+        "33": "81679",     # Lot de 33
+        "34": "81681",     # Lot de 34
+        "35": "81683",     # Lot de 35
+        "36": "81685",     # Lot de 36
+        "37": "81687",     # Lot de 37
+        "38": "81689",     # Lot de 38
+        "39": "81691",     # Lot de 39
+        "40": "81693",     # Lot de 40
+
+        "Mehr als 8": "24979",   # трактуем как "9er-Set"
+        "Mehr Als 8": "24979",
+        "Mehr als 6": "24975",   # трактуем как "7er-Set"
+        "Mehr als 4": "24973",   # трактуем как "5er-Set"
+        "Mehr als vierteilig": "24973",
     }
     value = get_first_value(input_value)
     if mapping.get(value):
@@ -774,19 +1058,81 @@ def format_183(input_value: List[str]) -> Optional[str]:
         return "11189"
     
     dest_mapping = {
-        "Jungen, Kinder, Mädchen": "11187",   # Kind
-        "Kinder": "11187",                   # Kind
-        "Erwachsene": "11189",               # Adult
-        "Jugendliche": "11187",              # Kind
-        "Unisex Baby & Kleinkind": "25129",  # Baby
-        "Damen": "11189",                    # Adult
-        "Unisex Kinder": "11187",            # Kind
-        "Baby": "25129",                     # Baby
-        "Kinder, Jungen, Mädchen": "11187",  # Kind
-        "Unisex Erwachsene": "11189",        # Adult
-        "Jungen": "11187",                   # Kind
-        "Mädchen": "11187",                  # Kind
-        "Unisex": "11187"                    # Kind (по умолчанию отнесём к детям)
+        # Baby
+        "Baby": "25129",
+        "Unisex Baby & Kleinkind": "25129",
+        "Bébé": "25129",
+        
+        # Child / Kids
+        "Kinder": "11187",
+        "Jungen": "11187",
+        "Mädchen": "11187",
+        "Jungen, Kinder, Mädchen": "11187",
+        "Kinder, Jungen, Mädchen": "11187",
+        "Kinder & Jugendzimmer": "11187",
+        "Jugendliche": "11187",
+        "Jugendlich": "11187",
+        "Jügendliche": "11187",
+        "Teenagers": "11187",
+        "Teens": "11187",
+        "Teenager": "11187",
+        "Kids": "11187",
+        "Children": "11187",
+        "Girls": "11187",
+        "Boys": "11187",
+        
+        # Adults
+        "Erwachsene": "11189",
+        "Adults": "11189",
+        "Adult": "11189",
+        "ADults": "11189",
+        "Adultss": "11189",
+        "Adullts": "11189",
+        "Adultls": "11189",
+        "Aadults": "11189",
+        "Adults,Teenagers": "11189",  # смесь, но взрослые есть
+        "Adults Teenagers": "11189",
+        
+        # Mixed Adults + Unisex
+        "Unisex Erwachsene": "11189",
+        "Unisex Adult": "11189",
+        "Adults, Unisex": "11189",
+        "Adult, Unisex": "11189",
+        "Adults,Unisex": "11189",
+        "Adults, Unisez": "11189",
+        "Adults, Unuisex": "11189",
+        "Adults, Unisexx": "11189",
+        "Unisex, Adults": "11189",
+        "Unisex,Adults": "11189",
+        "Unisex, Adults, Teenagers": "11189",
+        "Adults, Kids, Unisex": "11189",
+        "Adults,Kids,Unisex": "11189",
+        "Adults,Kids": "11189",
+        "Adults,Kids,Boys,Girls": "11189",
+        
+        # Pure Unisex → нет в справочнике, отдаем None
+        "Unisex": "11187",
+        "unisex": "11187",
+        "Unisexx": "11187",
+        "Unix": "11187",
+        
+        # Остальные нерелевантные
+        "Polsterung": None,
+        "Polyester": None,
+        "60 cm": None,
+        "Einfarbig": None,
+        "Jugendzimmer": None,
+        "Esszimmer": None,
+        "Esstisch": None,
+        "Hund": None,
+        "Damen": None,
+        "Aktuell": None,
+        "Animal": None,
+        "Animals": None,
+        "Waiting Room": None,
+        "Union": None,
+        "Department": None,
+        "Departement": None,
     }
 
         
@@ -1021,23 +1367,7 @@ def format_717(input_value: List[str]) -> Optional[str]:
         "Damast": "111071",  # Damask
     }
     
-    motif_mapping = {
-        "Weiß/Grau/Braun": "111059",  # Patchwork/Mehrfarbig
-        "Quadrat": "76281",  # Carreau/Karo
-        "208 cm": "76293",  # Sonstiges (не мотив, не цвет)
-        "Bizzotto": "76293",
-        "Oval": "76293",  # форма, не мотив
-        "Polyester": "76293",
-        "Transparent, Gold, Weiß": "111059",  # Patchwork/Mehrfarbig
-        "Braun / Mehrfarbig": "111059",  # Patchwork
-        "Mehrfarbig": "111059",
-        "wie abgebildet": "111059",
-        "Beige/ Mehrfarbig": "111059",
-        "102 cm": "76293",
-        "Weiß,Pink,Blau": "111059",
-        "Zweifarbig": "111059",
-        "Schwarz": "76295",
-    }
+    motif_mapping = mapping_format_717
     
     if pattern_mapping.get(get_first_value(input_value)) is None:
         logger.info(f"Pattern '{get_first_value(input_value)}' not found in primary mapping, returning motif mapping")
@@ -1206,7 +1536,22 @@ def format_747(input_value: List[str]) -> Optional[int]:
         "Kunstleder": "89963",      # Simili / Kunstleder
         "Anderer Stoff": "89861",      # Нет прямого, можно fallback к Textil
         "Holzfurnier": "89971",     # ДСП/фанера ближе к Holzwerkstoff
-        "Holz": "89967"             # Bois, panneau - Bois / Holz
+        "Holz": "89967",        # Bois, panneau - Bois / Holz
+        "Fabric": "89873",
+        "Synthetic Leather": "89959",
+        "Leather": "89959",
+        "Zinc Alloy  Crystal": "89941",
+        "Zinc Alloy Crystal": "89941",
+        "Faux Leather": "89959",
+        "Canvas": "89945",
+        "Kunstleder / Leder": "89959",
+        "Premium Kunstleder": "89959",
+        "Premium synthetic leather": "89959",
+        "Bonded Leather": "89959",
+        "Leather (Selectable)": "89959",
+        "leatherette": "89959",
+        "Crystal": "89857",
+        "Crystals": "89857",
     }
     
     value = get_first_value(input_value)
@@ -1436,81 +1781,42 @@ def format_927(input_value: List[str]) -> Optional[str]:
 
 @safe_execute("format_928", "input_value")
 def format_928(input_value: List[str]) -> Optional[int]:
-    """Форматирование размеров кровати"""
-    if not validate_input(input_value, list):
+    """Size formatting in feet"""
+    if not validate_input(input_value):
         logger.warning("Invalid input for format_928, returning default value")
-        return "119013"
-        
-    bed_size_mapping = {
-        "90/180x200cm": "119013",
-        "Liegefläche 60 x 180 cm": "119023",
-        "150 x 90 cm": "119029", # наоборот чуть чуть
-        "ca. 160cm x 200cm": "119012",
-        "120x190cm": "119008",
-        "160x200cm": "119012",
-        "150 x 200 cm": "119053",
-        "200 x 200cm": "119014",
-        "80/160x200cm": "119012",
-        "60 x 120 cm": "119023",
-        "ca. 120cm x 200cm": "119009",
-        "ca: 70 x 130 cm": "119024",
-        "ca. 180cm x 200cm": "119013",
-        "180cm x 200cm": "119013",
-        "ca: 90  x 190 cm": "119020",
-        "90 x 200 cm": "119021",
-        "ca: 70  x 130 cm": "119024",
-        "90x200cm": "119021",
-        "160 x 200 cm": "119012",
-        "160x200 oder 180x200cm": "119012",  # выбор первого размера
-        "120cm x 200cm": "119009",
-        "180x200cm": "119013",
-        "60 x 180 cm": "119017",
-        "140 x 200 cm": "119011",
-        "100 x 200 cm": "119022",
-        "80 x 160 cm": "119016",
-        "Doppelbett": "119014",
-        "ca. 60 x 180 cm": "119017",
-        "180x200 cm": "119013",
-        "160cm x 190cm": "119031",
-        "220 x 220 cm": "119933",
-        "90 x 190 cm": "119020",
-        "60 x200 cm": "119004",
-        "ca:100 x 200 cm": "119022",
-        "160x200": "119012",
-        "120 x 200 cm": "119009",
-        "120x190 cm": "119008",
-        "200cm x 200cm": "119014",
-        "180 x 200cm": "119013",
-        "ca: 90 x 190 cm": "119020",
-        "120 x 190cm": "119008",
-        "160 x 200cm": "119012",
-        "70 x 130 cm": "119024",
-        "140x200cm": "119011",
-        "ca.60 x 180 cm": "119017",
-        "200 x 200 cm": "119014",
-        "180 x 200 cm": "119013",
-        "ca: 60 x 120 cm": "119023",
-        "ca: 180 x 143 x cm": "119013",
-        "ca: 200 x 163 x cm": "119014",
-        "ca: 224 x 180 x cm": "119933",
-        "ca: 210 x 195 x cm": "119025",
-        "ca: 345 x 215 x cm": "119933",
-        "ca: 205 x 160 x cm": "119014",
-        "ca: 265 x 225 x cm": "119933",
-        "ca: 200 x 155 x cm": "119014",
-        "ca: 220 x 240 x cm": "119933",
-        "ca: 338 x 170 x cm": "119933",
-        "ca: 227 x 49 x 225 cm": "119933",
-        "ca: 210 x 200 x cm": "119025"
-    }
+        return "213"
     
-    value = get_first_value(input_value)
-    result = bed_size_mapping.get(value)
-    if result:
-        logger.debug(f"Bed size mapping: '{value}' -> {result}")
-        return result
-    logger.warning(f"Bed size '{value}' not found in mapping, returning default '119013'")
-    return "119013"
+    value = get_first_value(input_value).strip()
+    
+        
+    def find_closest_size(input_size: str, ref_sizes: list[str]) -> str:
+        # Parse numbers from string and take first two
+        nums_in = list(map(int, re.findall(r"\d+", input_size)))[:2]
+
+        closest = min(
+            ref_sizes,
+            key=lambda ref: sum(
+                (a - b) ** 2 for a, b in zip(
+                    nums_in,
+                    list(map(int, re.findall(r"\d+", ref)))[:2]
+                )
+            )
+        )
+        return closest
+
+    attr_928_dict = {val["label"]: val["code"] for val in ATTR_928.attr_928[0]["values"]}
+    
+    attr_928_values = [key for key in attr_928_dict.keys()]
+    attr_928_codes = [vals for vals in attr_928_dict.values()]
+    
+    closest_value = find_closest_size(value, attr_928_values)
+    logger.debug(f"Closest size for '{value}' is '{closest_value}'")
+    closest_code = attr_928_codes[attr_928_values.index(closest_value)]
+    
+    if closest_code is None:
+        logger.warning(f"No code found for closest size '{closest_value}', returning default '119002'")
+        return "119002"
+    return closest_code
 
 
 
