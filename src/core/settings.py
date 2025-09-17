@@ -1,31 +1,43 @@
+"""
+Application settings configuration module.
+Manages environment variables and application configuration using Pydantic.
+"""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
 
 class Settings(BaseSettings):
-    """Application settings."""
+    """
+    Application settings class.
+    Manages all configuration parameters for the Mirakl-Afterbuy connector.
+    """
 
     PROJECT_NAME: str = "mirakl - afterbuy connector"
     DEBUG: bool = False
 
-    #afterbuy
+    # Afterbuy API configuration
     afterbuy_url: str
     afterbuy_login: str
     afterbuy_password: str
     image_base_url: str
-    #mirakl
+    
+    # Mirakl API configuration
     mirakl_url: str
     mirakl_api_key: str
     mirakl_shop_id: int
     mirakl_connect: str
-    #ftp
-    ftp_host:str
-    ftp_port:int
-    ftp_user:str
-    ftp_password:str
-    #settings
+    
+    # FTP server configuration
+    ftp_host: str
+    ftp_port: int
+    ftp_user: str
+    ftp_password: str
+    
+    # Application behavior settings
     check_image_existence: bool = False
     use_real_html_desc: bool = False
     special_quantity_word: str
@@ -37,4 +49,5 @@ class Settings(BaseSettings):
     )
 
 
+# Global settings instance
 settings = Settings()

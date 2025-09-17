@@ -1,3 +1,8 @@
+"""
+Product data mapping module.
+Transforms Afterbuy product data into Mirakl-compatible format with proper attribute mapping.
+"""
+
 from src.const.constants import (
     mapping_attr,
     category_attrs_map,
@@ -78,7 +83,7 @@ async def _prepare_images(
         if img not in [err[0] for err in processed_images_error_sizes]
     ]
 
-    # ПОТОМ ПЕРЕДЕЛАТЬ ПОД ASYNCIO.GATHER
+    # TODO: Refactor to use asyncio.gather for better performance
     resized_error_images = [
         await resize_image_and_upload(
             url=img[0],
@@ -101,12 +106,16 @@ async def _prepare_images(
 
 
 def _parse_properties(properties_raw: str) -> dict:
+    """
+    Parses product properties from JSON string.
+    Returns empty dict if JSON is invalid.
+    """
     try:
         filtered_properties = json.loads(properties_raw)
     except json.JSONDecodeError:
-        logger.warning("Некорректный JSON в 'properties': %s", properties_raw)
+        logger.warning("Invalid JSON in 'properties': %s", properties_raw)
         filtered_properties = {}
-    logger.info("Свойства товара: %s", filtered_properties)
+    logger.info("Product properties: %s", filtered_properties)
     return filtered_properties
 
 
@@ -215,7 +224,7 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
             elif attr_code in mapping_attr_with_no_map_to_def_value:
                 val = mapping_attr_with_no_map_to_def_value[attr_code]
                 filled_attrs[attr_code] = val
-                logger.debug("[NO MAP] %s: set default value: %s", attr_code, val)
+                logger.warning("[NO MAP] %s: set default value: %s", attr_code, val)
 
             else:
                 fallback_val = mapping_attr_to_def_fallback.get(attr_code, "")
@@ -248,30 +257,30 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
 
 async def map_attributes(data: dict, httpx_client: httpx.AsyncClient, ftp_client = aioftp.Client) -> dict:
     """
-    Подготавливает словарь для Mirakl.
-    - Обрабатывает изображения (до 10).
-    - Подставляет атрибуты категории из mapping-слов.
-    - Логирует ключевые этапы.
+    Prepares dictionary for Mirakl.
+    - Processes images (up to 10).
+    - Maps category attributes from mapping dictionaries.
+    - Logs key processing stages.
     """
     logger.info(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
-    # --- изображения ---
+    # --- images ---
     main_image, extra_images, _ = await _prepare_images(data, httpx_client, ftp_client)
 
-    # --- свойства товара ---
+    # --- product properties ---
     properties_raw = data.get("properties", "{}")
     filtered_properties = _parse_properties(properties_raw)
 
-    # --- html описание ---
+    # --- html description ---
     html_desc = _build_html_description(data)
 
-    # --- базовые поля ---
+    # --- base fields ---
     data_for_mirakl = _build_base_fields(data, main_image, extra_images, html_desc)
 
-    # --- атрибуты категории ---
+    # --- category attributes ---
     category = data_for_mirakl["category"]
     filled_attrs = _fill_category_attributes(filtered_properties, category)
 
-    # --- результат ---
+    # --- result ---
     data_for_mirakl.update(filled_attrs)
     logger.info(
         "Ready product product-id=%s, category=%s",
@@ -285,10 +294,12 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient, ftp_client
 
 
 def map_categories(afterbuy_category_num: int) -> str | list[str]:
-    """Находит соответствие категории Afterbuy → Mirakl."""
+    """
+    Finds mapping for Afterbuy → Mirakl category.
+    """
     key = str(afterbuy_category_num)
 
-    # Проверка, что словарь загружен
+    # Check that dictionary is loaded
     if not mapping_categories_current:
         logger.error("Mapping dictionary for current_categories is empty or not initialized")
         return "No mapping"
@@ -298,7 +309,7 @@ def map_categories(afterbuy_category_num: int) -> str | list[str]:
     logger.debug(f"Afterbuy category num: {afterbuy_category_num}")
     logger.debug(f"Mirakl category num: {mirakl_category_num}")
 
-    if not mirakl_category_num:  # None, "" или []
+    if not mirakl_category_num:  # None, "" or []
         logger.error(f"No mapping for {afterbuy_category_num}")
         return "No mapping"
 

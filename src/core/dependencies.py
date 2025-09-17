@@ -1,3 +1,8 @@
+"""
+Dependency injection module for FastAPI.
+Provides HTTP and FTP client instances for API endpoints.
+"""
+
 from src import resources
 from src.core.settings import settings
 
@@ -5,14 +10,18 @@ import httpx
 import aioftp
 
 async def get_httpx_client() -> httpx.AsyncClient:
+    """
+    Returns the global HTTP client instance.
+    Raises RuntimeError if client is not initialized.
+    """
     if not resources.client:
         raise RuntimeError("Client not initialized")
     return resources.client
 
 async def get_ftp_client() -> aioftp.Client:
     """
-    Возвращает общий FTP-клиент из ресурсов.
-    Если клиент ещё не создан, создаёт и подключает его.
+    Returns the global FTP client instance.
+    If client is not created yet, creates and connects it.
     """
     if resources.ftp_client is None:
         client = aioftp.Client()

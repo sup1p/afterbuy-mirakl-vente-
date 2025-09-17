@@ -1,5 +1,5 @@
 mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO MAPPING" if there is no mapping
-    "ATTR_2": ["Farbe", "Rahmenfarbe", "Muster"],
+    "ATTR_2": ["Farbe", "Rahmenfarbe", "Muster", "Farbe der Tischplatte", "Farbe Rückenlehne", "Farbe:", "Frontfarbe", "Kabelfarbe", "Kissenfarbe", "Lichtfarbe", "Schirmfarbe", "Stuhlfarbe", "Tischplattenfarbe", "Arm Color", "Armrest Color", "Chair Color", "Color", "color", 'Color Back', 'Colou', 'Colour', 'COlour', 'Coloure', 'Cord Colour', 'Frame Color', 'Frame color', 'Frame Colour', 'Frame Colouur', 'Frame Coour', 'Main Colour'],
     "ATTR_3": "Polsterstoff",
     "ATTR_5": "Maße",
     "ATTR_7": ["Größe", "Liegefläche"],
@@ -29,7 +29,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_433": "Anzahl der Teile",
     "ATTR_435": "Altersempfehlung",
     "ATTR_515": "NO MAPPING", # ---
-    "ATTR_517": "Füllmaterial",
+    "ATTR_517": "NO MAPPING",
     "ATTR_535": "NO MAPPING", # ---
     "ATTR_557": "Abdeckung",
     "ATTR_563": "NO MAPPING", # ---
@@ -39,7 +39,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_723": "Stromquelle",
     "ATTR_741": "Füllmaterial",
     "ATTR_745": "Finish",
-    "ATTR_747": ["Gestellmaterial", "Material", "Rahmenmaterial", "Material:"],
+    "ATTR_747": ["Gestellmaterial", "Material", "Rahmenmaterial", "Material:", "Seat Material", "Stuhlrückenmaterial", "Verglasungsmaterial", "Bettrahmenmaterial", "Bodenmaterial", "Frame Material", "Frame material", "Frame Materiall", "Frame Materialll"],
     "ATTR_767": "Verpackung",
     "ATTR_769": "Figuren",
     "ATTR_775": "NO MAPPING", # ---
@@ -271,7 +271,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
             "Maße Wandregal"
             ],
     "ATTR_495": "NO MAPPING", # ---
-    "ATTR_896": "Einsatz",
+    "ATTR_896": "NO MAPPING",
     "ATTR_9": "NO MAPPING", # ---
     "ATTR_18": "NO MAPPING", # ---
     "ATTR_26": "NO MAPPING", # ---
@@ -282,7 +282,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_97": "NO MAPPING", #  ---
     "ATTR_106": "Anzahl der Einheiten",
     "ATTR_112": "NO MAPPING", # ---
-    "ATTR_119": "Anzahl der Einheiten",
+    "ATTR_119": "NO MAPPING",
     "ATTR_129": "NO MAPPING", # ---
     "ATTR_141": "NO MAPPING", # ---
     "ATTR_144": "NO MAPPING", # ---

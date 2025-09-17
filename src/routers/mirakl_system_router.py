@@ -1,3 +1,8 @@
+"""
+Mirakl system router module.
+Provides endpoints for checking Mirakl platform status, import errors, and system configuration.
+"""
+
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.mirakl_api_calls import (
@@ -15,6 +20,9 @@ router = APIRouter()
 
 @router.get("/import-product-error/{import_parameter}", tags=["mirakl_platform"])
 async def get_product_error(import_parameter: str, client: httpx.AsyncClient = Depends(get_httpx_client)):
+    """
+    Retrieves product import errors from Mirakl system.
+    """
     try:
         result = await check_import_error(import_parameter=import_parameter, client=client)
     except Exception as e:
@@ -27,7 +35,9 @@ async def get_product_error(import_parameter: str, client: httpx.AsyncClient = D
 
 @router.get("/mirakl-platform-settings", tags=["mirakl_platform"])
 async def get_mirakl_settings(httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
-    
+    """
+    Retrieves Mirakl platform configuration settings.
+    """
     try:
         platform_settings = await check_platform_settings(httpx_client)
     except Exception as e:
@@ -40,7 +50,9 @@ async def get_mirakl_settings(httpx_client: httpx.AsyncClient = Depends(get_http
     "/mirakl-product-non-integrated/{import_parameter}", tags=["mirakl_platform"]
 )
 async def get_product_non_integrated(import_parameter: str):
-    
+    """
+    Retrieves non-integrated products from Mirakl system.
+    """
     try:
         result = await check_non_integrated_products(import_parameter)
     except Exception as e:
@@ -52,6 +64,9 @@ async def get_product_non_integrated(import_parameter: str):
 
 @router.get("/mirakl-offer-import-error/{import_parameter}", tags=["mirakl_platform"])
 async def get_offer_import_error(import_parameter: str, client: httpx.AsyncClient = Depends(get_httpx_client)):
+    """
+    Retrieves offer import errors from Mirakl system.
+    """
     try:
         result = await check_offer_import_error(import_parameter=import_parameter, client=client)
     except Exception as e:

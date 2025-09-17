@@ -1,3 +1,8 @@
+"""
+HTML processing utilities module.
+Extracts product descriptions and properties from HTML content.
+"""
+
 from bs4 import BeautifulSoup
 
 from logs.config_logs import setup_logging
@@ -9,23 +14,24 @@ logger = logging.getLogger(__name__)
 
 
 def extract_product_description_from_html(html: str) -> str:
+    """
+    Extracts text description from 'Produktbeschreibung' block.
+    """
     logger.debug(f"Extracting product description from HTML of length {len(html) if html else 0}")
-    """
-    Извлекает текстовое описание из блока 'Produktbeschreibung'.
-    """
+    
     soup = BeautifulSoup(html, "html.parser")
 
-    # Находим заголовок "Produktbeschreibung"
+    # Find "Produktbeschreibung" heading
     heading = soup.find("div", class_="panel-heading", string="Produktbeschreibung")
     if not heading:
         return ""
 
-    # Блок с описанием сразу после заголовка
+    # Description block immediately after heading
     description_block = heading.find_next("div", class_="text-section")
     if not description_block:
         return ""
 
-    # Убираем теги <img>, пустые параграфы и пробелы
+    # Remove <img>, <script>, <style> tags and clean up whitespace
     for tag in description_block.find_all(["img", "script", "style"]):
         tag.decompose()
 
@@ -34,6 +40,9 @@ def extract_product_description_from_html(html: str) -> str:
 
 
 def extract_product_properties_from_html(html: str) -> str:
+    """
+    Extracts product properties from HTML tab content.
+    """
     soup = BeautifulSoup(html, "html.parser")
 
     tab1 = soup.find("div", {"id": "tab-content1"})
@@ -42,7 +51,7 @@ def extract_product_properties_from_html(html: str) -> str:
 
     details = []
 
-    # Убираем пустые и "nbsp"
+    # Remove empty and "nbsp" content
     paragraphs = [
         p.get_text(" ", strip=True)
         for p in tab1.find_all(["p", "font"])
@@ -53,11 +62,11 @@ def extract_product_properties_from_html(html: str) -> str:
         clean_text = re.sub(r"\s+", " ", text).strip()
 
         if ":" in clean_text:
-            # Разбиваем по первому двоеточию
+            # Split by first colon
             key, value = clean_text.split(":", 1)
             details.append(f"{key.strip()}: {value.strip()}")
         else:
-            # Добавляем как есть (например "oder ca: 202 x 287 cm")
+            # Add as is (e.g., "oder ca: 202 x 287 cm")
             details.append(clean_text)
 
     return " ".join(details)

@@ -1,3 +1,8 @@
+"""
+Mirakl API integration module.
+Handles product imports, error checking, and platform configuration with Mirakl API.
+"""
+
 from src.core.settings import settings
 from logs.config_logs import setup_logging
 
@@ -15,6 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 async def check_offer_import_error(import_parameter: str, client: httpx.AsyncClient):
+    """
+    Checks for offer import errors in Mirakl system.
+    Returns EANs and error messages from the error report.
+    """
     logger.info(f"Checking offer import error for parameter: {import_parameter}")
     headers = {
         "Authorization": settings.mirakl_api_key,
@@ -31,7 +40,7 @@ async def check_offer_import_error(import_parameter: str, client: httpx.AsyncCli
         df = pd.read_csv(BytesIO(response.content), sep=";")
         logger.info(f"Offer error report fetched successfully: {import_parameter}")
 
-        # Извлекаем EAN (из product-id, если product-id-type == 'EAN')
+        # Extract EANs (from product-id, if product-id-type == 'EAN')
         eans = None
         if "product-id" in df.columns and "product-id-type" in df.columns:
             eans_list = (
@@ -43,7 +52,7 @@ async def check_offer_import_error(import_parameter: str, client: httpx.AsyncCli
             eans = eans_list if eans_list else None
             logger.debug(f"EANs for {import_parameter}: {eans}")
 
-        # Извлекаем ошибки
+        # Extract errors
         errors = None
         if "error-message" in df.columns:
             errors_list = df["error-message"].dropna().astype(str).tolist()
@@ -53,11 +62,11 @@ async def check_offer_import_error(import_parameter: str, client: httpx.AsyncCli
         return {"status": 200, "ean": eans, "errors": errors}
 
     elif response.status_code == 404:
-        logger.debug(f"Ответ: {response.status_code} - {response.text}")
+        logger.debug(f"Response: {response.status_code} - {response.text}")
         return {"status": 200, "message": "Not found, probably no errors"}
 
     else:
-        logger.error(f"Ошибка: {response.status_code} - {response.text}")
+        logger.error(f"Error: {response.status_code} - {response.text}")
         try:
             error_json = response.json()
         except Exception:
@@ -66,6 +75,10 @@ async def check_offer_import_error(import_parameter: str, client: httpx.AsyncCli
 
 
 async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
+    """
+    Checks for product import errors in Mirakl system.
+    Returns EANs, errors, and warnings from the transformation error report.
+    """
     logger.info(f"Checking import error for parameter: {import_parameter}")
     headers = {
         "Authorization": settings.mirakl_api_key,
@@ -99,7 +112,7 @@ async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
         if "warnings" in df.columns:
             warnings_list = df["warnings"].dropna().tolist()
             warnings = warnings_list if warnings_list else None
-            logger.info(f"Warnings for {import_parameter}: \n{warnings}")\
+            logger.info(f"Warnings for {import_parameter}: \n{warnings}")
 
         if "ean" in df.columns:
             eans_list = df["ean"].dropna().tolist()
@@ -109,12 +122,12 @@ async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
         return {"status": 200, "ean": eans, "errors": errors, "warnings": warnings}
     
     elif response.status_code == 404:
-        logger.debug(f"Ответ: {response.status_code} - {response.text}")
+        logger.debug(f"Response: {response.status_code} - {response.text}")
             
         return {"status": 200, "message": "Not found, probably no errors/warnings"}
     
     else:
-        logger.error(f"Ошибка: {response.status_code} - {response.text}")
+        logger.error(f"Error: {response.status_code} - {response.text}")
         try:
             error_json = response.json()
         except Exception:
@@ -124,6 +137,10 @@ async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
 
 
 async def check_non_integrated_products(import_parameter: str, client: httpx.AsyncClient):
+    """
+    Checks for non-integrated products in Mirakl system.
+    Returns EANs, errors, and warnings from the error report.
+    """
     logger.info(f"Checking non-integrated products for parameter: {import_parameter}")
     headers = {
         "Authorization": settings.mirakl_api_key,
@@ -168,12 +185,12 @@ async def check_non_integrated_products(import_parameter: str, client: httpx.Asy
         return {"status": 200, "ean": eans, "errors": errors, "warnings": warnings}
     
     elif response.status_code == 404:
-        logger.debug(f"Ответ: {response.status_code} - {response.text}")
+        logger.debug(f"Response: {response.status_code} - {response.text}")
             
         return {"status": 200, "message": "Not found, probably no errors/warnings"}
     
     else:
-        logger.error(f"Ошибка: {response.status_code} - {response.text}")
+        logger.error(f"Error: {response.status_code} - {response.text}")
         try:
             error_json = response.json()
         except Exception:
@@ -182,6 +199,9 @@ async def check_non_integrated_products(import_parameter: str, client: httpx.Asy
 
 
 async def check_platform_settings(client: httpx.AsyncClient):
+    """
+    Retrieves Mirakl platform configuration settings.
+    """
     logger.info("Checking Mirakl platform settings")
     url = f"{settings.mirakl_url}/api/platform/configuration"
 
@@ -212,8 +232,11 @@ async def check_platform_settings(client: httpx.AsyncClient):
 
 
 async def import_product(csv_content, client: httpx.AsyncClient):
+    """
+    Imports product data to Mirakl system via CSV upload.
+    """
     reader = csv.DictReader(io.StringIO(csv_content))
-    first_row = next(reader)   # берём первую строку
+    first_row = next(reader)   # Get first row
 
     category = first_row.get("category")
     product_num = first_row.get("product-id")

@@ -1,3 +1,8 @@
+"""
+Product management router module.
+Provides endpoints for importing products from Afterbuy to Mirakl system.
+"""
+
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
@@ -25,7 +30,9 @@ router = APIRouter()
 
 @router.post("/import-product/{ean}", tags=["product"])
 async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
-    
+    """
+    Imports a single product by EAN from Afterbuy to Mirakl system.
+    """
     try:
         data = await get_product_data(ean=ean, client=httpx_client)
     except Exception as e:
@@ -79,7 +86,9 @@ async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get
 
 @router.post("/import-products", tags=["product"])
 async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
-    
+    """
+    Imports multiple products by EAN list from Afterbuy to Mirakl system.
+    """
     ean_list = eans.ean_list
     if not ean_list:
         raise HTTPException(
@@ -153,6 +162,9 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
 
 @router.post("/import-products-by-fabric/{fabric_id}", tags=["product"])
 async def import_products_by_fabric(fabric_id: int, client: httpx.AsyncClient = Depends(get_httpx_client)):
+    """
+    Imports products by fabric ID from Afterbuy to Mirakl system.
+    """
     try:
         data = await get_products_by_fabric(fabric_id=fabric_id, client=client)
     except Exception as e:

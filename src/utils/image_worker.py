@@ -1,3 +1,8 @@
+"""
+Image processing utilities module.
+Handles image validation, resizing, and FTP upload operations.
+"""
+
 from logs.config_logs import setup_logging
 from src.core.settings import settings
 
@@ -41,15 +46,16 @@ async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient)
     
 
 async def get_image_size(url: str, client: httpx.AsyncClient):
+    """
+    Retrieves image dimensions by downloading first 20KB of the image.
+    """
     try:
-        headers = {"Range": "bytes=0-20000"}  # читаем первые 20KB
+        headers = {"Range": "bytes=0-200000"}  # Read first 20KB
         resp = await client.get(url, headers=headers, timeout=10)
         resp.raise_for_status()
 
         try:
             img = Image.open(io.BytesIO(resp.content))
-            img.verify()  # проверяем, что изображение не повреждено
-            img = Image.open(io.BytesIO(resp.content))  # нужно открыть заново после verify
             logger.info(f"Image {url[:50]} sizes: {img.size}")
             return url, img.size
         except Exception as e:
@@ -58,11 +64,13 @@ async def get_image_size(url: str, client: httpx.AsyncClient):
         
     except Exception as e:
         logger.warning(f"Image {url[:50]} error: {e}")
-        return url, e  # вернём ошибку вместе с url
+        return url, e  # Return error along with url
     
 
 async def process_images(urls: list[str], client: httpx.AsyncClient):
-    """Асинхронно с помощью gather проверяет размеры изображения на соответсвие требованиям."""
+    """
+    Asynchronously checks image dimensions for compliance with requirements using gather.
+    """
     if len(urls) > 1:
         tasks = [get_image_size(url, client) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -83,8 +91,8 @@ async def process_images(urls: list[str], client: httpx.AsyncClient):
         logger.info(f"Processed: Normal images: {len(sizes)}, images with errors: {len(errors)}")
         
         return {
-            "sizes": sizes,   # словарь {url: (width, height)}
-            "errors": errors  # список [(url, "ошибка")]
+            "sizes": sizes,   # dictionary {url: (width, height)}
+            "errors": errors  # list [(url, "error")]
         }
     else:
         result = await get_image_size(urls[0], client)
@@ -96,7 +104,7 @@ async def process_images(urls: list[str], client: httpx.AsyncClient):
         
         return {
             "sizes": sizes,   # tuple (w,h) 
-            "errors": errors  # список [(url, "ошибка")]
+            "errors": errors  # list [(url, "error")]
         }
     
 
@@ -106,15 +114,15 @@ async def download_image_bytes(url: str, client: httpx.AsyncClient):
         resp = await client.get(url, timeout=30)
         resp.raise_for_status()
 
-        # Проверяем заголовок
+        # Check content type header
         ctype = resp.headers.get("Content-Type", "")
         if not ctype.startswith("image/"):
-            logger.warning(f"URL не вернул изображение: {url}, Content-Type: {ctype}")
-            return None, f"URL не вернул изображение: {url}, Content-Type: {ctype}"
+            logger.warning(f"URL did not return image: {url}, Content-Type: {ctype}")
+            return None, f"URL did not return image: {url}, Content-Type: {ctype}"
 
         return resp.content, None
     except Exception as e:
-        logger.error(f"Ошибка при скачивании изображения {url}: {e}")
+        logger.error(f"Error downloading image {url}: {e}")
         return None, e
 
 
@@ -124,10 +132,10 @@ def resize_image_bytes(img_bytes: bytes):
         with Image.open(io.BytesIO(img_bytes)) as im:
             w, h = im.size
             if w == 0 or h == 0:
-                logger.error("Некорректные размеры изображения")
-                return None, "Некорректные размеры изображения"
+                logger.error("Invalid image dimensions")
+                return None, "Invalid image dimensions"
 
-            # Масштабирование
+            # Scaling
             scale_h = settings.min_image_height / h
             scale_w = settings.min_image_width / w
             scale = max(scale_h, scale_w)
@@ -137,14 +145,14 @@ def resize_image_bytes(img_bytes: bytes):
 
             im = im.resize((new_w, new_h), Image.LANCZOS)
 
-            # Определяем формат сохранения
+            # Determine output format
             if im.mode in ("RGBA", "LA") or (
                 im.mode == "P" and "transparency" in im.info
             ):
                 out_format = "PNG"
                 ext = "png"
             else:
-                im = im.convert("RGB")  # JPEG не поддерживает альфу
+                im = im.convert("RGB")  # JPEG doesn't support alpha
                 out_format = "JPEG"
                 ext = "jpg"
 
@@ -154,28 +162,28 @@ def resize_image_bytes(img_bytes: bytes):
             return out.getvalue(), ext
 
     except UnidentifiedImageError:
-        logger.error("Переданные байты не являются изображением")
-        return None, "Переданные байты не являются изображением"
+        logger.error("Provided bytes are not an image")
+        return None, "Provided bytes are not an image"
     except Exception as e:
-        logger.error(f"Ошибка при обработке изображения: {e}")
-        return None, f"Ошибка при обработке изображения: {e}"
+        logger.error(f"Error processing image: {e}")
+        return None, f"Error processing image: {e}"
 
 
-# helper: нормализует имя из URL/basename
+# Helper: normalizes name from URL/basename
 def normalize_basename(name: str) -> str:
-    # декодируем percent-encoding
+    # Decode percent-encoding
     name = unquote(name or "")
-    # убираем управляющие символы
+    # Remove control characters
     name = re.sub(r'[\x00-\x1f\x7f]+', '', name)
-    # заменяем слэши на подчёркивание (чтобы не были путями)
+    # Replace slashes with underscores (to avoid path issues)
     name = name.replace('/', '_').replace('\\', '_')
-    # сжимаем последовательности пробелов в один
+    # Compress multiple spaces into one
     name = re.sub(r'\s+', ' ', name).strip()
     return name
 
 
 async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ean: str,ftp_client: aioftp.Client) -> str:
-    """Асинхронная загрузка на FTP через aioftp."""
+    """Asynchronous FTP upload via aioftp."""
     if remote_dir:
         try:
             await ftp_client.make_directory(remote_dir, parents=True)
@@ -192,14 +200,14 @@ async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ean: str,ft
     print("Current FTP directory:", current_dir)
     
     try:
-        # Записываем данные во временный файл
+        # Write data to temporary file
         with open(temp_filename, 'wb') as temp_file:
             temp_file.write(data)
         
-        # Загружаем файл - aioftp увидит только имя файла без слешей
+        # Upload file - aioftp will see only filename without slashes
         await ftp_client.upload(temp_filename)
     finally:
-        # Удаляем временный файл
+        # Remove temporary file
         if os.path.exists(temp_filename):
             os.unlink(temp_filename)
     
@@ -209,28 +217,28 @@ async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ean: str,ft
     return f"{settings.image_base_url}/{ean}/{filename}"
 
 
-# Модифицированный file_exists_on_ftp: пробует несколько вариантов имени
+# Modified file_exists_on_ftp: tries multiple name variants
 async def file_exists_on_ftp(filename: str, remote_dir: str, ean: str, ftp_client: aioftp.Client) -> bool:
     """
-    Проверяет, существует ли файл на FTP. Возвращает URL или False.
-    Пробует декодированное имя и закодированные варианты (на совместимость).
+    Checks if file exists on FTP. Returns URL or False.
+    Tries decoded name and encoded variants (for compatibility).
     """
     if remote_dir:
         try:
             await ftp_client.change_directory(remote_dir)
         except aioftp.StatusCodeError as e:
-            # Если директории нет, то файла точно нет
+            # If directory doesn't exist, file definitely doesn't exist
             if "550" in str(e):
                 return False
             raise
 
-    # Кандидаты имён: как передали, декодированное, URL-encoded
+    # Name candidates: as passed, decoded, URL-encoded
     decoded = normalize_basename(filename)
-    quoted = quote(decoded, safe='')  # полностью закодированное
-    space_encoded = decoded.replace(' ', '%20')  # часто встречующийся вариант
+    quoted = quote(decoded, safe='')  # fully encoded
+    space_encoded = decoded.replace(' ', '%20')  # commonly encountered variant
 
     candidates = []
-    # сохраняем порядок: оригинал -> декод -> space-encoded -> fully quoted
+    # preserve order: original -> decoded -> space-encoded -> fully quoted
     if filename not in candidates:
         candidates.append(filename)
     if decoded not in candidates:
@@ -243,10 +251,10 @@ async def file_exists_on_ftp(filename: str, remote_dir: str, ean: str, ftp_clien
     for candidate in candidates:
         try:
             await ftp_client.stat(candidate)
-            # вернём URL с тем вариантом имени, который реально найден
+            # Return URL with the name variant that was actually found
             return f"{settings.image_base_url}/{ean}/{candidate}"
         except aioftp.StatusCodeError as e:
-            # код 550 — файл не найден, пробуем следующий вариант
+            # Code 550 — file not found, try next variant
             if "550" in str(e):
                 continue
             raise
@@ -260,27 +268,27 @@ async def resize_image_and_upload(
     ftp_client: aioftp.Client,
     httpx_client: httpx.AsyncClient
 ) -> str:
-    # 1. Скачиваем байты
+    # 1. Download bytes
     img_bytes, err = await download_image_bytes(url, httpx_client)
     if img_bytes is None:
-        logger.error(f"Error occured while downloading image: {url}, error: {err}")
+        logger.error(f"Error occurred while downloading image: {url}, error: {err}")
         raise Exception(f"While downloading image: {url}, error: {err}")
 
-    # 2. Ресайз
+    # 2. Resize
     resized_bytes, ext_or_arr = await asyncio.to_thread(resize_image_bytes, img_bytes)
     if resized_bytes is None:
-        logger.error(f"Ошибка ресайза: {ext_or_arr}")
+        logger.error(f"Resize error: {ext_or_arr}")
         raise Exception(f"While resizing image: {url}, error: {ext_or_arr}")
 
-    # 3. Формирование имени файла: декодируем basename и подставляем корректное расширение
+    # 3. Form filename: decode basename and set correct extension
     path = urlparse(url).path
     orig_file_name_with_ext = os.path.basename(path)
-    orig_file_name_with_ext = unquote(orig_file_name_with_ext)  # превращаем %20 -> пробел
+    orig_file_name_with_ext = unquote(orig_file_name_with_ext)  # convert %20 -> space
     orig_file_name, _ = os.path.splitext(orig_file_name_with_ext)
-    orig_file_name = normalize_basename(orig_file_name)  # безопасное имя
+    orig_file_name = normalize_basename(orig_file_name)  # safe name
     orig_file_name = f"{orig_file_name}.{ext_or_arr}"
 
-    # 4. Проверка на существование (file_exists_on_ftp теперь учитывает варианты)
+    # 4. Check existence (file_exists_on_ftp now considers variants)
     existing_url = await file_exists_on_ftp(
         filename=orig_file_name,
         remote_dir=f"/xlmoebel.at/image/afterbuy_resized_images_for_mirakl/{ean}",
@@ -293,7 +301,7 @@ async def resize_image_and_upload(
 
     logger.debug(f"Image {orig_file_name} does not exist in ftp server, importing there")
 
-    # 5. Загрузка на FTP — логика не меняется, передаём нормализованное имя
+    # 5. FTP upload — logic unchanged, pass normalized name
     ftp_url = await upload_to_ftp(
         data=resized_bytes,
         filename=orig_file_name,

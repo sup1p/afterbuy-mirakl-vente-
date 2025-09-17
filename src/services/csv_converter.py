@@ -1,3 +1,8 @@
+"""
+CSV conversion utilities module.
+Converts JSON data structures to CSV format for Mirakl API integration.
+"""
+
 import io
 import csv
 import logging
@@ -7,23 +12,25 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 def make_csv(data):
-    """Конвертирует JSON (dict | list[dict]) → CSV (строка в памяти)."""
-    if not data:  # пустое значение
-        logger.warning("make_csv получил пустые данные")
+    """
+    Converts JSON (dict | list[dict]) → CSV (string in memory).
+    """
+    if not data:  # empty value
+        logger.warning("make_csv received empty data")
         return ""
 
     output = io.StringIO()
 
-    # Определяем список словарей
+    # Determine list of dictionaries
     rows = data if isinstance(data, list) else [data]
 
-    # Собираем все ключи (на случай разнородных словарей)
+    # Collect all keys (in case of heterogeneous dictionaries)
     fieldnames = set()
     for row in rows:
         if isinstance(row, dict):
             fieldnames.update(row.keys())
         else:
-            logger.error(f"Ожидался dict, а пришло: {type(row)} → {row}")
+            logger.error(f"Expected dict, but got: {type(row)} → {row}")
             return ""
 
     fieldnames = list(fieldnames)
@@ -34,7 +41,7 @@ def make_csv(data):
     for row in rows:
         writer.writerow(row)
 
-    # Берём id/ean из первой строки (если есть)
+    # Get id/ean from first row (if available)
     first = rows[0]
     logger.info(
         f"Converted to CSV with product-id: {first.get('product-id')}, ean: {first.get('ean')}"
@@ -44,20 +51,22 @@ def make_csv(data):
 
 
 def make_big_csv(data):
-    """Конвертирует список JSON-объектов → CSV (строка в памяти)."""
+    """
+    Converts list of JSON objects → CSV (string in memory).
+    """
     if not data or not isinstance(data, list):
-        logger.error("make_big_csv получил пустые или некорректные данные")
+        logger.error("make_big_csv received empty or invalid data")
         return ""
 
     output = io.StringIO()
 
-    # Собираем все ключи (на случай разнородных словарей)
+    # Collect all keys (in case of heterogeneous dictionaries)
     fieldnames = set()
     for row in data:
         if isinstance(row, dict):
             fieldnames.update(row.keys())
         else:
-            logger.error(f"Ожидался dict, а пришло: {type(row)} → {row}")
+            logger.error(f"Expected dict, but got: {type(row)} → {row}")
             return ""
 
     fieldnames = list(fieldnames)

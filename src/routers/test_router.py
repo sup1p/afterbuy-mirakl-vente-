@@ -1,3 +1,8 @@
+"""
+Test router module.
+Provides testing endpoints for development and debugging purposes.
+"""
+
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.core.dependencies import get_httpx_client, get_ftp_client
@@ -21,7 +26,9 @@ router = APIRouter()
 
 @router.post("/test-import-product/{ean}", tags=["test"])
 async def test_import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
-    
+    """
+    Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
+    """
     try:
         data = await get_product_data(ean=ean, client=httpx_client)
     except Exception as e:
@@ -45,6 +52,9 @@ async def test_import_product(ean: int, httpx_client: httpx.AsyncClient = Depend
 
 @router.post("/test-import-products-by-fabric/{afterbuy_fabric_id}", tags=["test"])
 async def test_import_products_by_fabric(afterbuy_fabric_id: int, get_httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+    """
+    Test endpoint for importing products by fabric ID (returns mapped data without importing to Mirakl).
+    """
     try:
         data = await get_products_by_fabric(afterbuy_fabric_id=afterbuy_fabric_id, client=get_httpx_client)        
     except Exception as e:
@@ -82,7 +92,7 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, get_httpx_clie
             continue
                 
         if data_for_mirakl.get("category") == "No mapping":
-            logger.error(f"No mapping found for category {data_for_mirakl.get('category')} of ean {ean}") # ПОМЕНЯТЬ НА РИЛ КАТЕГОРИЯ ИЗ ОСНОВНОГО products 
+            logger.error(f"No mapping found for category {data_for_mirakl.get('category')} of ean {ean}") # TODO: Change to real category from main products 
             not_added_eans.append(ean)
             continue
         
@@ -97,6 +107,9 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, get_httpx_clie
 
 @router.post("/test-resize-image", tags=["test"])
 async def test_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
+    """
+    Test endpoint for image resizing and FTP upload functionality.
+    """
     try:
         result = await resize_image_and_upload(url=data.url, ean=data.ean, httpx_client=httpx_client, ftp_client=ftp_client)
     except Exception as e:

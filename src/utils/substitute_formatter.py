@@ -1,3 +1,8 @@
+"""
+Attribute substitution formatter module.
+Routes attribute formatting requests to appropriate formatting functions based on attribute codes.
+"""
+
 from src.utils.format_attr import (
     format_2,
     format_3,
@@ -14,9 +19,11 @@ from src.utils.format_attr import (
     format_68,
     format_73,
     format_82,
+    format_106,
     format_163,
     format_175,
     format_183,
+    format_259,
     format_267,
     format_287,
     format_391,
@@ -28,6 +35,7 @@ from src.utils.format_attr import (
     format_717,
     format_723,
     format_741,
+    format_745,
     format_747,
     format_767,
     format_769,
@@ -107,6 +115,10 @@ def substitute_attr(attr_code, filled_attrs, value):
         case "ATTR_82":
             logger.info(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_82(value)
+            
+        case "ATTR_106":
+            logger.info(f"Matched case: {attr_code}")
+            filled_attrs[attr_code] = format_106(value)
 
         case "ATTR_163":
             logger.info(f"Matched case: {attr_code}")
@@ -119,6 +131,10 @@ def substitute_attr(attr_code, filled_attrs, value):
         case "ATTR_183":
             logger.info(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_183(value)
+
+        case "ATTR_259":
+            logger.info(f"Matched case: {attr_code}")
+            filled_attrs[attr_code] = format_259(value)
 
         case "ATTR_267":
             logger.info(f"Matched case: {attr_code}")
@@ -139,7 +155,7 @@ def substitute_attr(attr_code, filled_attrs, value):
         case "ATTR_435":
             logger.info(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_435(value)
-
+            
         case "ATTR_557":
             logger.info(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_557(value)
@@ -163,6 +179,10 @@ def substitute_attr(attr_code, filled_attrs, value):
         case "ATTR_741":
             logger.info(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_741(value)
+            
+        case "ATTR_745":
+            logger.info(f"Matched case: {attr_code}")
+            filled_attrs[attr_code] = format_745(value)
 
         case "ATTR_747":
             logger.info(f"Matched case: {attr_code}")

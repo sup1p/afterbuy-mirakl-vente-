@@ -1,8 +1,13 @@
+"""
+Product attribute formatting utilities module.
+Contains functions for formatting various product attributes according to Mirakl specifications.
+"""
+
 import logging
 import re
 import unicodedata
 from typing import Union, List, Optional, Any
-from src.const.attrs import ATTR_175, ATTR_2, ATTR_795, ATTR_927, ATTR_7
+from src.const.attrs import ATTR_175, ATTR_2, ATTR_795, ATTR_927, ATTR_7, ATTR_106
 from src.const.constants import mapping_format_85
 from src.core.settings import settings
 from logs.config_logs import setup_logging
@@ -12,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 class FormatterError(Exception):
-    """Кастомное исключение для ошибок форматирования"""
+    """Custom exception for formatting errors"""
     pass
 
 
 def safe_execute(func_name: str, _input_value: Any):
-    """Декоратор для безопасного выполнения функций с логированием"""
+    """Decorator for safe function execution with logging"""
     def decorator(func):
         def wrapper(*args, **kwargs):
             real_input_value = args[0] if args else kwargs.get('input_value', _input_value)
@@ -36,7 +41,7 @@ def safe_execute(func_name: str, _input_value: Any):
     return decorator
 
 def validate_input(input_value: Any, expected_type: type = None) -> bool:
-    """Валидация входных данных"""
+    """Validates input data"""
     if input_value is None:
         logger.warning("Input value is None")
         return False
@@ -53,7 +58,7 @@ def validate_input(input_value: Any, expected_type: type = None) -> bool:
 
 
 def get_first_value(input_value: Union[List, Any]) -> Any:
-    """Безопасно извлекает первое значение из списка или возвращает само значение"""
+    """Safely extracts first value from list or returns the value itself"""
     if isinstance(input_value, list) and input_value:
         return input_value[0]
     return input_value
@@ -61,7 +66,7 @@ def get_first_value(input_value: Union[List, Any]) -> Any:
 
 @safe_execute("format_2", "input_value")
 def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
-    """Форматирование по атрибуту 2 с локализацией"""
+    """Formatting for attribute 2 with localization"""
     if not validate_input(input_value, list):
         logger.warning("Invalid input for format_2, returning default value")
         return  "9"
@@ -81,6 +86,8 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Silber": "5",
         "Hell beige": "7",
         "Beige-Braun": "7",
+        "Warmweiß": "9",
+        "Kaltweiß": "9",
         "Schwarz / Braun": "33",
         "Braun-Beige": "15",
         "Transparent-Weiß": "43",
@@ -92,6 +99,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Grau / Schwarz": "21",
         "Schwarz/Weiß": "33",
         "Violett": "19",
+        "Ultraviolett": "19",
         "Beige-matt": "7",
         "Bizzotto": "5",
         "Grau - Blau": "21",
@@ -252,6 +260,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Abstraktes Muster": "87",   # разноцветный/абстрактный -> Multicolore
         "Dreifarbig": "87",          # несколько цветов -> Multicolore
         "Modern/Zeitgenössisch": None, # это стиль, не цвет
+        "Modern": None,
         "Zweifardig": "87",          # ошибка в слове, но явно -> Multicolore
         "Naturmuster": "29",         # ближе всего к Naturfarben hell
         "Zweifarbig": "87",          # два цвета -> Multicolore
@@ -264,6 +273,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Geblümt": "87",             # цветочный -> Multicolore
         "Mehrfarbig": "87",          # явное попадание -> Multicolore
         "Gemustert": "87",           # общий узор -> Multicolore
+        "Freie Farbwahl": None
     }
     if color_map.get(get_first_value(input_value)) is None:
         logger.info(f"Color '{get_first_value(input_value)}' not found in primary mapping, returning secondary mapping")
@@ -284,7 +294,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
 
 @safe_execute("format_3", "input_value")
 def format_3(input_value: str) -> Optional[str]:
-    """Форматирование материалов"""
+    """Material formatting"""
     if not validate_input(input_value):
         logger.warning("Invalid input for format_3, returning default value")
         return "107"
@@ -324,9 +334,9 @@ def format_3(input_value: str) -> Optional[str]:
     
     logger.debug(f"Available materials: {list(material_mapping.keys())}")
     if material_mapping.get(input_value) is None:
-        logger.info(f"Material '{input_value}' not found in primary mapping, returning extra mapping")
+        logger.debug(f"Material '{input_value}' not found in primary mapping, returning extra mapping")
         if material_mapping_extra.get(input_value) is None:
-            logger.info(f"Material '{input_value}' not found in extra mapping, returning default '107'")
+            logger.warning(f"Material '{input_value}' not found in extra mapping, returning default '107'")
             return "107"
         return material_mapping_extra.get(input_value)
     return material_mapping.get(input_value)
@@ -334,7 +344,7 @@ def format_3(input_value: str) -> Optional[str]:
 
 @safe_execute("format_5", "input_value")
 def format_5(input_value: str) -> Optional[str]:
-    """Форматирование размера на основе объема"""
+    """Size formatting based on volume"""
     if not validate_input(input_value):
         logger.warning("Invalid input for format_5, returning default value")
         return None
@@ -350,7 +360,7 @@ def format_5(input_value: str) -> Optional[str]:
         volume = nums[0] * nums[1] * nums[2]
         logger.info(f"Calculated volume: {volume}")
         
-        # Определение размера на основе объема
+        # Size determination based on volume
         size_thresholds = [
             (381652, "Petit modèle"),
             (660409, "Moyen modèle"), 
@@ -383,7 +393,7 @@ def format_5(input_value: str) -> Optional[str]:
 
 @safe_execute("format_7", "input_value")  
 def format_7(input_value: str) -> Optional[str]:
-    """Форматирование размера в футах"""
+    """Size formatting in feet"""
     if not validate_input(input_value):
         logger.warning("Invalid input for format_7, returning default value")
         return "213"
@@ -392,7 +402,7 @@ def format_7(input_value: str) -> Optional[str]:
     
         
     def find_closest_size(input_size: str, ref_sizes: list[str]) -> str:
-        # Парсим числа из строки и берём первые два
+        # Parse numbers from string and take first two
         nums_in = list(map(int, re.findall(r"\d+", input_size)))[:2]
 
         closest = min(
@@ -423,7 +433,7 @@ def format_7(input_value: str) -> Optional[str]:
 
 @safe_execute("format_8", "input_value")
 def format_8(input_value: str) -> Optional[str]:
-    """Форматирование жесткости"""
+    """Firmness formatting"""
     if not validate_input(input_value):
         logger.warning("Invalid input for format_8, returning default value")
         return "313"
@@ -434,14 +444,14 @@ def format_8(input_value: str) -> Optional[str]:
     }   
     
     if firmness_mapping.get(get_first_value(input_value)) is None:
-        logger.info(f"Firmness '{get_first_value(input_value)}' not found in mapping, returning default '313'")
+        logger.warning(f"Firmness '{get_first_value(input_value)}' not found in mapping, returning default '313'")
         return "313"
     return firmness_mapping.get(get_first_value(input_value))
 
 
 @safe_execute("format_17", "input_value")
 def format_17(input_value: List[str]) -> Optional[str]:
-    """Форматирование формы"""
+    """Shape formatting"""
     if not validate_input(input_value, list):
         logger.warning("Invalid input for format_17, returning default value")
         return "375"
@@ -456,7 +466,7 @@ def format_17(input_value: List[str]) -> Optional[str]:
         "Quadrat": "375",
     }
     if shape_mapping.get(get_first_value(input_value)) is None:
-        logger.info(f"Shape '{get_first_value(input_value)}' not found in mapping, returning default '375'")
+        logger.warning(f"Shape '{get_first_value(input_value)}' not found in mapping, returning default '375'")
         return "375"
     
     return shape_mapping.get(get_first_value(input_value))
@@ -464,22 +474,22 @@ def format_17(input_value: List[str]) -> Optional[str]:
 
 @safe_execute("format_19", "input_value")
 def format_19(input_value: List[str]) -> Optional[str]:
-    """Форматирование стиля"""
+    """Style formatting"""
     if not validate_input(input_value, list):
         logger.warning("Invalid input for format_19, returning default value")
         return "393"
         
     style_mapping = {
-        "Klassisch": "393",                # дефолт Modern
+        "Klassisch": "393",                # default Modern
         "Moddern": "393",
         "Empire": "393",
         "Modern": "393",
         "Italienisch": "393",
         "Pop Art": "393",
         "Art dėko": "10073",
-        "Antik": "397",                     # Vintage как близкий
+        "Antik": "397",                     # Vintage as closest
         "Art Deco-Stil": "10073",
-        "Barock/Rokoko": "395",             # Zeitlos как нейтральный
+        "Barock/Rokoko": "395",             # Zeitlos as neutral
         "Arts & Crafts/Mission": "395",
         "Klassish": "393",
         "Art Deco": "10073",
@@ -499,7 +509,7 @@ def format_19(input_value: List[str]) -> Optional[str]:
     
     value = get_first_value(input_value)
     if style_mapping.get(value) is None:
-        logger.info(f"Style '{value}' not found in mapping, returning default '393'")
+        logger.warning(f"Style '{value}' not found in mapping, returning default '393'")
         return "393"
     
     return style_mapping.get(value)
@@ -507,18 +517,18 @@ def format_19(input_value: List[str]) -> Optional[str]:
 
 @safe_execute("format_32", "input_value")
 def format_32(input_value: List[str]) -> Optional[str]:
-    """Форматирование булевого значения (Да/Нет)"""
+    """Boolean value formatting (Yes/No)"""
     if not validate_input(input_value, list):
         logger.warning("Invalid input for format_32, returning default value")
         return "24961"
         
     type_pose_map = {
-        "Wandmontage": "24961",   # A fixer au mur (навесной/настенный)
-        "Vorhang": "24961",       # Тоже навесной (если имелось в виду "навесной")
-        "Einbau": "24967",        # à encastrer (встраиваемый)
-        "Freistehend": "40371",   # Autoportant (отдельностоящий)
-        "Ja": "40371",               # булево, не относится к типу позы
-        "Nein": "24961"              # булево, не относится к типу позы
+        "Wandmontage": "24961",   # A fixer au mur (wall-mounted)
+        "Vorhang": "24961",       # Also wall-mounted (if meant "wall-mounted")
+        "Einbau": "24967",        # à encastrer (built-in)
+        "Freistehend": "40371",   # Autoportant (freestanding)
+        "Ja": "40371",               # boolean, not related to pose type
+        "Nein": "24961"              # boolean, not related to pose type
     }
     
     extra_map = {
@@ -697,7 +707,50 @@ def format_82(input_value: List[str]) -> Optional[str]:
     except AttributeError as e:
         logger.error(f"Error processing numerical value: {e}, retnurning default value")
         return "977"
+    
+@safe_execute("format_106", "input_value")
+def format_106(input_value: List[str]) -> Optional[str]:
+    """Форматирование по атрибуту 106 (Nombre total de jets).
+    - Если в значении есть число → ищем ближайшее совпадение с 'jets' в справочнике attr_106.
+    - Если число не найдено или пришёл текст → возвращаем дефолтное значение.
+    """
+    DEFAULT_CODE = "1369"  # дефолт, например "6 jets"
 
+    if not validate_input(input_value, list):
+        logger.warning("Invalid input for format_106, returning default value")
+        return DEFAULT_CODE
+
+    try:
+        value = get_first_value(input_value)
+        match = re.search(r"\d+", value)
+        if not match:
+            logger.warning(f"No number found in '{value}', returning default value")
+            return DEFAULT_CODE
+
+        number = int(match.group())
+        reference = ATTR_106.attr_106[0]["values"]
+        logger.debug(f"Searching nearest match for number {number} in attr_106")
+
+        # Собираем числа из label
+        candidates = []
+        for val in reference:
+            jets_match = re.search(r"(\d+)", val["label"])
+            if jets_match:
+                jets_num = int(jets_match.group(1))
+                candidates.append((jets_num, val["code"]))
+
+        if not candidates:
+            logger.warning("No numeric labels in attr_106 reference, returning default")
+            return DEFAULT_CODE
+
+        # Ищем ближайшее значение
+        closest_num, closest_code = min(candidates, key=lambda x: abs(x[0] - number))
+        logger.info(f"Closest match for {number} jets -> {closest_num} jets (code={closest_code})")
+        return closest_code
+
+    except (ValueError, KeyError, IndexError) as e:
+        logger.error(f"Error processing ATTR_106 lookup: {e}, returning default value")
+        return DEFAULT_CODE
 
 @safe_execute("format_163", "input_value")
 def format_163(input_value: List[str]) -> Optional[str]:
@@ -708,7 +761,7 @@ def format_163(input_value: List[str]) -> Optional[str]:
         
     value = get_first_value(input_value)
     if value is None:
-        logger.info(f"Energy class '{value}' is None, returning default '6772'")
+        logger.warning(f"Energy class '{value}' is None, returning default '6772'")
         return "6772"
     return "99899" if value == "A+++" else "6772"
 
@@ -739,9 +792,39 @@ def format_183(input_value: List[str]) -> Optional[str]:
         
     value = get_first_value(input_value)
     if dest_mapping.get(value) is None:
-        logger.info(f"Type '{value}' not found in mapping, returning default '11189'")
+        logger.warning(f"Type '{value}' not found in mapping, returning default '11189'")
         return "11189"
     return dest_mapping.get(value)
+
+@safe_execute("format_259", "input_value")
+def format_259(input_value: List[str]):
+    if not validate_input(input_value, list):
+        logger.warning("Invalid input for format_259, returning default value")
+        return "24117"
+    
+    mapping = {
+        "copper": None,
+        "Gelb": "24117",
+        "Ultraviolett": "24113",
+        "Braun": None,
+        "Stecker/Kabel": None,
+        "Warmweiß": "24107",
+        "Weiß": "24107",
+        "Rosa": "24111",
+        "Kaltweiß": "24107",
+        "Beige": None,
+        "Blau": "24101",
+        "Gold": None,
+    }
+    
+    value = get_first_value(input_value)
+    
+    if mapping.get(value) is None:
+        logger.warning(f"Attr_259 '{value}' not found in mapping, returning default '24107'")
+        return "24107"
+    
+    return mapping.get(value)
+    
 
 
 @safe_execute("format_267", "input_value")
@@ -761,7 +844,7 @@ def format_267(input_value: List[str]) -> Optional[int]:
     value = get_first_value(input_value)
     
     if style_mapping.get(value) is None:
-        logger.info(f"Furniture style '{value}' not found in mapping, returning default '24135'")
+        logger.warning(f"Furniture style '{value}' not found in mapping, returning default '24135'")
         return "24135"
     
     return style_mapping.get(value)
@@ -808,7 +891,7 @@ def format_287(input_value: List[str]) -> Optional[int]:
     value = get_first_value(input_value)
     
     if feature_mapping.get(value) is None:
-        logger.info(f"Furniture feature '{value}' not found in mapping, returning default '24249'")
+        logger.warning(f"Furniture feature '{value}' not found in mapping, returning default '24249'")
         return "24249"
     return feature_mapping.get(value)
 
@@ -982,8 +1065,125 @@ def format_723(input_value: List[str]) -> Optional[str]:
 @safe_execute("format_741", "input_value")
 def format_741(input_value: Any) -> str:
     """Форматирование с фиксированным значением"""
-    logger.debug("Returning default fixed value for format_741")
+    logger.warning("Returning default fixed value for format_741")
     return "82913"
+
+safe_execute("format_745", "input_value")
+def format_745(input_value: List[str]):
+    if not validate_input(input_value, list):
+        logger.warning("Invalid input for format_745, returning default value")
+        return "89827"
+    
+    mapping = {
+        "Metall": None,
+        "Glass, Painted": None,
+        "Optional": None,
+        "Matt/Edelstahl": "89827",  # Mat (Matt)
+        "Holz Effeck": "105209",    # Woodgrain (Holzeffekt)
+        "Stainless": None,
+        "Gebürstet": "89803",       # Brossé (Brushed)
+        "Lacquer": "89837",         # Laqué (Lacquered)
+        "Chrome": "89805",          # Chromé (Chrome-plated)
+        "Matt gebürstet": "89803",  # близко к Brushed + Matt
+        "Walnuss hell": "103827",   # Placage noyer (Walnut veneer) – ближайшее
+        "Walnut Dark": "103827",    # то же, т.к. только Walnut veneer
+        "Verchromt": "89805",       # Chromé
+        "Glas": None,
+        "Lacquered": "89837",
+        "Halbglanz": "89847",       # Brillant (Glossy)
+        "Doppelbett": None,
+        "Mate": "89827",            # Mat
+        "Laminated": "89845",       # Stratifié
+        "Gebeizt": None,
+        "Glossy + Painted": "89847",  # Glossy → Brillant
+        "Nein": None,
+        "Natural": None,
+        "Stainless Platinum": None,
+        "Walnuss": "103827",        # Walnut veneer
+        "Gewachst": None,
+        "Vergoldet": None,
+        "Semi-Gloss": "89847",      # Glossy близко
+        "Finished": None,
+        "Holz-Effekt": "105209",    # Woodgrain
+        "Leather Fiber": "114884",  # Effet cuir
+        "Wandpaneel": None,
+        "Bemalt": None,
+        "Glänzend": "89847",        # Brillant
+        "Gold": None,
+        "Lackiert": "89837",        # Laqué
+        "Wandpaneelen": None,
+        "Stone": None,
+        "Maple": None,
+        "4067282875029": None,
+        "Oiled": "89793",           # Huilé
+        "Oak": "103825",            # Placage chêne
+        "Gelackt": "89837",         # Laqué (Lackiert)
+        "Marble": "114011",         # Effet marbre
+        "Hochglanz": "89847",       # Brillant
+        "Polished": "89811",        # Poli
+        "Holzeffekt": "105209",     # Woodgrain
+        "Furnier": "103825",        # Oak veneer ближайшее
+        "Oil-Rubbed": "89793",      # Oiled ближайшее
+        "Schiefer": None,
+        "Antikes Gold": None,
+        "Holz- Effect": "105209",   # Woodgrain
+        "Wood Effect": "105209",    # Woodgrain
+        "Lack": "89837",            # Laqué
+        "Laminiert": "89845",       # Stratifié
+        "High Glossy": "89847",     # Brillant
+        "Laminate": "89845",
+        "Eiche": "103825",          # Oak veneer
+        "Glitzer": None,
+        "Gloss": "89847",
+        "veneered & painted": "103825",  # Oak veneer ближайшее
+        "Stainless Steel": None,
+        "Oak Light": "103825",      # Oak veneer
+        "Polished Chrome": "89805", # Chromé
+        "Smooth": "89839",          # Lisse
+        "Gold-Finish": None,
+        "Antique Bronze": None,
+        "Dark Walnut": "103827",    # Walnut veneer
+        "Oak Dark": "103825",
+        "Glossy": "89847",
+        "Eierschale": None,
+        "Textured": "89835",        # Texturé
+        "Anthrazit": None,
+        "Mahogany": None,
+        "L": None,
+        "Antik": "89849",           # Vieilli (Aged)
+        "Hochglanzpoliert": "89811",# Polished
+        "Brushed": "89803",
+        "Edelstahl": None,
+        "Metallisch": None,
+        "Chrom": "89805",           # Chromé
+        "Ja": None,
+        "Natürlich": None,
+        "Unpainted": "89851",       # Sans finition
+        "Glatt": "89839",           # Lisse
+        "Solid Wood": None,
+        "Poliert": "89811",         # Poli
+        "Metallic": "126580",       # Gun métal ближайшее
+        "Veneer": "103825",         # Oak veneer
+        "Walnut": "103827",
+        "Bereift": None,
+        "Halbmatt": "89827",        # Mat
+        "Farbwechselnd": None,
+        "Glass": None,
+        "Polsterbett": None,
+        "Painted": None,
+        "Matte": "89827",
+        "Matt": "89827",
+        "Lasiert": None,
+    }
+    
+    value = get_first_value(input_value)
+    
+    if not mapping.get(value):
+        logger.warning(f"ATTR_745 '{get_first_value(input_value)}' not found in primary mapping, returning default mapping")
+        return "89827"
+    
+    return mapping.get(value)
+
 
 
 @safe_execute("format_747", "input_value")
@@ -1109,7 +1309,7 @@ def format_747(input_value: List[str]) -> Optional[int]:
 @safe_execute("format_767", "input_value")
 def format_767(input_value: Any) -> str:
     """Форматирование с фиксированным значением"""
-    logger.debug("Returning default fixed value for format_767")
+    logger.warning("Returning default fixed value for format_767")
     return "98723"
 
 
@@ -1127,7 +1327,7 @@ def format_769(input_value: List[str]) -> Optional[int]:
     
     value = get_first_value(input_value)
     if figure_mapping.get(value) is None:
-        logger.info(f"Figure type '{value}' not found in mapping, returning default '98729'")
+        logger.warning(f"Figure type '{value}' not found in mapping, returning default '98729'")
         return "98729"
     return figure_mapping.get(value)
 
@@ -1192,14 +1392,14 @@ def format_795(input_value: List[str]) -> Optional[str]:
 @safe_execute("format_805", "input_value")
 def format_805(input_value: Any) -> str:
     """Форматирование с фиксированным значением"""
-    logger.debug("Returning default fixed value for format_805")
+    logger.warning("Returning default fixed value for format_805")
     return "107321"
 
 
 @safe_execute("format_875", "input_value")
 def format_875(input_value: Any) -> str:
     """Форматирование с фиксированным значением"""
-    logger.debug("Returning default fixed value for format_875")
+    logger.warning("Returning default fixed value for format_875")
     return "112838"
 
 
@@ -1409,7 +1609,7 @@ def format_175(input_value: List[str]) -> Optional[str]:
                         logger.info(f"Found numeric translation match: {num} -> {val['code']}")
                         return val["code"]
         else:
-            logger.debug("No number extracted, proceeding with text matching, returning default value")
+            logger.warning("No number extracted, proceeding with text matching, returning default value")
             return "11147"
         
     except (KeyError, AttributeError) as e:
@@ -1419,8 +1619,8 @@ def format_175(input_value: List[str]) -> Optional[str]:
     
 def product_quantity_check(product_article: str) -> int:
     """
-    Проверка количества товара.
-    Возвращает 1, если товар особый(env), иначе 20.
+    Product quantity check.
+    Returns 1 if product is special (env), otherwise 20.
     """
     
     if not isinstance(product_article, str) or not product_article:

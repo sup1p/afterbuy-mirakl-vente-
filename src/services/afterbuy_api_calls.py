@@ -1,3 +1,8 @@
+"""
+Afterbuy API integration module.
+Handles authentication, product data retrieval, and brand information from Afterbuy API.
+"""
+
 from src.core.settings import settings
 from logs.config_logs import setup_logging
 
@@ -10,19 +15,21 @@ import asyncio
 setup_logging()
 logger = logging.getLogger(__name__)
 
-
-
+# Global token management variables
 _access_token = None
 _access_token_expiry = 0  # Unix timestamp
 _access_token_lock = asyncio.Lock()
 
 
 async def get_access_token(client: httpx.AsyncClient):
+    """
+    Retrieves and manages Afterbuy API access token.
+    Uses caching to avoid unnecessary authentication requests.
+    """
     global _access_token, _access_token_expiry
     
-    
     async with _access_token_lock:
-        # Если токен есть и не истёк, возвращаем его
+        # If token exists and hasn't expired, return it
         if _access_token and time.time() < _access_token_expiry:
             logger.info(f"Using cached access token, that will expire in {_access_token_expiry - time.time():.0f} seconds")
             return _access_token
@@ -54,12 +61,15 @@ async def get_access_token(client: httpx.AsyncClient):
         
         _access_token = data["access_token"]
         expires_in = 1000
-        _access_token_expiry = time.time() + expires_in - 10  # -10 сек на всякий случай
+        _access_token_expiry = time.time() + expires_in - 10  # -10 seconds buffer for safety
 
         return _access_token
 
 
 async def get_brand_by_id(brand_id: int, client: httpx.AsyncClient):
+    """
+    Retrieves brand information by brand ID from Afterbuy API.
+    """
     logger.info(f"get_brand_by_id with brand-id: {brand_id} was accessed")
     
     try:
@@ -83,7 +93,7 @@ async def get_brand_by_id(brand_id: int, client: httpx.AsyncClient):
     if response.status_code != 200:
         logger.error(f"Failed to get brand by id: {response.status_code} - {response.text}")
         raise Exception(
-            f"Ошибка получения бренда из Afterbuy парсера: {response.status_code} - {response.text}",
+            f"Error retrieving brand from Afterbuy parser: {response.status_code} - {response.text}",
         )
 
     data = response.json()
@@ -98,7 +108,10 @@ async def get_brand_by_id(brand_id: int, client: httpx.AsyncClient):
 
 
 async def get_product_data(ean: int, client: httpx.AsyncClient):
-    
+    """
+    Retrieves product data by EAN from Afterbuy API.
+    Includes HTML description if enabled in settings.
+    """
     logger.info(f"get_product_data with ean: {ean} was accessed")
     
     try:
@@ -130,7 +143,7 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
     if response.status_code != 200:
         logger.error(f"Failed to get product data: {response.status_code} - {response.text}")
         raise Exception(
-            f"Ошибка получения данных из Afterbuy: {response.status_code} - {response.text}",
+            f"Error retrieving data from Afterbuy: {response.status_code} - {response.text}",
         )
 
     data = response.json()
@@ -176,7 +189,10 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
 
 
 async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncClient):
-    
+    """
+    Retrieves all products associated with a specific fabric ID from Afterbuy API.
+    Processes products in parallel with semaphore for rate limiting.
+    """
     logger.info(f"get_products_and_data_by_fabric with afterbuy_fabric_id: {afterbuy_fabric_id} was accessed")
     
     fabric_id = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id, client)
@@ -209,7 +225,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncCli
     if response.status_code != 200:
         logger.error(f"Failed to get products by fabric_id: {response.status_code} - {response.text}")
         raise Exception(
-            f"Ошибка получения данных из Afterbuy by fabric_id: {response.status_code} - {response.text}",
+            f"Error retrieving data from Afterbuy by fabric_id: {response.status_code} - {response.text}",
         )
 
     data = response.json()
@@ -227,7 +243,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncCli
     
     if isinstance(data, list):
         
-        semaphore = asyncio.Semaphore(10)  # Ограничение на 10 одновременных запросов
+        semaphore = asyncio.Semaphore(10)  # Limit to 10 concurrent requests
         
         async def enrich_product(product):
             product_ean = product.get("ean", "No EAN")
@@ -274,7 +290,9 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncCli
 
 
 async def get_product_html_desc(product_id: int, client: httpx.AsyncClient):
-    
+    """
+    Retrieves HTML description for a specific product from Afterbuy API.
+    """
     logger.info(f"get_product_html_desc with product_id: {product_id} was accessed")
     
     try:
@@ -299,7 +317,7 @@ async def get_product_html_desc(product_id: int, client: httpx.AsyncClient):
     if response.status_code != 200:
         logger.error(f"Failed to get product data: {response.status_code} - {response.text}")
         raise Exception(
-            f"Ошибка получения данных из Afterbuy: {response.status_code} - {response.text}",
+            f"Error retrieving data from Afterbuy: {response.status_code} - {response.text}",
         )
 
     data = response.json()
@@ -332,7 +350,9 @@ async def get_product_html_desc(product_id: int, client: httpx.AsyncClient):
 
 
 async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, client: httpx.AsyncClient):
-    """Возвращает айди фабрики в парсере, на основе afterbuy_fabric_id для поиска продуктов"""
+    """
+    Returns fabric ID in parser based on afterbuy_fabric_id for product search.
+    """
     
     try:
         access_token = await get_access_token(client=client) 
@@ -360,7 +380,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, client: httpx.As
     if response.status_code != 200:
         logger.error(f"Failed to get fabric by afterbuy_fabric_id: {response.status_code} - {response.text}")
         raise Exception(
-            f"Ошибка получения fabric из Afterbuy by afterbuy_fabric_id: {response.status_code} - {response.text}",
+            f"Error retrieving fabric from Afterbuy by afterbuy_fabric_id: {response.status_code} - {response.text}",
         )
 
     data = response.json()
