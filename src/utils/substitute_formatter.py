@@ -222,7 +222,12 @@ def substitute_attr(attr_code, filled_attrs, value):
 
         case "ATTR_150" | "ATTR_151" | "ATTR_152":
             logger.info(f"Matched case: {attr_code}")
-            index = 0 if attr_code == "ATTR_150" else 2 if attr_code == "ATTR_151" else 1 if attr_code == "ATTR_152" else 1
+            mapping = {
+                "ATTR_150": 0,
+                "ATTR_151": 2,
+                "ATTR_152": 1,
+            }
+            index = mapping.get(attr_code, 1)
             filled_attrs[attr_code] = format_150_151_152(value, index)
 
         case _:

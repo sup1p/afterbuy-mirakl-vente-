@@ -8,7 +8,6 @@ from src.core.settings import settings
 
 
 import io
-import tempfile
 import os
 import re
 from urllib.parse import unquote, quote, urlparse

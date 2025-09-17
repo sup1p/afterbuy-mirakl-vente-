@@ -1547,7 +1547,7 @@ def format_150_151_152(
             return 50.0
         
         # Возврат по индексу
-        if index is not None:
+        if index is not None and len(numbers) > 1:
             logger.debug(f"List of numbers: {numbers}")
             
             if 0 <= index < len(numbers):
@@ -1560,7 +1560,7 @@ def format_150_151_152(
                 logger.warning(f"Index {index} out of range for '{value}', возвращаем numbers[0] : {numbers[0]}'")
                 return numbers[0]
         
-        logger.debug(f"Index is None, returning numbers[0]: {numbers[0]}")
+        logger.debug(f"Index is None or len(numbers) >= 1, returning numbers[0]: {numbers[0]}")
         return numbers[0]
             
     except (ValueError, AttributeError) as e:
