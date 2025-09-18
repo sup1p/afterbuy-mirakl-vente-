@@ -54,11 +54,19 @@ async def _prepare_images(
     (main_image_url, extra_images_urls_list, amount_of_resized_images)
     """
     # --- main image ---
-    main_image = data.get("pic_main", "").strip()
+    main_image = data.get("pic_main", "")
+    if not main_image:
+        logger.error(
+            f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
+        )
+        raise Exception(
+            f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
+        )
+
     main_image = normalize_url(main_image)
     pure_main_image = main_image
 
-    if not main_image or not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
+    if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(
             f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
         )
@@ -96,6 +104,7 @@ async def _prepare_images(
     # Убираем дубликат главного изображения
     pics_list = [pic for pic in pics_list if pic != pure_main_image]
 
+    # Проверка размеров extra image
     processed_images_error_sizes_result = await process_images(
         pics_list, httpx_client
     )
