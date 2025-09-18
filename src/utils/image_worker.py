@@ -12,6 +12,7 @@ import os
 import re
 from urllib.parse import unquote, quote, urlparse
 from PIL import Image, UnidentifiedImageError
+from typing import Optional
 
 import httpx
 import logging
@@ -264,7 +265,8 @@ async def resize_image_and_upload(
     url: str,
     ean: str,
     ftp_client: aioftp.Client,
-    httpx_client: httpx.AsyncClient
+    httpx_client: httpx.AsyncClient,
+    test: Optional[bool] = False
 ) -> str:
     # 1. Download bytes
     img_bytes, err = await download_image_bytes(url, httpx_client)
@@ -280,11 +282,16 @@ async def resize_image_and_upload(
 
     # 3. Form filename: decode basename and set correct extension
     path = urlparse(url).path
-    orig_file_name_with_ext = os.path.basename(path)
-    orig_file_name_with_ext = unquote(orig_file_name_with_ext)  # convert %20 -> space
-    orig_file_name, _ = os.path.splitext(orig_file_name_with_ext)
-    orig_file_name = normalize_basename(orig_file_name)  # safe name
-    orig_file_name = f"{orig_file_name}.{ext_or_arr}"
+    print(normalize_basename(path))
+    orig_file_name = normalize_basename(path)
+    # orig_file_name_with_ext = os.path.basename(path)
+    # orig_file_name_with_ext = unquote(orig_file_name_with_ext)  # convert %20 -> space
+    # print(orig_file_name_with_ext)
+    # orig_file_name, _ = os.path.splitext(orig_file_name_with_ext)
+    # print(orig_file_name)
+    # orig_file_name = normalize_basename(orig_file_name)  # safe name
+    # orig_file_name = f"{orig_file_name}.{ext_or_arr}"
+    # print(orig_file_name)
 
     # 4. Check existence (file_exists_on_ftp now considers variants)
     existing_url = await file_exists_on_ftp(
@@ -295,6 +302,11 @@ async def resize_image_and_upload(
     )
     if existing_url:
         logger.info(f"Image {orig_file_name} already exists in ftp server, returning its address")
+        if test:
+            return {
+                "ftp_url" : existing_url,
+                "sizes": await process_images([existing_url], httpx_client=httpx_client)
+            }
         return existing_url
 
     logger.debug(f"Image {orig_file_name} does not exist in ftp server, importing there")
@@ -307,5 +319,9 @@ async def resize_image_and_upload(
         ean=ean,
         ftp_client=ftp_client
     )
-
+    if test:
+        return {
+            "ftp_url" : ftp_url,
+            "sizes": await process_images([ftp_url], httpx_client=httpx_client)
+        }
     return ftp_url

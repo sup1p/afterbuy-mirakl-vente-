@@ -6,6 +6,7 @@ Provides testing endpoints for development and debugging purposes.
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.core.dependencies import get_httpx_client
+from src.core.settings import settings
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mapping import map_attributes
 from src.utils.image_worker import resize_image_and_upload
@@ -116,7 +117,8 @@ async def test_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClie
     Test endpoint for image resizing and FTP upload functionality.
     """
     try:
-        result = await resize_image_and_upload(url=data.url, ean=data.ean, httpx_client=httpx_client)
+        async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password) as ftp_client:
+            result = await resize_image_and_upload(url=data.url, ean=data.ean, httpx_client=httpx_client, ftp_client=ftp_client, test=True)
     except Exception as e:
         raise HTTPException(
             status_code=422,
