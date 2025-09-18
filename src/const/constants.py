@@ -52,6 +52,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_928": ["Liegefläche", "Maße Bettkopfteil", "Bettgröße", "Größe", "Liegefläche 1", "Liegefläche 2", "Liegefläche A", "Liegefläche B", "Liegefläche:", "Liegeflächen", "Maße Liegefläche"],
     "ATTR_150": [
             "Länge",
+            "Liegeflächen-Länge",
             "Gesamttiefe",
             "Maße",
             "Maße:",
@@ -200,6 +201,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
             ],
     "ATTR_152": [
             "Breite",
+            "Liegeflächen-Breite",
             "Gesamtbreite",
             "Maße",
             "Maße:",

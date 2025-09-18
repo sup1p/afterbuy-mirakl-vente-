@@ -24,10 +24,11 @@ import logging
 import httpx
 import aioftp
 import asyncio
+import re
 
 setup_logging()
 logger = logging.getLogger(__name__)
-ftp_semaphore = asyncio.Semaphore(8)
+ftp_semaphore = asyncio.Semaphore(5)
 
 
 
@@ -38,6 +39,10 @@ def _log_html_length(html_desc: str | None):
 def safe_get(images, idx):
     return images[idx] if idx < len(images) else ""
 
+def normalize_url(url):
+        # Исправляем https:: на https:
+        url = re.sub(r'https?::?//', 'https://', url)
+        return url
 
 async def _prepare_images(
     data: dict,
@@ -49,7 +54,9 @@ async def _prepare_images(
     (main_image_url, extra_images_urls_list, amount_of_resized_images)
     """
     # --- main image ---
-    main_image = data.get("pic_main", "")
+    main_image = data.get("pic_main", "").strip()
+    main_image = normalize_url(main_image)
+    pure_main_image = main_image
 
     if not main_image or not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(
@@ -70,20 +77,31 @@ async def _prepare_images(
         amount_of_resized_images = amount_of_resized_images + 1
 
     # --- extra images ---
-    extra_images_not_checked_for_existence = str(data.get("pics", "")).split()
-    extra_images_not_checked_for_size = [
-        img
-        for img in extra_images_not_checked_for_existence
-        if await check_image_existence(image_url=img, httpx_client=httpx_client)
-    ]
+    
+    # Получаем строку с картинками
+    extra_images_not_checked_for_size = data.get("pics") or ""
+    
+    # Проверяем, есть ли в строке полные URL'ы с протоколом
+    if 'http' in extra_images_not_checked_for_size:
+        # Для полных URL'ов используем регулярное выражение
+        pics_list = re.findall(r'https?://.*?(?=\s+https?://|$)', extra_images_not_checked_for_size)
+    
+    # Очищаем от лишних пробелов
+    pics_list = [pic.strip() for pic in pics_list if pic.strip()]
+    
+    # Нормализуем https::// -> https://
+    pics_list = [normalize_url(pic) for pic in pics_list]
+    
+    # Убираем дубликат главного изображения
+    pics_list = [pic for pic in pics_list if pic != pure_main_image]
 
     processed_images_error_sizes_result = await process_images(
-        extra_images_not_checked_for_size, httpx_client
+        pics_list, httpx_client
     )
     processed_images_error_sizes = processed_images_error_sizes_result.get("errors", [])
     extra_images = [
         img
-        for img in extra_images_not_checked_for_size
+        for img in pics_list
         if img not in [err[0] for err in processed_images_error_sizes]
     ]
 
