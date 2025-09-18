@@ -66,5 +66,5 @@ def extract_product_properties_from_html(html: str) -> str:
 
     # Соединяем в одну строку
 
-    logger.debug(f"Product extracted from html properties: {details}")
+    logger.info(f"Product extracted from html properties: {details}")
     return " ".join(details)
