@@ -80,6 +80,7 @@ async def _prepare_images(
     
     # Получаем строку с картинками
     extra_images_not_checked_for_size = data.get("pics") or ""
+    pics_list = []
     
     # Проверяем, есть ли в строке полные URL'ы с протоколом
     if 'http' in extra_images_not_checked_for_size:

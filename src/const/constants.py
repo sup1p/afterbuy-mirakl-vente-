@@ -53,6 +53,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_150": [
             "Länge",
             "Liegeflächen-Länge",
+            "Item Length",
             "Gesamttiefe",
             "Maße",
             "Maße:",
@@ -128,6 +129,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
             ],
     "ATTR_151": [
             "Höhe",
+            "Item Height",
             "Höhe (cm)",
             "Gesamthöhe",
             "Maße",
@@ -201,6 +203,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
             ],
     "ATTR_152": [
             "Breite",
+            "Item Width",
             "Liegeflächen-Breite",
             "Gesamtbreite",
             "Maße",
@@ -600,9 +603,9 @@ mapping_attr_to_def_fallback = { # if there is mapping but afterbuy hasnt provid
     "ATTR_896": "114626",
     "ATTR_927": "118979",
     "ATTR_928": "119002",
-    "ATTR_150": "70.00",
-    "ATTR_151": "50.00",
-    "ATTR_152": "30.00"
+    "ATTR_150": 70.00,
+    "ATTR_151": 50.00,
+    "ATTR_152": 30.00
 }
 
 category_attrs_map = { # key is the Mirakl category, value is the list of important attributes for that category
