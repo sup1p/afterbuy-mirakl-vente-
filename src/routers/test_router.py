@@ -86,8 +86,6 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
     processed_eans = set()
     
     for res in results:
-        
-        
         if isinstance(res, Exception):
             logger.error(f"Error fetching data (not adding it to csv): {res}")
             continue
@@ -95,7 +93,7 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
         data_for_mirakl = res.get("data_for_mirakl")        
         
         if data_for_mirakl.get("category") == "No mapping":
-            logger.error(f"No mapping found for category {data_for_mirakl.get('category')} of ean {data_for_mirakl.get('ean')}") # TODO: Change to real category from main products 
+            logger.error(f"No mapping found of ean {data_for_mirakl.get('ean')}") # TODO: Change to real category from main products 
             continue
         
         processed_eans.add(data_for_mirakl.get("ean"))

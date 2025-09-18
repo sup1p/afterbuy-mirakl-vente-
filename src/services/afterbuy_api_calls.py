@@ -212,29 +212,28 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
     
     logger.debug(f"Got access token, making request for fabric_id {fabric_id}")
     
-    try:
-        response = await httpx_client.post(
-            f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data
-        )
-    except Exception as e:
-        logger.error(f"Error while requesting products by fabric_id: {e}")
-        raise Exception(
-            f"Error while requesting products by fabric_id from Afterbuy: {e}",
-        )
-
-    if response.status_code != 200:
+    # Retry logic for main request
+    for attempt in range(3):
+        try:
+            response = await httpx_client.post(
+                f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data
+            )
+            if response.status_code == 200:
+                break
+        except Exception as e:
+            if attempt == 2:  # Last attempt
+                logger.error(f"Error while requesting products by fabric_id: {e}")
+                raise Exception(f"Error while requesting products by fabric_id from Afterbuy: {e}")
+            await asyncio.sleep(1 * (attempt + 1))  # Exponential backoff
+    else:
         logger.error(f"Failed to get products by fabric_id: {response.status_code} - {response.text}")
-        raise Exception(
-            f"Error retrieving data from Afterbuy by fabric_id: {response.status_code} - {response.text}",
-        )
+        raise Exception(f"Error retrieving data from Afterbuy by fabric_id: {response.status_code} - {response.text}")
 
     data = response.json()
     
     if not data:
         logger.error(f"No products found for fabric_id {fabric_id} in Afterbuy")
-        raise Exception(
-            f"No products found for fabric_id {fabric_id} in Afterbuy",
-        )
+        raise Exception(f"No products found for fabric_id {fabric_id} in Afterbuy")
     
     logger.debug(f"Response data contains {len(data)} products for fabric_id {fabric_id}")
     
@@ -252,7 +251,15 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
             try:
                 if settings.use_real_html_desc:
                     async with semaphore:
-                        product["html_description"] = await get_product_html_desc(product["id"], httpx_client)
+                        # Retry logic for product description
+                        for attempt in range(3):
+                            try:
+                                product["html_description"] = await get_product_html_desc(product["id"], httpx_client)
+                                break
+                            except Exception as e:
+                                if attempt == 2:
+                                    raise e
+                                await asyncio.sleep(0.5 * (attempt + 1))
                 else:
                     logger.debug(
                         f"Skipping fetching real html description for product with ean {product.get('ean')} as per settings"
@@ -304,29 +311,31 @@ async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient
     
     logger.debug(f"Got access token, making request for product_id {product_id}")
     
-    try:
-        response = await httpx_client.get(
-            f"{settings.afterbuy_url}/v1/products/{product_id}", headers=headers
-        )
-    except Exception as e:
-        logger.error(f"Error while requesting product html description: {e}")
-        raise Exception(
-            f"Error while requesting product html description from Afterbuy: {e}",
-        )
-
-    if response.status_code != 200:
-        logger.error(f"Failed to get product data: {response.status_code} - {response.text}")
-        raise Exception(
-            f"Error retrieving data from Afterbuy: {response.status_code} - {response.text}",
-        )
+    for attempt in range(3):
+        try:
+            response = await httpx_client.get(
+                f"{settings.afterbuy_url}/v1/products/{product_id}", headers=headers
+            )
+            if response.status_code == 200:
+                break
+        except Exception as e:
+            if attempt == 2:  # Last attempt
+                logger.error(f"Error while requesting product html description: {e}")
+                raise Exception(f"Error while requesting product html description from Afterbuy: {e}")
+            await asyncio.sleep(0.5 * (attempt + 1))  # Wait before retry
+            continue
+        
+        # Handle non-200 status codes
+        if attempt == 2:  # Last attempt
+            logger.error(f"Failed to get product data: {response.status_code} - {response.text}")
+            raise Exception(f"Error retrieving data from Afterbuy: {response.status_code} - {response.text}")
+        await asyncio.sleep(0.5 * (attempt + 1))  # Wait before retry
 
     data = response.json()
     
     if not data:
         logger.error(f"Product with product_id {product_id} not found in Afterbuy")
-        raise Exception(
-            f"Product with product_id {product_id} not found in Afterbuy",
-        )
+        raise Exception(f"Product with product_id {product_id} not found in Afterbuy")
     
     only_html = None
     
@@ -342,9 +351,7 @@ async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient
         logger.warning(f"Product with ean {data.get('ean')}, cannot fetch html description")
     
     if not only_html:
-        raise Exception(
-            f"Product with product_id {product_id} has no html description",
-        )
+        raise Exception(f"Product with product_id {product_id} has no html description")
     
     return only_html
 
@@ -367,22 +374,28 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
         "afterbuy_id": str(afterbuy_fabric_id)
     }
     
-    try:
-        response = await httpx_client.post(
-            f"{settings.afterbuy_url}/v1/fabrics/find", headers=headers, json=data
-        )
-    except Exception as e:
-        logger.error(f"Error while requesting fabric from Afterbuy: {e}")
-        raise Exception(
-            f"Error while requesting product fabric from Afterbuy: {e}",
-        )
-
-    if response.status_code != 200:
-        logger.error(f"Failed to get fabric by afterbuy_fabric_id: {response.status_code} - {response.text}")
-        raise Exception(
-            f"Error retrieving fabric from Afterbuy by afterbuy_fabric_id: {response.status_code} - {response.text}",
-        )
-
+    for attempt in range(3):
+        try:
+            response = await httpx_client.post(
+                f"{settings.afterbuy_url}/v1/fabrics/find", headers=headers, json=data
+            )
+            if response.status_code == 200:
+                break
+        except Exception as e:
+            if attempt == 2:
+                logger.error(f"Error while requesting fabric from Afterbuy: {e}")
+                raise Exception(
+                    f"Error while requesting product fabric from Afterbuy: {e}",
+                )
+            await asyncio.sleep(0.5 * (attempt+1))
+            continue
+        
+        # Handle non-200 status codes
+        if attempt == 2:  # Last attempt
+            logger.error(f"Failed to get fabric by afterbuy_fabric_id: {response.status_code} - {response.text}")
+            raise Exception(f"Error retrieving fabric from Afterbuy by afterbuy_fabric_id: {response.status_code} - {response.text}")
+        await asyncio.sleep(0.5 * (attempt + 1)) 
+        
     data = response.json()
     
     if not data:

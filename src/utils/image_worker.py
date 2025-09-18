@@ -23,49 +23,64 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient) -> bool:
+async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient, retries: int = 3, timeout: int = 5) -> bool:
     if settings.check_image_existence is False:
         return True
-    
+
     if not image_url:
         return False
-    
-        
-    try:
-        response = await httpx_client.head(image_url)
-    except Exception as e:
-        logger.error(f"Error while checking image at {image_url}: {e}")
-        return False
-    
-    if response.status_code == 200:
-        logger.debug(f"Image found at {image_url}")
-        return True
-    else:
-        logger.warning(f"Image not found at {image_url}, status code: {response.status_code}")
-        return False
+
+    image_url = unquote(image_url)
+
+    for attempt in range(1, retries + 1):
+        try:
+            response = await httpx_client.head(image_url, timeout=timeout)
+            if response.status_code == 200:
+                return True
+            elif response.status_code in (403, 405):  
+                # 403 Forbidden или 405 Method Not Allowed — часто указывает, что HEAD не поддерживается
+                response = await httpx_client.get(image_url, timeout=timeout)
+                return response.status_code == 200
+        except Exception as e:
+            logger.warning(f"Attempt {attempt}/{retries} failed for {image_url}: {e}")
+            if attempt < retries:
+                await asyncio.sleep(2 ** attempt)  # экспоненциальная задержка
+
+    logger.error(f"Image not accessible at {image_url} after {retries} attempts")
+    return False
     
 
 async def get_image_size(url: str, httpx_client: httpx.AsyncClient):
     """
-    Retrieves image dimensions by downloading first 20KB of the image.
+    Retrieves image dimensions by downloading first 200KB of the image.
     """
-    try:
-        headers = {"Range": "bytes=0-200000"}  # Read first 20KB
-        resp = await httpx_client.get(url, headers=headers, timeout=10)
-        resp.raise_for_status()
-
+    for attempt in range(3):
         try:
-            img = Image.open(io.BytesIO(resp.content))
-            logger.info(f"Image {url[:50]} sizes: {img.size}")
-            return url, img.size
+            headers = {"Range": "bytes=0-200000"}  # Read first 200KB
+            resp = await httpx_client.get(url, headers=headers, timeout=10)
+            if resp.status_code in [200, 206]:
+                try:
+                    img = Image.open(io.BytesIO(resp.content))
+                    logger.info(f"Image {url[:50]} sizes: {img.size}")
+                    return url, img.size
+                except Exception as e:
+                    logger.warning(f"Image {url[:50]} error: {e}")
+                    return url, f"Pillow error: {e}"
+            resp.raise_for_status()
+
         except Exception as e:
-            logger.warning(f"Image {url[:50]} error: {e}")
-            return url, f"Pillow error: {e}"
-        
-    except Exception as e:
-        logger.warning(f"Image {url[:50]} error: {e}")
-        return url, e  # Return error along with url
-    
+            if attempt == 2:
+                logger.warning(f"Image {url[:50]} error: {e}")
+                return url, e  # Return error along with url
+            await asyncio.sleep(0.5 * (attempt+1))
+            continue
+            
+        # Handle non-200 status codes
+        if attempt == 2:  # Last attempt
+            logger.error(f"Failed to get check image existence: {resp.status_code}")
+            raise Exception(f"Error checking image existence: {resp.status_code}")
+        await asyncio.sleep(0.5 * (attempt + 1))  # Wait before retry
+            
 
 async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
     """
@@ -110,20 +125,33 @@ async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
 
 
 async def download_image_bytes(url: str, httpx_client: httpx.AsyncClient):
-    try:
-        resp = await httpx_client.get(url, timeout=30)
-        resp.raise_for_status()
+    for attempt in range(3):
+        try:
+            resp = await httpx_client.get(url, timeout=30)
 
-        # Check content type header
-        ctype = resp.headers.get("Content-Type", "")
-        if not ctype.startswith("image/"):
-            logger.warning(f"URL did not return image: {url}, Content-Type: {ctype}")
-            return None, f"URL did not return image: {url}, Content-Type: {ctype}"
+            if resp.status_code == 200:
+                # Проверяем, что это картинка
+                ctype = resp.headers.get("Content-Type", "")
+                if not ctype.startswith("image/"):
+                    logger.warning(f"URL did not return image: {url}, Content-Type: {ctype}")
+                    return None, f"URL did not return image: {url}, Content-Type: {ctype}"
 
-        return resp.content, None
-    except Exception as e:
-        logger.error(f"Error downloading image {url}: {e}")
-        return None, e
+                return resp.content, None
+
+        except Exception as e:
+            if attempt == 2:  # последняя попытка
+                logger.error(f"Error downloading image {url}: {e}")
+                return None, e
+            await asyncio.sleep(0.5 * (attempt + 1))
+            continue
+
+        # Если статус != 200
+        if attempt == 2:  # последняя попытка
+            logger.error(f"Failed to download image {url}: {resp.status_code} - {resp.text}")
+            return None, f"HTTP {resp.status_code}: {resp.text}"
+        await asyncio.sleep(0.5 * (attempt + 1))
+
+    return None, "Unexpected error in download image bytes"  # на всякий случай
 
 
 
@@ -182,38 +210,59 @@ def normalize_basename(name: str) -> str:
     return name
 
 
-async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ean: str,ftp_client: aioftp.Client) -> str:
-    """Asynchronous FTP upload via aioftp."""
-    if remote_dir:
+async def upload_to_ftp(
+    data: bytes,
+    filename: str,
+    remote_dir: str,
+    ean: str,
+    ftp_client: aioftp.Client,
+    max_retries: int = 3,
+) -> str:
+    """Asynchronous FTP upload via aioftp with retry logic."""
+    
+    filename_only = os.path.basename(filename)
+    temp_filename = filename  # temp file = исходное имя
+    
+    for attempt in range(max_retries):
         try:
-            await ftp_client.make_directory(remote_dir, parents=True)
-        except aioftp.StatusCodeError as e:
-            if "550" not in str(e):
-                raise
-        await ftp_client.change_directory(remote_dir)
+            if remote_dir:
+                try:
+                    await ftp_client.make_directory(remote_dir, parents=True)
+                except aioftp.StatusCodeError as e:
+                    # 550 - директория уже существует
+                    if "550" not in str(e):
+                        raise
+                await ftp_client.change_directory(remote_dir)
 
-    logger.debug(f"Start of file upload: {filename}")
+            logger.debug(f"[Attempt {attempt+1}] Start of file upload: {filename_only}")
 
-    temp_filename = filename
-    filename = os.path.basename(filename)
-    current_dir = await ftp_client.get_current_directory()
-    
-    try:
-        # Write data to temporary file
-        with open(temp_filename, 'wb') as temp_file:
-            temp_file.write(data)
-        
-        # Upload file - aioftp will see only filename without slashes
-        await ftp_client.upload(temp_filename)
-    finally:
-        # Remove temporary file
-        if os.path.exists(temp_filename):
-            os.unlink(temp_filename)
-    
-    logger.debug("End of file upload")
-    
-    
-    return f"{settings.image_base_url}/{ean}/{filename}"
+            # Сохраняем временный файл
+            with open(temp_filename, "wb") as temp_file:
+                temp_file.write(data)
+
+            # Загружаем
+            await ftp_client.upload(temp_filename)
+
+            logger.debug(f"[Attempt {attempt+1}] End of file upload: {filename_only}")
+
+            # Успех -> чистим и возвращаем URL
+            if os.path.exists(temp_filename):
+                os.unlink(temp_filename)
+
+            return f"{settings.image_base_url}/{ean}/{filename_only}"
+
+        except Exception as e:
+            logger.error(f"[Attempt {attempt+1}] FTP upload failed for {filename_only}: {e}")
+
+            # Чистим временный файл (на случай неудачи тоже)
+            if os.path.exists(temp_filename):
+                os.unlink(temp_filename)
+
+            if attempt == max_retries - 1:
+                raise Exception(f"FTP upload failed after {max_retries} attempts: {e}")
+
+            # Ждём перед новой попыткой
+            await asyncio.sleep(0.5 * (attempt + 1))
 
 
 # Modified file_exists_on_ftp: tries multiple name variants
@@ -282,7 +331,6 @@ async def resize_image_and_upload(
 
     # 3. Form filename: decode basename and set correct extension
     path = urlparse(url).path
-    print(normalize_basename(path))
     orig_file_name = normalize_basename(path)
     # orig_file_name_with_ext = os.path.basename(path)
     # orig_file_name_with_ext = unquote(orig_file_name_with_ext)  # convert %20 -> space

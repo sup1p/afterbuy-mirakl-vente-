@@ -40,9 +40,21 @@ def safe_get(images, idx):
     return images[idx] if idx < len(images) else ""
 
 def normalize_url(url):
-        # Исправляем https:: на https:
-        url = re.sub(r'https?::?//', 'https://', url)
-        return url
+    # Исправляем https:: на https:
+    url = re.sub(r'https?::?//', 'https://', url)
+    
+    # Разделяем склеенные URL по паттерну https://
+    # Ищем места где https:// встречается не в начале строки
+    parts = re.split(r'(?<!^)(?=https://)', url)
+    
+    # Берем первую часть и очищаем её
+    first_url = parts[0].strip()
+    
+    # Убираем возможные артефакты в конце (например, повторяющиеся расширения)
+    # Ищем корректное окончание URL
+    first_url = re.sub(r'\.webp.*$', '.webp', first_url)
+    
+    return first_url
 
 async def _prepare_images(
     data: dict,
@@ -57,10 +69,10 @@ async def _prepare_images(
     main_image = data.get("pic_main", "")
     if not main_image:
         logger.error(
-            f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
+            f"Main image not found(probably None or empty): {data.get('id')}, ean: {data.get('ean')}"
         )
         raise Exception(
-            f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
+            f"Main image not found(probably None or empty): {data.get('id')}, ean: {data.get('ean')}"
         )
 
     main_image = normalize_url(main_image)
@@ -103,17 +115,18 @@ async def _prepare_images(
     
     # Убираем дубликат главного изображения
     pics_list = [pic for pic in pics_list if pic != pure_main_image]
+    
+    if len(pics_list) < 1:
+        return main_image, [], amount_of_resized_images
 
     # Проверка размеров extra image
     processed_images_error_sizes_result = await process_images(
         pics_list, httpx_client
     )
     processed_images_error_sizes = processed_images_error_sizes_result.get("errors", [])
-    extra_images = [
-        img
-        for img in pics_list
-        if img not in [err[0] for err in processed_images_error_sizes]
-    ]
+    
+    bad_urls = [err[0] for err in processed_images_error_sizes if isinstance(err, (list, tuple)) and len(err) >= 1]
+    extra_images = [img for img in pics_list if img not in bad_urls]
 
     # TODO: Refactor to use asyncio.gather for better performance
     resized_error_images = [
