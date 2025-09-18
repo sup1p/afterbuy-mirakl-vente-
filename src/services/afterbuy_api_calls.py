@@ -21,7 +21,7 @@ _access_token_expiry = 0  # Unix timestamp
 _access_token_lock = asyncio.Lock()
 
 
-async def get_access_token(client: httpx.AsyncClient):
+async def get_access_token(httpx_client: httpx.AsyncClient):
     """
     Retrieves and manages Afterbuy API access token.
     Uses caching to avoid unnecessary authentication requests.
@@ -42,7 +42,7 @@ async def get_access_token(client: httpx.AsyncClient):
         logger.info("Requesting access token from Afterbuy")
         
         try:
-            response = await client.post(f"{settings.afterbuy_url}/v1/auth/login", json=credentials)
+            response = await httpx_client.post(f"{settings.afterbuy_url}/v1/auth/login", json=credentials)
                 
         except Exception as e:
             logger.error(f"Error while requesting access token: {e}")
@@ -66,14 +66,14 @@ async def get_access_token(client: httpx.AsyncClient):
         return _access_token
 
 
-async def get_brand_by_id(brand_id: int, client: httpx.AsyncClient):
+async def get_brand_by_id(brand_id: int, httpx_client: httpx.AsyncClient):
     """
     Retrieves brand information by brand ID from Afterbuy API.
     """
     logger.info(f"get_brand_by_id with brand-id: {brand_id} was accessed")
     
     try:
-        access_token = await get_access_token(client=client) 
+        access_token = await get_access_token(httpx_client=httpx_client) 
     except Exception as e:
         raise e(str(e))
     
@@ -83,7 +83,7 @@ async def get_brand_by_id(brand_id: int, client: httpx.AsyncClient):
     }
     
     try:
-        response = await client.get(f"{settings.afterbuy_url}/v1/brands/{brand_id}", headers=headers)
+        response = await httpx_client.get(f"{settings.afterbuy_url}/v1/brands/{brand_id}", headers=headers)
     except Exception as e:
         logger.error(f"Error while requesting brand by id: {e}")
         raise Exception(
@@ -107,7 +107,7 @@ async def get_brand_by_id(brand_id: int, client: httpx.AsyncClient):
     return data["name"]
 
 
-async def get_product_data(ean: int, client: httpx.AsyncClient):
+async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     """
     Retrieves product data by EAN from Afterbuy API.
     Includes HTML description if enabled in settings.
@@ -115,7 +115,7 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
     logger.info(f"get_product_data with ean: {ean} was accessed")
     
     try:
-        access_token = await get_access_token(client=client) 
+        access_token = await get_access_token(httpx_client=httpx_client) 
     except Exception as e:
         raise e
     
@@ -130,7 +130,7 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
     logger.debug(f"Got access token, making request for ean {ean}")
     
     try:
-        response = await client.post(
+        response = await httpx_client.post(
             f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data
         )
         logger.debug(f"{settings.afterbuy_url}/v1/products/filter?limit={limit} _-------------- {data}")
@@ -159,7 +159,7 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
     if isinstance(data, list) and data[0].get('id'):
         try:
             if settings.use_real_html_desc:
-                data[0]['html_description'] = await get_product_html_desc(data[0].get('id'), client)
+                data[0]['html_description'] = await get_product_html_desc(data[0].get('id'), httpx_client)
             else:
                 logger.debug(f"Skipping fetching real html description for product with ean {ean} as per settings")
                 data[0]['html_description'] = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
@@ -171,7 +171,7 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
     elif isinstance(data, dict) and data.get('id'):
         try:
             if settings.use_real_html_desc:
-                data['html_description'] = await get_product_html_desc(data.get('id'), client)
+                data['html_description'] = await get_product_html_desc(data.get('id'), httpx_client)
             else:
                 logger.debug(f"Skipping fetching real html description for product with ean {ean} as per settings")
                 data['html_description'] = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
@@ -188,17 +188,17 @@ async def get_product_data(ean: int, client: httpx.AsyncClient):
     return data[0] if isinstance(data, list) else data
 
 
-async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncClient):
+async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient):
     """
     Retrieves all products associated with a specific fabric ID from Afterbuy API.
     Processes products in parallel with semaphore for rate limiting.
     """
     logger.info(f"get_products_and_data_by_fabric with afterbuy_fabric_id: {afterbuy_fabric_id} was accessed")
     
-    fabric_id = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id, client)
+    fabric_id = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id, httpx_client)
     
     try:
-        access_token = await get_access_token(client=client) 
+        access_token = await get_access_token(httpx_client=httpx_client) 
     except Exception as e:
         raise e
     
@@ -213,7 +213,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncCli
     logger.debug(f"Got access token, making request for fabric_id {fabric_id}")
     
     try:
-        response = await client.post(
+        response = await httpx_client.post(
             f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data
         )
     except Exception as e:
@@ -252,7 +252,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncCli
             try:
                 if settings.use_real_html_desc:
                     async with semaphore:
-                        product["html_description"] = await get_product_html_desc(product["id"], client)
+                        product["html_description"] = await get_product_html_desc(product["id"], httpx_client)
                 else:
                     logger.debug(
                         f"Skipping fetching real html description for product with ean {product.get('ean')} as per settings"
@@ -289,14 +289,14 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, client: httpx.AsyncCli
     }
 
 
-async def get_product_html_desc(product_id: int, client: httpx.AsyncClient):
+async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient):
     """
     Retrieves HTML description for a specific product from Afterbuy API.
     """
     logger.info(f"get_product_html_desc with product_id: {product_id} was accessed")
     
     try:
-        access_token = await get_access_token(client=client) 
+        access_token = await get_access_token(httpx_client=httpx_client) 
     except Exception as e:
         raise e
     
@@ -305,7 +305,7 @@ async def get_product_html_desc(product_id: int, client: httpx.AsyncClient):
     logger.debug(f"Got access token, making request for product_id {product_id}")
     
     try:
-        response = await client.get(
+        response = await httpx_client.get(
             f"{settings.afterbuy_url}/v1/products/{product_id}", headers=headers
         )
     except Exception as e:
@@ -349,13 +349,13 @@ async def get_product_html_desc(product_id: int, client: httpx.AsyncClient):
     return only_html
 
 
-async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, client: httpx.AsyncClient):
+async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient):
     """
     Returns fabric ID in parser based on afterbuy_fabric_id for product search.
     """
     
     try:
-        access_token = await get_access_token(client=client) 
+        access_token = await get_access_token(httpx_client=httpx_client) 
     except Exception as e:
         raise e
     
@@ -368,7 +368,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, client: httpx.As
     }
     
     try:
-        response = await client.post(
+        response = await httpx_client.post(
             f"{settings.afterbuy_url}/v1/fabrics/find", headers=headers, json=data
         )
     except Exception as e:

@@ -14,6 +14,7 @@ from src.const.constants import (
 )
 from src.utils.substitute_formatter import substitute_attr
 from src.utils.format_attr import product_quantity_check
+from src.core.settings import settings
 from src.utils.image_worker import check_image_existence, process_images, resize_image_and_upload
 from logs.config_logs import setup_logging
 from src.utils.format_html import extract_product_properties_from_html
@@ -22,9 +23,12 @@ import json
 import logging
 import httpx
 import aioftp
+import asyncio
 
 setup_logging()
 logger = logging.getLogger(__name__)
+ftp_semaphore = asyncio.Semaphore(8)
+
 
 
 def _log_html_length(html_desc: str | None):
@@ -254,8 +258,7 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
 
     return filled_attrs
 
-
-async def map_attributes(data: dict, httpx_client: httpx.AsyncClient, ftp_client = aioftp.Client) -> dict:
+async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     """
     Prepares dictionary for Mirakl.
     - Processes images (up to 10).
@@ -264,7 +267,9 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient, ftp_client
     """
     logger.info(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
     # --- images ---
-    main_image, extra_images, _ = await _prepare_images(data, httpx_client, ftp_client)
+    async with ftp_semaphore:
+        async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password) as ftp_client:
+            main_image, extra_images, _ = await _prepare_images(data, httpx_client, ftp_client)
 
     # --- product properties ---
     properties_raw = data.get("properties", "{}")

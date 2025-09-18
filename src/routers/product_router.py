@@ -7,18 +7,16 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mirakl_api_calls import import_product as import_product_mirakl
-from src.schemas import ProductEan, TestImageResize
+from src.schemas import ProductEan
 from src.services.csv_converter import make_csv, make_big_csv
 from src.services.mapping import map_attributes
-from src.core.dependencies import get_httpx_client, get_ftp_client
+from src.core.dependencies import get_httpx_client
 from logs.config_logs import setup_logging
 
 import asyncio
 import logging
 import httpx
 import aioftp
-
-from src.utils.image_worker import resize_image_and_upload
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -29,12 +27,12 @@ router = APIRouter()
 
 
 @router.post("/import-product/{ean}", tags=["product"])
-async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
+async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Imports a single product by EAN from Afterbuy to Mirakl system.
     """
     try:
-        data = await get_product_data(ean=ean, client=httpx_client)
+        data = await get_product_data(ean=ean, httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(
@@ -44,7 +42,7 @@ async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get
     
     logger.info(f"Fetched data for ean {ean}: {len(data)} items")
     try:
-        mapped_data_result = await map_attributes(data=data, httpx_client=httpx_client, ftp_client=ftp_client)
+        mapped_data_result = await map_attributes(data=data, httpx_client=httpx_client)
         mapped_data = mapped_data_result.get('data_for_mirakl')
         logger.debug(f"MAPPED DATA IN THE MAP_ATTRIBUTES: {mapped_data}")
         
@@ -65,7 +63,6 @@ async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get
     logger.info(f"Mapped data for ean {ean}: {mapped_data}")
 
     if mapped_data.get("category") == "No mapping":
-        print(data.get("category"))
         logger.error(f"No mapping found for category {data.get('category')} of ean {ean}")
         raise HTTPException(
             status_code=404,
@@ -81,11 +78,11 @@ async def import_product(ean: int, httpx_client: httpx.AsyncClient = Depends(get
             detail=f"Product with ean {ean} not found or make_csv failed",
         )
 
-    return await import_product_mirakl(csv_content, client=httpx_client)
+    return await import_product_mirakl(csv_content, httpx_client=httpx_client)
 
 
 @router.post("/import-products", tags=["product"])
-async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), ftp_client: aioftp.Client = Depends(get_ftp_client)):
+async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Imports multiple products by EAN list from Afterbuy to Mirakl system.
     """
@@ -97,7 +94,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
         )
         
         
-    tasks = [get_product_data(ean=ean, client=httpx_client) for ean in ean_list]
+    tasks = [get_product_data(ean=ean, httpx_client=httpx_client) for ean in ean_list]
     results = await asyncio.gather(*tasks, return_exceptions=True)    
     
     data = []
@@ -113,7 +110,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
         logger.info(f"Fetched data for ean {ean}")
         
         try:
-            mapped_data_results = await map_attributes(data=single_product, httpx_client=httpx_client, ftp_client=ftp_client)
+            mapped_data_results = await map_attributes(data=single_product, httpx_client=httpx_client)
             mapped_data = mapped_data_results.get('data_for_mirakl')
         except Exception as e:
             logger.error(f"Error mapping attributes for ean {ean}: {e}")
@@ -145,7 +142,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
         )
         
     try:
-        mirakl_answer = await import_product_mirakl(csv_content, client=httpx_client)
+        mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error importing products to Mirakl: {e}")
         raise HTTPException(
@@ -161,12 +158,12 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
 
 
 @router.post("/import-products-by-fabric/{fabric_id}", tags=["product"])
-async def import_products_by_fabric(fabric_id: int, client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def import_products_by_fabric(fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Imports products by fabric ID from Afterbuy to Mirakl system.
     """
     try:
-        data = await get_products_by_fabric(fabric_id=fabric_id, client=client)
+        data = await get_products_by_fabric(fabric_id=fabric_id, httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error fetching data for fabric {fabric_id}: {e}")
         raise HTTPException(

@@ -1563,6 +1563,9 @@ def format_747(input_value: List[str]) -> Optional[int]:
             "Massiv Holz": "89967",  # Holz, Platte - Holz
             "Holz/Textil": "89967",  # смешанный → дерево + ткань (дерево как основной)
             "Holz": "89967",
+            "Holz / Marmorimitation": "89967",
+            "Marmorimitation":"89889",
+            "Marmorimitat":"89889",
             "Holz / Textil": "89967",
             "Baumwollmischung": "89873",  # Stoff - Baumwolle
             "Holzfurnier": "89971",  # Holzplatte und Holzderivate
@@ -1612,6 +1615,7 @@ def format_747(input_value: List[str]) -> Optional[int]:
             "Harz": "89965",
             "45 cm": "89969",  # не материал
             "Rattan": "89855",
+            "Hartglas":"89865",
             "Hanf": "89937",
             "Ebenholz": "89967",
             "Latex": "89969",  # нет
@@ -1620,14 +1624,19 @@ def format_747(input_value: List[str]) -> Optional[int]:
             "Zink": "89941",
             "Glas": "89947",
             "Kiefer": "89967",
+            "Porzellan-Tischplatte":"89869",
+            "Porzellan":"89869",
+            "Glas / Marmorimitation":"89947",
             "Metall": "89969",
             "Keramik": "89859",
             "Holz mit Marmor": "89967",
             "Leder": "89959",
             "Holz & Glas": "89967",
             "MDF/Spanplatte": "89971",
+            "Spanplatte": "89971",
             "Holz, Textil": "89967",
             "Chrom": "89969",  # нет отдельного
+            "Bauholz":"89967",
             "Holz / Edelstahl / Kunststoff": "89967",
             "Aluminium": "89909",
             "Holzwerkstoff": "89971",

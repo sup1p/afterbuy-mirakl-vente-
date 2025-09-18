@@ -44,13 +44,13 @@ async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient)
         return False
     
 
-async def get_image_size(url: str, client: httpx.AsyncClient):
+async def get_image_size(url: str, httpx_client: httpx.AsyncClient):
     """
     Retrieves image dimensions by downloading first 20KB of the image.
     """
     try:
         headers = {"Range": "bytes=0-200000"}  # Read first 20KB
-        resp = await client.get(url, headers=headers, timeout=10)
+        resp = await httpx_client.get(url, headers=headers, timeout=10)
         resp.raise_for_status()
 
         try:
@@ -66,12 +66,12 @@ async def get_image_size(url: str, client: httpx.AsyncClient):
         return url, e  # Return error along with url
     
 
-async def process_images(urls: list[str], client: httpx.AsyncClient):
+async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
     """
     Asynchronously checks image dimensions for compliance with requirements using gather.
     """
     if len(urls) > 1:
-        tasks = [get_image_size(url, client) for url in urls]
+        tasks = [get_image_size(url, httpx_client) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         logger.debug(f"Results: {results}")
@@ -94,7 +94,7 @@ async def process_images(urls: list[str], client: httpx.AsyncClient):
             "errors": errors  # list [(url, "error")]
         }
     else:
-        result = await get_image_size(urls[0], client)
+        result = await get_image_size(urls[0], httpx_client)
         errors = []
         sizes = result[1]
         
@@ -108,9 +108,9 @@ async def process_images(urls: list[str], client: httpx.AsyncClient):
     
 
 
-async def download_image_bytes(url: str, client: httpx.AsyncClient):
+async def download_image_bytes(url: str, httpx_client: httpx.AsyncClient):
     try:
-        resp = await client.get(url, timeout=30)
+        resp = await httpx_client.get(url, timeout=30)
         resp.raise_for_status()
 
         # Check content type header
@@ -196,7 +196,6 @@ async def upload_to_ftp(data: bytes, filename: str, remote_dir: str, ean: str,ft
     temp_filename = filename
     filename = os.path.basename(filename)
     current_dir = await ftp_client.get_current_directory()
-    print("Current FTP directory:", current_dir)
     
     try:
         # Write data to temporary file

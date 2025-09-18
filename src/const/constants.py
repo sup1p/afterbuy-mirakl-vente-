@@ -39,7 +39,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_723": "Stromquelle",
     "ATTR_741": "Füllmaterial",
     "ATTR_745": "Finish",
-    "ATTR_747": ["Gestellmaterial","Gestellmaterial (max. 30 Werte möglich)", "Material","Material (max. 30 Werte möglich)", "MaterialJV Möbel","MaterialGla","Materialien","Rahmenmaterial", "Material:", "Seat Material", "Stuhlrückenmaterial", "Verglasungsmaterial", "Bettrahmenmaterial", "Bodenmaterial", "Frame Material", "Frame material", "Frame Materiall", "Frame Materialll","Materiall", "Materialll","Materila","Materrial"],
+    "ATTR_747": ["Gestellmaterial","Gestellmaterial (max. 30 Werte möglich)", "Material","Material (max. 30 Werte möglich)", "MaterialJV Möbel","MaterialGla","Materialien","Rahmenmaterial", "Material:", "Seat Material", "Stuhlrückenmaterial", "Verglasungsmaterial", "Bettrahmenmaterial", "Bodenmaterial", "Frame Material", "Frame material", "Frame Materiall", "Frame Materialll","Materiall", "Materialll","Materila","Materrial", "Tischplattenmaterial"],
     "ATTR_767": "Verpackung",
     "ATTR_769": "Figuren",
     "ATTR_775": "NO MAPPING", # ---

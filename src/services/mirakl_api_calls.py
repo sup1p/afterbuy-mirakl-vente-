@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 
-async def check_offer_import_error(import_parameter: str, client: httpx.AsyncClient):
+async def check_offer_import_error(import_parameter: str, httpx_client: httpx.AsyncClient):
     """
     Checks for offer import errors in Mirakl system.
     Returns EANs and error messages from the error report.
@@ -31,7 +31,7 @@ async def check_offer_import_error(import_parameter: str, client: httpx.AsyncCli
     url = f"{settings.mirakl_url}/api/offers/imports/{import_parameter}/error_report"
 
     try:
-        response = await client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers)
     except Exception as e:
         logger.error(f"Error while requesting offer import error report: {e}")
         raise Exception("Error while requesting offer import error report from Mirakl") from e
@@ -74,7 +74,7 @@ async def check_offer_import_error(import_parameter: str, client: httpx.AsyncCli
         return {"status": response.status_code, "message": error_json.get("message", "Unknown error")}
 
 
-async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
+async def check_import_error(import_parameter: str, httpx_client: httpx.AsyncClient):
     """
     Checks for product import errors in Mirakl system.
     Returns EANs, errors, and warnings from the transformation error report.
@@ -90,7 +90,7 @@ async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
     )
 
     try:
-        response = await client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers)
     except Exception as e:
         logger.error(f"Error while requesting import error report: {e}")
         raise e("Error while requesting import error report from Mirakl")
@@ -136,7 +136,7 @@ async def check_import_error(import_parameter: str, client: httpx.AsyncClient):
         return {"status": response.status_code, "message": error_json.get("message", "Unknown error")}
 
 
-async def check_non_integrated_products(import_parameter: str, client: httpx.AsyncClient):
+async def check_non_integrated_products(import_parameter: str, httpx_client: httpx.AsyncClient):
     """
     Checks for non-integrated products in Mirakl system.
     Returns EANs, errors, and warnings from the error report.
@@ -152,7 +152,7 @@ async def check_non_integrated_products(import_parameter: str, client: httpx.Asy
     )
 
     try:
-        response = await client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers)
     except Exception as e:
         logger.error(f"Error while requesting non-integrated products: {e}")
         raise e("Error while requesting non-integrated products from Mirakl")
@@ -198,7 +198,7 @@ async def check_non_integrated_products(import_parameter: str, client: httpx.Asy
         return {"status": response.status_code, "message": error_json.get("message", "Unknown error")}
 
 
-async def check_platform_settings(client: httpx.AsyncClient):
+async def check_platform_settings(httpx_client: httpx.AsyncClient):
     """
     Retrieves Mirakl platform configuration settings.
     """
@@ -211,7 +211,7 @@ async def check_platform_settings(client: httpx.AsyncClient):
     }
     
     try:
-        response = await client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers)
     except Exception as e:
         logger.error(f"Error while requesting Mirakl platform settings: {e}")
         raise e("Error while requesting platform settings from Mirakl")
@@ -231,7 +231,7 @@ async def check_platform_settings(client: httpx.AsyncClient):
     return data
 
 
-async def import_product(csv_content, client: httpx.AsyncClient):
+async def import_product(csv_content, httpx_client: httpx.AsyncClient):
     """
     Imports product data to Mirakl system via CSV upload.
     """
@@ -265,7 +265,7 @@ async def import_product(csv_content, client: httpx.AsyncClient):
     url = f"{settings.mirakl_url}/api/offers/imports"
     
     try:
-        response = await client.post(url=url, data=payload, files=files, headers=headers)
+        response = await httpx_client.post(url=url, data=payload, files=files, headers=headers)
     except Exception as exc:
         logger.error(f"Request error while importing product: {exc}")
         results.append({f"product {product_num} error": str(exc)})

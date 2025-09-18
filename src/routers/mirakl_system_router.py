@@ -19,12 +19,12 @@ router = APIRouter()
 
 
 @router.get("/import-product-error/{import_parameter}", tags=["mirakl_platform"])
-async def get_product_error(import_parameter: str, client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Retrieves product import errors from Mirakl system.
     """
     try:
-        result = await check_import_error(import_parameter=import_parameter, client=client)
+        result = await check_import_error(import_parameter=import_parameter, httpx_client=httpx_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -63,12 +63,12 @@ async def get_product_non_integrated(import_parameter: str):
     return {"message": result}
 
 @router.get("/mirakl-offer-import-error/{import_parameter}", tags=["mirakl_platform"])
-async def get_offer_import_error(import_parameter: str, client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def get_offer_import_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Retrieves offer import errors from Mirakl system.
     """
     try:
-        result = await check_offer_import_error(import_parameter=import_parameter, client=client)
+        result = await check_offer_import_error(import_parameter=import_parameter, httpx_client=httpx_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
