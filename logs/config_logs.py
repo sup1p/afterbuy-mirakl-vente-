@@ -6,7 +6,7 @@ os.makedirs("logs", exist_ok=True)
 
 def setup_logging():
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.INFO)
 
     if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
         handler = RotatingFileHandler(
@@ -20,3 +20,6 @@ def setup_logging():
         )
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
+        
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)

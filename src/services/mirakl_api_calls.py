@@ -31,7 +31,7 @@ async def check_offer_import_error(import_parameter: str, httpx_client: httpx.As
     url = f"{settings.mirakl_url}/api/offers/imports/{import_parameter}/error_report"
 
     try:
-        response = await httpx_client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers, timeout=40.0)
     except Exception as e:
         logger.error(f"Error while requesting offer import error report: {e}")
         raise Exception("Error while requesting offer import error report from Mirakl") from e
@@ -90,7 +90,7 @@ async def check_import_error(import_parameter: str, httpx_client: httpx.AsyncCli
     )
 
     try:
-        response = await httpx_client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers, timeout=40.0)
     except Exception as e:
         logger.error(f"Error while requesting import error report: {e}")
         raise e("Error while requesting import error report from Mirakl")
@@ -152,7 +152,7 @@ async def check_non_integrated_products(import_parameter: str, httpx_client: htt
     )
 
     try:
-        response = await httpx_client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers, timeout=40.0)
     except Exception as e:
         logger.error(f"Error while requesting non-integrated products: {e}")
         raise e("Error while requesting non-integrated products from Mirakl")
@@ -211,7 +211,7 @@ async def check_platform_settings(httpx_client: httpx.AsyncClient):
     }
     
     try:
-        response = await httpx_client.get(url, headers=headers)
+        response = await httpx_client.get(url, headers=headers, timeout=40.0)
     except Exception as e:
         logger.error(f"Error while requesting Mirakl platform settings: {e}")
         raise e("Error while requesting platform settings from Mirakl")
@@ -265,7 +265,7 @@ async def import_product(csv_content, httpx_client: httpx.AsyncClient):
     url = f"{settings.mirakl_url}/api/offers/imports"
     
     try:
-        response = await httpx_client.post(url=url, data=payload, files=files, headers=headers)
+        response = await httpx_client.post(url=url, data=payload, files=files, headers=headers, timeout=40.0)
     except Exception as exc:
         logger.error(f"Request error while importing product: {exc}")
         results.append({f"product {product_num} error": str(exc)})

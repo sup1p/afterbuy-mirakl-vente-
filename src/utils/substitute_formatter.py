@@ -57,171 +57,171 @@ logger = logging.getLogger(__name__)
 def substitute_attr(attr_code, filled_attrs, value):
     match attr_code:
         case "ATTR_2":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_2(value)
 
         case "ATTR_3":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_3(value)
 
         case "ATTR_5":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_5(value)
 
         case "ATTR_7":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_7(value)
 
         case "ATTR_8":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_8(value)
 
         case "ATTR_17":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_17(value)
 
         case "ATTR_19":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_19(value)
 
         case "ATTR_32":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_32(value)
 
         case "ATTR_48":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_48(value)
 
         case "ATTR_56":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_56(value)
 
         case "ATTR_58":
-            logger.info(f"Matched case: {attr_code}")
+            logger.indebugfo(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_58(value)
             
         case "ATTR_61":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_61(value)
 
         case "ATTR_68":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_68(value)
 
         case "ATTR_73":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_73(value)
 
         case "ATTR_82":
-            logger.info(f"Matched case: {attr_code}")
+            logger.indebugfo(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_82(value)
             
         case "ATTR_106":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_106(value)
 
         case "ATTR_163":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_163(value)
 
         case "ATTR_175":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_175(value)
 
         case "ATTR_183":
-            logger.info(f"Matched case: {attr_code}")
+            logger.indebugfo(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_183(value)
 
         case "ATTR_259":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_259(value)
 
         case "ATTR_267":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_267(value)
 
         case "ATTR_287":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_287(value)
 
         case "ATTR_391":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_391(value)
 
         case "ATTR_433":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_433(value)
 
         case "ATTR_435":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_435(value)
             
         case "ATTR_557":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_557(value)
 
         case "ATTR_585":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_585(value)
             
         case "ATTR_693":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_693(value)  # Direct assignment without formatting
 
         case "ATTR_717":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_717(value)
 
         case "ATTR_723":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_723(value)
 
         case "ATTR_741":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_741(value)
             
         case "ATTR_745":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_745(value)
 
         case "ATTR_747":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_747(value)
 
         case "ATTR_767":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_767(value)
 
         case "ATTR_769":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_769(value)
             
         case "ATTR_779":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_779(value)
 
         case "ATTR_795":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_795(value)
 
         case "ATTR_805":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_805(value)
 
         case "ATTR_875":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_875(value)
 
         case "ATTR_927":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_927(value)
 
         case "ATTR_928":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_928(value)
 
         case "ATTR_150" | "ATTR_151" | "ATTR_152":
-            logger.info(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             mapping = {
                 "ATTR_150": 0,
                 "ATTR_151": 2,

@@ -32,7 +32,7 @@ def safe_execute(func_name: str, _input_value: Any):
                 if result is None:
                     logger.warning(f"{func_name}: No matching result found for input '{real_input_value}'")
                 else:
-                    logger.info(f"{func_name}: Successfully mapped {real_input_value} -> '{result}'")
+                    logger.debug(f"{func_name}: Successfully mapped {real_input_value} -> '{result}'")
                 return result
             except Exception as e:
                 logger.error(f"{func_name}: Error processing '{real_input_value}': {str(e)}")
@@ -1386,7 +1386,7 @@ def format_723(input_value: List[str]) -> Optional[str]:
     """Форматирование типа подключения"""
     if not validate_input(input_value, list):
         logger.warning("Invalid input for format_723, returning default value")
-        return "77047"
+        return "77049"
         
     value = get_first_value(input_value)
     return "77049" if value == "Stecker/Kabel" else "77047"
@@ -1653,7 +1653,7 @@ def format_747(input_value: List[str]) -> Optional[int]:
                 "Glas, Holz": "89967"
             }
             if third_mapping.get(value) is None:
-                logger.info(f"Material '{value}' not found in third mapping, returning '89969'")
+                logger.warning(f"Material '{value}' not found in third mapping, returning '89969'")
                 return "89969"
             return third_mapping.get(value)
         return material_mapping_extra.get(value)
@@ -1838,7 +1838,7 @@ def format_150_151_152(
     Поддержка размеров '135 x 77 x 90' или 'ca. 9Ft. 248 x 157 x 80 cm'.
     Если index задан, возвращается число с этой позиции (0-based).
     """
-    logger.info(f"Processing numeric value: {value}")
+    logger.debug(f"Processing numeric value: {value}")
     
     try:
         logger.debug(f"value: {value}")

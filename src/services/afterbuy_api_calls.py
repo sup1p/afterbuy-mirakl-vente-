@@ -42,7 +42,7 @@ async def get_access_token(httpx_client: httpx.AsyncClient):
         logger.info("Requesting access token from Afterbuy")
         
         try:
-            response = await httpx_client.post(f"{settings.afterbuy_url}/v1/auth/login", json=credentials)
+            response = await httpx_client.post(f"{settings.afterbuy_url}/v1/auth/login", json=credentials, timeout=40.0)
                 
         except Exception as e:
             logger.error(f"Error while requesting access token: {e}")
@@ -83,7 +83,7 @@ async def get_brand_by_id(brand_id: int, httpx_client: httpx.AsyncClient):
     }
     
     try:
-        response = await httpx_client.get(f"{settings.afterbuy_url}/v1/brands/{brand_id}", headers=headers)
+        response = await httpx_client.get(f"{settings.afterbuy_url}/v1/brands/{brand_id}", headers=headers, timeout=40.0)
     except Exception as e:
         logger.error(f"Error while requesting brand by id: {e}")
         raise Exception(
@@ -112,7 +112,6 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     Retrieves product data by EAN from Afterbuy API.
     Includes HTML description if enabled in settings.
     """
-    logger.info(f"get_product_data with ean: {ean} was accessed")
     
     try:
         access_token = await get_access_token(httpx_client=httpx_client) 
@@ -131,7 +130,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     
     try:
         response = await httpx_client.post(
-            f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data
+            f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data, timeout=40.0
         )
         logger.debug(f"{settings.afterbuy_url}/v1/products/filter?limit={limit} _-------------- {data}")
     except Exception as e:
@@ -216,7 +215,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
     for attempt in range(3):
         try:
             response = await httpx_client.post(
-                f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data
+                f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data, timeout=40.0
             )
             if response.status_code == 200:
                 break
@@ -300,7 +299,7 @@ async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient
     """
     Retrieves HTML description for a specific product from Afterbuy API.
     """
-    logger.info(f"get_product_html_desc with product_id: {product_id} was accessed")
+    logger.debug(f"get_product_html_desc with product_id: {product_id} was accessed")
     
     try:
         access_token = await get_access_token(httpx_client=httpx_client) 
@@ -314,7 +313,7 @@ async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient
     for attempt in range(3):
         try:
             response = await httpx_client.get(
-                f"{settings.afterbuy_url}/v1/products/{product_id}", headers=headers
+                f"{settings.afterbuy_url}/v1/products/{product_id}", headers=headers, timeout=40.0
             )
             if response.status_code == 200:
                 break
@@ -377,7 +376,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
     for attempt in range(3):
         try:
             response = await httpx_client.post(
-                f"{settings.afterbuy_url}/v1/fabrics/find", headers=headers, json=data
+                f"{settings.afterbuy_url}/v1/fabrics/find", headers=headers, json=data, timeout=40.0
             )
             if response.status_code == 200:
                 break

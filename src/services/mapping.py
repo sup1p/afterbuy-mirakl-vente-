@@ -117,6 +117,7 @@ async def _prepare_images(
     pics_list = [pic for pic in pics_list if pic != pure_main_image]
     
     if len(pics_list) < 1:
+        logger.debug("len of the pics_list from which extra_images creates is less than 1")
         return main_image, [], amount_of_resized_images
 
     # Проверка размеров extra image
@@ -142,10 +143,6 @@ async def _prepare_images(
 
     extra_images.extend(resized_error_images)
     amount_of_resized_images = amount_of_resized_images + len(resized_error_images)
-
-    logger.info(
-        f"Total amount of came images: {len(extra_images_not_checked_for_size)}.  Total amount of resized images: {amount_of_resized_images}"
-    )
 
     return main_image, extra_images, amount_of_resized_images
 
@@ -201,7 +198,7 @@ def _build_base_fields(
         "image_8": safe_get(extra_images, 6),
         "image_9": safe_get(extra_images, 7),
         "image_10": safe_get(extra_images, 8),
-        "category": map_categories(int(data.get("category", 0))),
+        "category": map_categories(data.get("category", 0)),
         "ean": data.get("ean"),
         "description": html_desc if html_desc else default_html_description,
         "description_de": html_desc if html_desc else default_html_description,
@@ -214,7 +211,7 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
         return filled_attrs
 
     category_attributes = category_attrs_map.get(int(category), [])
-    logger.debug("Attributes for category %s: %s", category, category_attributes)
+    logger.info("Attributes for category %s: %s", category, category_attributes)
 
     for attr_code in category_attributes:
         value_extra_set = False
@@ -307,6 +304,31 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     - Logs key processing stages.
     """
     logger.info(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
+    
+    if map_categories(data.get("category", 0)) in ("No mapping", 0):
+        logger.info("No mapping for ean: %s \n", data.get("ean"))
+
+        return {
+            "ean": data.get("ean"),
+            
+            "data_for_mirakl": {
+                "sku": data.get("ean"),
+                "product-id": data.get("ean"),
+                "product-id-type": "EAN",
+                "price": data.get("price", 0.00),
+                "state": 11,
+                "quantity": product_quantity_check(data.get("article", "")),
+                "brand": "407",
+                "internal-description": "",
+                "title_de": data.get("article"),
+                "image_1": "https://example.com",
+                "category": map_categories(data.get("category", 0)),
+                "ean": data.get("ean"),
+                "description": default_html_description,
+                "description_de": default_html_description,
+            }
+        }
+    
     # --- images ---
     async with ftp_semaphore:
         async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password) as ftp_client:
@@ -334,7 +356,7 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
         data_for_mirakl["category"],
     )
 
-    logger.debug("Filled Attributes for Mirakl: %s \n", filled_attrs)
+    logger.info("Filled Attributes for Mirakl: %s \n", filled_attrs)
 
     return {"ean": data_for_mirakl.get("ean"), "data_for_mirakl": data_for_mirakl}
 

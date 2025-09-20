@@ -101,6 +101,10 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
     
     not_added_eans = list(all_eans - processed_eans)
     
+    logger.info(
+        f"not_added_eans: {not_added_eans},\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
+    )
+    
     return {
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
