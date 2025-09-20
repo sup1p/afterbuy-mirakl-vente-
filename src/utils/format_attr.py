@@ -1524,6 +1524,7 @@ def format_747(input_value: List[str]) -> Optional[int]:
         return "89969"
         
     material_mapping = {
+        "Leinen":"89901",
         "Textil": "89861",          # Tissu - Polyester / Stoff - Polyester
         "Glas": "89947",            # Verre / Glas
         "Timber": "89967",          # Bois, panneau - Bois / Holz, Platte - Holz

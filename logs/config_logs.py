@@ -10,7 +10,7 @@ def setup_logging():
 
     if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
         handler = RotatingFileHandler(
-            "logs/logs.log",
+            "logs/logs/logs.log",
             maxBytes=5_000_000,
             backupCount=5,
             encoding="utf-8"

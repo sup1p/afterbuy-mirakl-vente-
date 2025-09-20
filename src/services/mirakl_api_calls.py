@@ -234,16 +234,7 @@ async def check_platform_settings(httpx_client: httpx.AsyncClient):
 async def import_product(csv_content, httpx_client: httpx.AsyncClient):
     """
     Imports product data to Mirakl system via CSV upload.
-    """
-    reader = csv.DictReader(io.StringIO(csv_content))
-    first_row = next(reader)   # Get first row
-
-    category = first_row.get("category")
-    product_num = first_row.get("product-id")
-    ean = first_row.get("ean")
-    
-    logger.info(f"Importing product with category: {category}, product_num: {product_num}, ean: {ean}")
-    
+    """    
     
     results = []
     files = {"file": ("products.csv", csv_content, "text/csv")}
@@ -268,7 +259,7 @@ async def import_product(csv_content, httpx_client: httpx.AsyncClient):
         response = await httpx_client.post(url=url, data=payload, files=files, headers=headers, timeout=40.0)
     except Exception as exc:
         logger.error(f"Request error while importing product: {exc}")
-        results.append({f"product {product_num} error": str(exc)})
+        results.append({"product error": str(exc)})
         return {"status": "error", "results": results}
 
     if response.status_code != 201:

@@ -11,6 +11,7 @@ from src.services.afterbuy_api_calls import get_product_data, get_products_by_fa
 from src.services.mapping import map_attributes
 from src.utils.image_worker import resize_image_and_upload
 from src.schemas import TestImageResize
+from src.services.csv_converter import make_big_csv
 
 from logs.config_logs import setup_logging
 
@@ -104,6 +105,18 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
     logger.info(
         f"not_added_eans: {not_added_eans},\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
     )
+    
+    csv_content = make_big_csv(data_for_csv)
+    
+    if not csv_content:
+        logger.error(f"Making csv failed or make_csv got no 'data' for fabric id: {afterbuy_fabric_id}")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
+        )
+    
+    with open("output.csv", "w", encoding="utf-8", newline="") as f:
+        f.write(csv_content)
     
     return {
         "not_added_eans": not_added_eans,

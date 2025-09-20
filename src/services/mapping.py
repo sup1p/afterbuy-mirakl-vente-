@@ -140,6 +140,8 @@ async def _prepare_images(
         for img in processed_images_error_sizes
         if img[1] == "small"
     ]
+    
+    logger.info(f"Resized and uploaded: {len(resized_error_images)}, - {resized_error_images}")
 
     extra_images.extend(resized_error_images)
     amount_of_resized_images = amount_of_resized_images + len(resized_error_images)

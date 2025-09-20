@@ -97,7 +97,7 @@ def substitute_attr(attr_code, filled_attrs, value):
             filled_attrs[attr_code] = format_56(value)
 
         case "ATTR_58":
-            logger.indebugfo(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_58(value)
             
         case "ATTR_61":
@@ -113,7 +113,7 @@ def substitute_attr(attr_code, filled_attrs, value):
             filled_attrs[attr_code] = format_73(value)
 
         case "ATTR_82":
-            logger.indebugfo(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_82(value)
             
         case "ATTR_106":
@@ -129,7 +129,7 @@ def substitute_attr(attr_code, filled_attrs, value):
             filled_attrs[attr_code] = format_175(value)
 
         case "ATTR_183":
-            logger.indebugfo(f"Matched case: {attr_code}")
+            logger.debug(f"Matched case: {attr_code}")
             filled_attrs[attr_code] = format_183(value)
 
         case "ATTR_259":
