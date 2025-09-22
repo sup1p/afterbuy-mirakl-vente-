@@ -1553,12 +1553,13 @@ def format_747(input_value: List[str]) -> Optional[int]:
         "leatherette": "89959",
         "Crystal": "89857",
         "Crystals": "89857",
+        "Acrylic": "89961"
     }
     
     value = get_first_value(input_value)
     
     if material_mapping.get(value) is None:
-        logger.info(f"Material '{value}' not found in primary mapping, returning extra mapping")
+        logger.info(f"ATTR_747 - Material '{value}' not found in primary mapping, returning extra mapping")
         material_mapping_extra = {
             "Textil": "89873",   # Stoff - Baumwolle (или "89861" если Textile → Polyester)
             "Massiv Holz": "89967",  # Holz, Platte - Holz
@@ -1644,7 +1645,7 @@ def format_747(input_value: List[str]) -> Optional[int]:
             "Massivholz": "89967"
         }
         if material_mapping_extra.get(value) is None:
-            logger.info(f"Material '{value}' not found in extra mapping, returning third mapping")
+            logger.info(f"ATTR_747 - Material '{value}' not found in extra mapping, returning third mapping")
             third_mapping = {
                 "Brass": "89913",
                 "Edelstahl": "89907",
