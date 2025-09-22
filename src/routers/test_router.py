@@ -11,7 +11,7 @@ from src.services.afterbuy_api_calls import get_product_data, get_products_by_fa
 from src.services.mapping import map_attributes
 from src.utils.image_worker import resize_image_and_upload
 from src.utils.format_ean import is_valid_ean
-from src.schemas import TestImageResize
+from src.schemas import TestImageResize, MappedProduct, FabricMappedProducts
 from src.services.csv_converter import make_big_csv
 
 from logs.config_logs import setup_logging
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/test-import-product/{ean}/", tags=["test"])
+@router.post("/test-import-product/{ean}/", tags=["test"], response_model=MappedProduct)
 async def test_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
@@ -67,7 +67,7 @@ async def test_import_product(ean: str, afterbuy_fabric_id: int | None = None,ht
         )
     return mapped_data
 
-@router.post("/test-import-products-by-fabric/{afterbuy_fabric_id}", tags=["test"])
+@router.post("/test-import-products-by-fabric/{afterbuy_fabric_id}", tags=["test"], response_model=FabricMappedProducts)
 async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, without importing to Mirakl).
@@ -156,7 +156,7 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
         "data_for_csv_by_fabric": data_for_csv
     }
 
-@router.post("/test-resize-image", tags=["test"])
+@router.post("/test-resize-image", tags=["test"], response_model=str)
 async def test_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for image resizing and FTP upload functionality.

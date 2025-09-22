@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mirakl_api_calls import import_product as import_product_mirakl
 from src.utils.format_ean import is_valid_ean
-from src.schemas import ProductEan
+from src.schemas import ProductEan, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse
 from src.services.csv_converter import make_csv, make_big_csv
 from src.services.mapping import map_attributes
 from src.core.dependencies import get_httpx_client
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/import-product/{ean}", tags=["product"])
+@router.post("/import-product/{ean}", tags=["product"], response_model=MiraklImportResponse)
 async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Import a single product by EAN from Afterbuy to Mirakl.Uses EAN and optional fabric id for getting product
@@ -101,7 +101,7 @@ async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_
     return await import_product_mirakl(csv_content, httpx_client=httpx_client)
 
 
-@router.post("/import-products", tags=["product"])
+@router.post("/import-products", tags=["product"], response_model=ImportManyEanResponse)
 async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Import multiple products by a list of EANs from Afterbuy to Mirakl.
@@ -198,7 +198,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
     }
 
 
-@router.post("/import-products-by-fabric/{afterbuy_fabric_id}", tags=["product"])
+@router.post("/import-products-by-fabric/{afterbuy_fabric_id}", tags=["product"], response_model=ImportFabricProductsResponse)
 async def import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Import products by Afterbuy fabric ID from Afterbuy to Mirakl.
@@ -296,5 +296,4 @@ async def import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
         "total_eans_in_fabric": len(all_eans),
-        "data_for_csv_by_fabric": data_for_csv
     }
