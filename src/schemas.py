@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field
 from typing import List, Union, Optional, Dict
 
 class ProductEan(BaseModel):

@@ -40,27 +40,10 @@ async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClie
     return {"message": result}
 
 
-@router.get("/mirakl-platform-settings", tags=["mirakl_platform"])
-async def get_mirakl_settings(httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
-    """
-    Returns all of the mirakl platform settings used by mirakl API contributors
-
-    Returns:
-        dict: {mirakl answer}.
-    """
-    
-    try:
-        platform_settings = await check_platform_settings(httpx_client)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-        
-    return await platform_settings
-
-
 @router.get(
     "/mirakl-product-non-integrated/{import_parameter}", tags=["mirakl_platform"]
 )
-async def get_product_non_integrated(import_parameter: str):
+async def get_product_non_integrated(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Returns non integrated products of product import parameter - if exists
 
@@ -72,7 +55,7 @@ async def get_product_non_integrated(import_parameter: str):
     """
     
     try:
-        result = await check_non_integrated_products(import_parameter)
+        result = await check_non_integrated_products(import_parameter, httpx_client=httpx_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

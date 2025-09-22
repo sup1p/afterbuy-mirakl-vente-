@@ -650,37 +650,18 @@ async def resize_image_and_upload(
         Exception: If upload fails after all retry attempts.
     """
     
-    # 1. Download bytes
-    img_bytes, err = await download_image_bytes(url, httpx_client)
-    if img_bytes is None:
-        logger.error(f"Error occurred while downloading image: {url}, error: {err}")
-        raise Exception(f"While downloading image: {url}, error: {err}")
-
-    # 2. Resize
-    resized_bytes, ext_or_arr = await asyncio.to_thread(resize_image_bytes, img_bytes)
-    if resized_bytes is None:
-        logger.error(f"Resize error: {ext_or_arr}")
-        raise Exception(f"While resizing image: {url}, error: {ext_or_arr}")
-
-    # 3. Form filename: decode basename and set correct extension
+    # 1. Form filename: decode basename and set correct extension
     path = urlparse(url).path
     orig_file_name = normalize_basename(path)
-    # orig_file_name_with_ext = os.path.basename(path)
-    # orig_file_name_with_ext = unquote(orig_file_name_with_ext)  # convert %20 -> space
-    # print(orig_file_name_with_ext)
-    # orig_file_name, _ = os.path.splitext(orig_file_name_with_ext)
-    # print(orig_file_name)
-    # orig_file_name = normalize_basename(orig_file_name)  # safe name
-    # orig_file_name = f"{orig_file_name}.{ext_or_arr}"
-    # print(orig_file_name)
-
-    # 4. Check existence (file_exists_on_ftp now considers variants)
+    
+    # 2. Check existence (file_exists_on_ftp now considers variants)
     existing_url = await file_exists_on_ftp(
         filename=orig_file_name,
         remote_dir=f"/xlmoebel.at/image/afterbuy_resized_images_for_mirakl/{ean}",
         ean=ean,
         ftp_client=ftp_client
     )
+    
     if existing_url:
         logger.info(f"Image {orig_file_name} already exists in ftp server, returning its address")
         if test:
@@ -690,6 +671,18 @@ async def resize_image_and_upload(
             }
         return existing_url
 
+    # 3. Download bytes
+    img_bytes, err = await download_image_bytes(url, httpx_client)
+    if img_bytes is None:
+        logger.error(f"Error occurred while downloading image: {url}, error: {err}")
+        raise Exception(f"While downloading image: {url}, error: {err}")
+
+    # 4. Resize
+    resized_bytes, ext_or_arr = await asyncio.to_thread(resize_image_bytes, img_bytes)
+    if resized_bytes is None:
+        logger.error(f"Resize error: {ext_or_arr}")
+        raise Exception(f"While resizing image: {url}, error: {ext_or_arr}")
+    
     logger.debug(f"Image {orig_file_name} does not exist in ftp server, importing there")
 
     # 5. FTP upload — logic unchanged, pass normalized name
