@@ -80,47 +80,6 @@ async def get_access_token(httpx_client: httpx.AsyncClient):
         return _access_token
 
 
-async def get_brand_by_id(brand_id: int, httpx_client: httpx.AsyncClient):
-    """
-    Retrieves brand information by brand ID from Afterbuy API.
-    """
-    logger.info(f"get_brand_by_id with brand-id: {brand_id} was accessed")
-    
-    try:
-        access_token = await get_access_token(httpx_client=httpx_client) 
-    except Exception as e:
-        raise e(str(e))
-    
-    headers = {
-        "access-token": access_token,
-        "Accept": "application/json",
-    }
-    
-    try:
-        response = await httpx_client.get(f"{settings.afterbuy_url}/v1/brands/{brand_id}", headers=headers, timeout=40.0)
-    except Exception as e:
-        logger.error(f"Error while requesting brand by id: {e}")
-        raise Exception(
-            f"Error while requesting brand from Afterbuy: {e}",
-        )
-
-    if response.status_code != 200:
-        logger.error(f"Failed to get brand by id: {response.status_code} - {response.text}")
-        raise Exception(
-            f"Error retrieving brand from Afterbuy parser: {response.status_code} - {response.text}",
-        )
-
-    data = response.json()
-    
-    if not data:
-        logger.error(f"No data received when obtaining brand for brand_id {brand_id}")
-        raise Exception(
-            f"No data received when obtaining brand from Afterbuy for brand_id {brand_id}",
-        )
-
-    return data["name"]
-
-
 async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_fabric_id: Optional[int] = None):
     """
     Retrieves product data from the Afterbuy API by EAN.

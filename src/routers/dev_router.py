@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/test-import-product/{ean}/", tags=["test"], response_model=MappedProduct)
-async def test_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
     If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
@@ -68,7 +68,7 @@ async def test_import_product(ean: str, afterbuy_fabric_id: int | None = None,ht
     return mapped_data
 
 @router.post("/test-import-products-by-fabric/{afterbuy_fabric_id}", tags=["test"], response_model=FabricMappedProducts)
-async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, without importing to Mirakl).
 
@@ -157,7 +157,7 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
     }
 
 @router.post("/test-resize-image", tags=["test"], response_model=str)
-async def test_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for image resizing and FTP upload functionality.
 
