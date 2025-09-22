@@ -45,7 +45,7 @@ async def get_access_token(httpx_client: httpx.AsyncClient):
     async with _access_token_lock:
         # If token exists and hasn't expired, return it
         if _access_token and time.time() < _access_token_expiry:
-            logger.info(f"Using cached access token, that will expire in {_access_token_expiry - time.time():.0f} seconds")
+            logger.debug(f"Using cached access token, that will expire in {_access_token_expiry - time.time():.0f} seconds")
             return _access_token
 
         credentials = {

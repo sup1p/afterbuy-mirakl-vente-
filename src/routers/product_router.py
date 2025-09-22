@@ -125,8 +125,17 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
             detail="EAN list is empty",
         )
         
-        
-    tasks = [get_product_data(ean=ean, httpx_client=httpx_client) for ean in ean_list]
+    tasks = []
+    for idx, ean in enumerate(ean_list, start=1):
+        async def wrapper(e=ean, i=idx):
+            try:
+                res = await get_product_data(e, httpx_client)
+                logger.info(f"[{i}/{len(ean_list)}] Got product with EAN={e}")
+                return res
+            except Exception as e:
+                logger.error(f"[{i}/{len(ean_list)}] Error processing product EAN={e}: {e}")
+                return e
+        tasks.append(wrapper())
     results = await asyncio.gather(*tasks, return_exceptions=True)    
     
     data = []
@@ -228,7 +237,17 @@ async def import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx
     
     logger.info(f"Fetched {len(products)} products for fabric {afterbuy_fabric_id}")
     
-    tasks = [map_attributes(prod, httpx_client) for prod in products]
+    tasks = []
+    for idx, prod in enumerate(products, start=1):
+        async def wrapper(p=prod, i=idx):
+            try:
+                res = await map_attributes(p, httpx_client)
+                logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('ean')}")
+                return res
+            except Exception as e:
+                logger.error(f"[{i}/{len(products)}] Error processing product EAN={p.get('ean')}: {e}")
+                return e
+        tasks.append(wrapper())
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
     data_for_csv = []

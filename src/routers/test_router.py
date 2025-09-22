@@ -82,6 +82,7 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
     Raises:
         HTTPException: 500 if data fetch fails, 404 if no products found or CSV creation fails.
     """
+    
     try:
         data = await get_products_by_fabric(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)        
     except Exception as e:
@@ -96,14 +97,30 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
             status_code=404,
             detail=f"No products found for fabric {afterbuy_fabric_id}",
         )
+        
     products = data.get("products", [])
     not_added_eans = data.get("not_added_eans", [])
     all_eans = {prod.get("ean") for prod in products}
+    
     logger.info(f"Fetched {len(products)} products for fabric {afterbuy_fabric_id}")
-    tasks = [map_attributes(prod, httpx_client) for prod in products]
+    
+    tasks = []
+    for idx, prod in enumerate(products, start=1):
+        async def wrapper(p=prod, i=idx):
+            try:
+                res = await map_attributes(p, httpx_client)
+                logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('ean')}")
+                return res
+            except Exception as e:
+                logger.error(f"[{i}/{len(products)}] Error processing product EAN={p.get('ean')}: {e}")
+                return e
+        tasks.append(wrapper())
+
     results = await asyncio.gather(*tasks, return_exceptions=True)
+    
     data_for_csv = []
     processed_eans = set()
+    
     for res in results:
         if isinstance(res, Exception):
             logger.error(f"Error fetching data (not adding it to csv): {res}")
@@ -114,19 +131,24 @@ async def test_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: 
             continue
         processed_eans.add(data_for_mirakl.get("ean"))
         data_for_csv.append(data_for_mirakl)
+        
     not_added_eans = list(all_eans - processed_eans)
     logger.info(
         f"not_added_eans: {not_added_eans},\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
     )
+    
     csv_content = make_big_csv(data_for_csv)
+    
     if not csv_content:
         logger.error(f"Making csv failed or make_csv got no 'data' for fabric id: {afterbuy_fabric_id}")
         raise HTTPException(
             status_code=404,
             detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
         )
+        
     with open("output.csv", "w", encoding="utf-8", newline="") as f:
         f.write(csv_content)
+        
     return {
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
