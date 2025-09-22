@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     # Application behavior settings
     check_image_existence: bool = False
     use_real_html_desc: bool = False
+    use_ean_validator: bool = True  
     special_quantity_word: str
     min_image_height: int
     min_image_width: int

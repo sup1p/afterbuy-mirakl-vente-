@@ -1,19 +1,33 @@
 # XXLmebel 1 API
 
-## Project Overview
-XXLmebel 1 API is a backend service built with FastAPI that acts as a connector between the Afterbuy and Mirakl platforms. It provides endpoints for product data retrieval, CSV generation, and integration error checking, facilitating automated product management and synchronization between e-commerce systems.
+## Project Description
+XXLmebel 1 API is a FastAPI-based backend application designed for automated transfer of large volumes of product data from the Afterbuy platform to the Mirakl (vente-unique) marketplace. The service provides integration, transformation, CSV export, error handling, and logging.
 
-## Features
-- RESTful API built with FastAPI
-- Product data retrieval from Afterbuy
-- Product data mapping and CSV export
-- Mirakl platform integration and error reporting
-- Logging with rotation and persistent log files
+## Purpose
+- Automate product transfer between Afterbuy and Mirakl
+- Generate and export CSV files for import
+- Check integration errors and display status
+- Centralized operation logging
 
-## Requirements
-- Python 3.11 or higher
+## Project Structure
+- `src/` — application source code
+  - `main.py` — FastAPI entry point
+  - `routers/` — API route definitions
+  - `services/` — business logic and integrations
+  - `core/` — application settings
+  - `const/` — constants and attributes
+  - `utils/` — utility functions
+- `logs/` — logging configuration and log files
+- `.env` — environment variables (keys, passwords)
+- `pyproject.toml`, `uv.lock` — dependencies and build configuration
+- `product_samples.json` — sample product data
 
-## Installation
+## Installation and Launch
+### Requirements
+- Python >= 3.11
+- [uv](https://github.com/astral-sh/uv) utility for dependency management
+
+### Installation Steps
 1. Clone the repository:
    ```bash
    git clone <repository_url>
@@ -21,42 +35,59 @@ XXLmebel 1 API is a backend service built with FastAPI that acts as a connector 
    ```
 2. Create and activate a virtual environment:
    ```bash
-   python3.13 -m venv venv
+   python3.11 -m venv venv
    source venv/bin/activate
    ```
-3. Install dependencies using uv:
+3. Install dependencies:
    ```bash
    uv sync
    ```
-   Alternatively, if using PEP 621/pyproject.toml:
+   Or using PEP 621/pyproject.toml:
    ```bash
    uv pip install .
    ```
-4. Configure environment variables:
-   - Copy `.env` file and set the required credentials for Afterbuy and Mirakl platforms.
+4. Copy the `.env` file and specify the required parameters for Afterbuy and Mirakl.
 
-## Usage
-1. Run the API server:
-   ```bash
-   uv run uvicorn src.main:app
-   ```
-2. Access the API:
-   - The root endpoint (`/`) returns a live status.
-   - Product and Mirakl-related endpoints are available under `/create_big_csv`, `/import-product-error/{import_parameter}`, `/mirakl-platform-settings`, and `/mirakl-product-non-integrated/{import_parameter}`.
-3. Logging:
-   - Logs are stored in `logs/logs.log` with rotation enabled.
+### Server Launch
+```bash
+uv run uvicorn src.main:app
+```
 
-## Project Structure
-- `src/` - Main application code
-  - `main.py` - FastAPI application entry point
-  - `routers/` - API route definitions
-  - `services/` - Business logic and integrations
-  - `core/` - Application settings
-  - `const/` - Constants and attribute mappings
-  - `utils/` - Utility functions
-- `logs/` - Logging configuration and log files
-- `.env` - Environment variables for credentials and API keys
+## Usage Examples
+### 1. Check server status
+```bash
+curl http://localhost:8000/
+```
+Response:
+```json
+{"status": "ok"}
+```
+
+### 2. Import large CSV based on fabric id
+```bash
+curl -X POST http://localhost:8000/import-products-by-fabric/{fabric_id}
+```
+
+### 3. Get import errors
+```bash
+curl http://localhost:8000/import-product-error/{import_parameter}
+```
+
+### 4. Get Mirakl platform settings
+```bash
+curl http://localhost:8000/mirakl-platform-settings
+```
+
+### 5. Swagger UI
+For interactive API testing, open in your browser:
+```
+http://localhost:8000/docs
+```
 
 ## Additional Notes
-- Ensure all required environment variables are set in `.env` before launching the application.
-- For production deployments, configure proper security and access controls.
+- All environment variables must be correctly specified in `.env` before starting the application.
+- For production deployments, it is recommended to configure security and access control.
+- Operation logs are saved in `logs/logs.log` with rotation enabled.
+
+## Contacts
+For technical questions and support, contact the project developer.

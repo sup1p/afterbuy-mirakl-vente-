@@ -1,6 +1,6 @@
 """
 Dependency injection module for FastAPI.
-Provides HTTP and FTP client instances for API endpoints.
+Provides HTTP client instances for API endpoints.
 """
 
 from src import resources

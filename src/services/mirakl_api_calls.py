@@ -7,8 +7,6 @@ from src.core.settings import settings
 from logs.config_logs import setup_logging
 
 from io import BytesIO
-import io
-import csv
 import pandas as pd
 import logging
 import httpx
@@ -21,8 +19,24 @@ logger = logging.getLogger(__name__)
 
 async def check_offer_import_error(import_parameter: str, httpx_client: httpx.AsyncClient):
     """
-    Checks for offer import errors in Mirakl system.
-    Returns EANs and error messages from the error report.
+    Retrieve and parse the Mirakl offer import error report.
+
+    The function requests the error report for a specific offer import 
+    and extracts EANs (if available) and related error messages.
+
+    Args:
+        import_parameter (str): Import identifier provided by Mirakl.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        dict: Dictionary with the following keys:
+            - status (int): HTTP-like status indicator.
+            - ean (list[str] | None): List of EANs extracted from the report (if available).
+            - errors (list[str] | None): List of error messages (if available).
+            - message (str, optional): Returned if no errors are found or on failure.
+
+    Raises:
+        Exception: If the request to Mirakl fails.
     """
     logger.info(f"Checking offer import error for parameter: {import_parameter}")
     headers = {
@@ -138,9 +152,27 @@ async def check_import_error(import_parameter: str, httpx_client: httpx.AsyncCli
 
 async def check_non_integrated_products(import_parameter: str, httpx_client: httpx.AsyncClient):
     """
-    Checks for non-integrated products in Mirakl system.
-    Returns EANs, errors, and warnings from the error report.
+    Retrieve and parse the Mirakl error report for non-integrated products.
+
+    The function checks for products that were not successfully integrated 
+    during the import process and extracts EANs, errors, and warnings.
+
+    Args:
+        import_parameter (str): Import identifier provided by Mirakl.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        dict: Dictionary with the following keys:
+            - status (int): HTTP-like status indicator.
+            - ean (list[str] | None): List of EANs (if available).
+            - errors (list[str] | None): List of error messages (if available).
+            - warnings (list[str] | None): List of warnings (if available).
+            - message (str, optional): Returned if no errors/warnings are found or on failure.
+
+    Raises:
+        Exception: If the request to Mirakl fails.
     """
+    
     logger.info(f"Checking non-integrated products for parameter: {import_parameter}")
     headers = {
         "Authorization": settings.mirakl_api_key,
@@ -200,8 +232,21 @@ async def check_non_integrated_products(import_parameter: str, httpx_client: htt
 
 async def check_platform_settings(httpx_client: httpx.AsyncClient):
     """
-    Retrieves Mirakl platform configuration settings.
+    Retrieve Mirakl platform configuration settings.
+
+    The function requests platform-level configuration data, 
+    such as enabled modules and system parameters.
+
+    Args:
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        dict: JSON response containing platform configuration.
+
+    Raises:
+        Exception: If the request fails or Mirakl returns invalid/empty data.
     """
+    
     logger.info("Checking Mirakl platform settings")
     url = f"{settings.mirakl_url}/api/platform/configuration"
 
@@ -233,8 +278,24 @@ async def check_platform_settings(httpx_client: httpx.AsyncClient):
 
 async def import_product(csv_content, httpx_client: httpx.AsyncClient):
     """
-    Imports product data to Mirakl system via CSV upload.
-    """    
+    Import product data into Mirakl via CSV upload.
+
+    The function sends a CSV file containing product data to the Mirakl API 
+    and initiates the import process. Import settings include AI enrichment 
+    and rewrite options, as well as operator format.
+
+    Args:
+        csv_content (bytes): CSV file content to be uploaded.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        dict: Dictionary with the following keys:
+            - status (str): "done" if request succeeded, "error" otherwise.
+            - results (list[dict]): List of results or errors from the import process.
+
+    Raises:
+        Exception: Not raised explicitly, but request failures are logged and returned in results.
+    """
     
     results = []
     files = {"file": ("products.csv", csv_content, "text/csv")}

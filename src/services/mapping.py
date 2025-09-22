@@ -33,13 +33,44 @@ ftp_semaphore = asyncio.Semaphore(5)
 
 
 def _log_html_length(html_desc: str | None):
+    """
+    Logs the length of the extracted HTML description.
+
+    Args:
+        html_desc (str | None): The HTML description string or None.
+    """
+    
     logger.debug("Extracted HTML description length: %s", len(html_desc) if html_desc else 0)
 
 
 def safe_get(images, idx):
+    """
+    Safely retrieves an image from a list by index.
+
+    Args:
+        images (list): List of image URLs.
+        idx (int): Index of the image to retrieve.
+
+    Returns:
+        str: Image URL if available, otherwise an empty string.
+    """
+    
     return images[idx] if idx < len(images) else ""
 
 def normalize_url(url):
+    """
+    Normalizes product image URLs:
+    - Fixes malformed protocol (https:: → https:).
+    - Splits concatenated URLs.
+    - Cleans duplicated extensions.
+
+    Args:
+        url (str): Original URL string.
+
+    Returns:
+        str: Normalized URL.
+    """
+    
     # Исправляем https:: на https:
     url = re.sub(r'https?::?//', 'https://', url)
     
@@ -62,8 +93,27 @@ async def _prepare_images(
     ftp_client = aioftp.Client,
 ):
     """
-    Validates and processes product images. Returns tuple:
-    (main_image_url, extra_images_urls_list, amount_of_resized_images)
+    Validates and processes product images.
+
+    Workflow:
+    - Ensures the main image exists and resizes if needed.
+    - Extracts extra images from raw string.
+    - Validates and resizes small images.
+    - Uploads resized images via FTP.
+
+    Args:
+        data (dict): Product data dictionary.
+        httpx_client (httpx.AsyncClient): HTTP client for image validation.
+        ftp_client (aioftp.Client): FTP client for uploading images.
+
+    Returns:
+        tuple[str, list[str], int]:
+            - main_image_url (str)
+            - extra_images_urls (list of str)
+            - amount_of_resized_images (int)
+
+    Raises:
+        Exception: If the main image is missing or inaccessible.
     """
     # --- main image ---
     main_image = data.get("pic_main", "")
@@ -152,7 +202,12 @@ async def _prepare_images(
 def _parse_properties(properties_raw: str) -> dict:
     """
     Parses product properties from JSON string.
-    Returns empty dict if JSON is invalid.
+
+    Args:
+        properties_raw (str): Raw JSON string containing product properties.
+
+    Returns:
+        dict: Parsed properties, or empty dict if invalid JSON.
     """
     try:
         filtered_properties = json.loads(properties_raw)
@@ -164,6 +219,20 @@ def _parse_properties(properties_raw: str) -> dict:
 
 
 def _build_html_description(data: dict) -> str | None:
+    """
+    Extracts and adjusts HTML product description.
+
+    Rules:
+    - Discards too short descriptions (< 51 chars).
+    - Duplicates text if length is between 51–100 chars.
+
+    Args:
+        data (dict): Product data containing 'html_description'.
+
+    Returns:
+        str | None: Processed HTML description or None if invalid.
+    """
+    
     html_desc = extract_product_properties_from_html(data.get("html_description"))
     if not html_desc or len(html_desc) < 51:
         html_desc = None
@@ -179,6 +248,19 @@ def _build_base_fields(
     extra_images: list[str],
     html_desc: str | None,
 ) -> dict:
+    """
+    Builds base Mirakl product fields.
+
+    Args:
+        data (dict): Product data dictionary.
+        main_image (str): Main image URL.
+        extra_images (list[str]): List of extra image URLs.
+        html_desc (str | None): Processed HTML description.
+
+    Returns:
+        dict: Dictionary with base product fields for Mirakl.
+    """
+    
     return {
         "sku": data.get("ean"),
         "product-id": data.get("ean"),
@@ -208,6 +290,22 @@ def _build_base_fields(
 
 
 def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
+    """
+    Fills category-specific attributes for a product.
+
+    Workflow:
+    - Maps attributes using predefined mapping dictionaries.
+    - Applies fallbacks or default values if mapping is missing.
+    - Handles extra attributes if defined.
+
+    Args:
+        filtered_properties (dict): Parsed product properties.
+        category (str): Target Mirakl category ID.
+
+    Returns:
+        dict: Dictionary of filled category attributes.
+    """
+    
     filled_attrs: dict = {}
     if category == "No mapping":
         return filled_attrs
@@ -217,7 +315,6 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
 
     for attr_code in category_attributes:
         value_extra_set = False
-        value_set = False
         value = None
         value_extra = None
 
@@ -300,11 +397,26 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
 
 async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     """
-    Prepares dictionary for Mirakl.
-    - Processes images (up to 10).
-    - Maps category attributes from mapping dictionaries.
-    - Logs key processing stages.
+    Maps Afterbuy product data into Mirakl-compatible format.
+
+    Workflow:
+    - Processes product images (main + extras).
+    - Parses and maps product properties.
+    - Builds base fields and category attributes.
+    - Logs processing stages.
+
+    Args:
+        data (dict): Raw product data from Afterbuy.
+        httpx_client (httpx.AsyncClient): HTTP client for image validation.
+
+    Returns:
+        dict: Dictionary with structure:
+              {
+                  "ean": str,
+                  "data_for_mirakl": dict
+              }
     """
+    
     logger.info(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
     
     if map_categories(data.get("category", 0)) in ("No mapping", 0):
@@ -365,8 +477,15 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
 
 def map_categories(afterbuy_category_num: int) -> str | list[str]:
     """
-    Finds mapping for Afterbuy → Mirakl category.
+    Maps Afterbuy category number to Mirakl category.
+
+    Args:
+        afterbuy_category_num (int): Afterbuy category number.
+
+    Returns:
+        str | list[str]: Corresponding Mirakl category ID(s), or "No mapping" if not found.
     """
+    
     key = str(afterbuy_category_num)
 
     # Check that dictionary is loaded

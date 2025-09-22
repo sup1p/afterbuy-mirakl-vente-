@@ -21,8 +21,15 @@ router = APIRouter()
 @router.get("/import-product-error/{import_parameter}", tags=["mirakl_platform"])
 async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
-    Retrieves product import errors from Mirakl system.
+    Returns error of product import parameter - if exists
+
+    Args:
+        import_parameter (str): import parameter that mirakl platform gave when product was imported.
+
+    Returns:
+        dict: {message: mirakl answer}.
     """
+    
     try:
         result = await check_import_error(import_parameter=import_parameter, httpx_client=httpx_client)
     except Exception as e:
@@ -36,8 +43,12 @@ async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClie
 @router.get("/mirakl-platform-settings", tags=["mirakl_platform"])
 async def get_mirakl_settings(httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
-    Retrieves Mirakl platform configuration settings.
+    Returns all of the mirakl platform settings used by mirakl API contributors
+
+    Returns:
+        dict: {mirakl answer}.
     """
+    
     try:
         platform_settings = await check_platform_settings(httpx_client)
     except Exception as e:
@@ -51,8 +62,15 @@ async def get_mirakl_settings(httpx_client: httpx.AsyncClient = Depends(get_http
 )
 async def get_product_non_integrated(import_parameter: str):
     """
-    Retrieves non-integrated products from Mirakl system.
+    Returns non integrated products of product import parameter - if exists
+
+    Args:
+        import_parameter (str): import parameter that mirakl platform gave when product was imported.
+
+    Returns:
+        dict: {message: mirakl answer}.
     """
+    
     try:
         result = await check_non_integrated_products(import_parameter)
     except Exception as e:
@@ -65,8 +83,15 @@ async def get_product_non_integrated(import_parameter: str):
 @router.get("/mirakl-offer-import-error/{import_parameter}", tags=["mirakl_platform"])
 async def get_offer_import_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
-    Retrieves offer import errors from Mirakl system.
+    Returns offer error of import parameter - if exists
+
+    Args:
+        import_parameter (str): import parameter that mirakl platform gave when product offer was imported.
+
+    Returns:
+        dict: {message: mirakl answer}.
     """
+    
     try:
         result = await check_offer_import_error(import_parameter=import_parameter, httpx_client=httpx_client)
     except Exception as e:

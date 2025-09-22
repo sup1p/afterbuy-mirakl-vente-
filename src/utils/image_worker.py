@@ -24,6 +24,23 @@ logger = logging.getLogger(__name__)
 
 
 async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient, retries: int = 3, timeout: int = 5) -> bool:
+    """
+    Verify whether an image is accessible at the given URL.
+
+    The function attempts to check the image's availability using an HTTP HEAD request. 
+    If HEAD is not supported (403/405), it falls back to GET. Retries with exponential 
+    backoff are used in case of failures.
+
+    Args:
+        image_url (str): The URL of the image.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+        retries (int, optional): Number of retry attempts. Defaults to 3.
+        timeout (int, optional): Timeout per request in seconds. Defaults to 5.
+
+    Returns:
+        bool: True if the image is accessible (HTTP 200), False otherwise.
+    """
+    
     if settings.check_image_existence is False:
         return True
 
@@ -52,8 +69,22 @@ async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient,
 
 async def get_image_size(url: str, httpx_client: httpx.AsyncClient):
     """
-    Retrieves image dimensions by downloading first 2000KB of the image.
+    Retrieve image dimensions by partially downloading the image.
+
+    Downloads the first 2 MB of the image to read its metadata and determine 
+    width and height without fetching the entire file.
+
+    Args:
+        url (str): Image URL.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        tuple: A tuple (url, (width, height)) if successful, or (url, Exception) if an error occurred.
+
+    Raises:
+        Exception: If all retry attempts fail or a non-recoverable error occurs.
     """
+    
     for attempt in range(3):
         try:
             headers = {"Range": "bytes=0-2000000"}  # Read first 2000KB
@@ -84,8 +115,21 @@ async def get_image_size(url: str, httpx_client: httpx.AsyncClient):
 
 async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
     """
-    Asynchronously checks image dimensions for compliance with requirements using gather.
+    Validate multiple images asynchronously and check their dimensions.
+
+    Uses asyncio.gather to fetch image sizes in parallel. 
+    Validates dimensions against configured minimum width and height.
+
+    Args:
+        urls (list[str]): List of image URLs to process.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        dict: Dictionary containing:
+            - sizes (dict): Mapping {url: (width, height)} for valid images.
+            - errors (list): List of (url, error) tuples for invalid or small images.
     """
+    
     if len(urls) > 1:
         tasks = [get_image_size(url, httpx_client) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -126,6 +170,20 @@ async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
 
 
 async def download_image_bytes(url: str, httpx_client: httpx.AsyncClient):
+    """
+    Download image content as raw bytes.
+
+    Verifies that the response has an image Content-Type header. 
+    Retries are performed with incremental backoff.
+
+    Args:
+        url (str): Image URL.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+
+    Returns:
+        tuple: (image_bytes, None) if successful, (None, error_message/Exception) if failed.
+    """
+    
     for attempt in range(3):
         try:
             resp = await httpx_client.get(url, timeout=40.0)
@@ -157,6 +215,19 @@ async def download_image_bytes(url: str, httpx_client: httpx.AsyncClient):
 
 
 def resize_image_bytes(img_bytes: bytes):
+    """
+    Resize an image to meet minimum width/height requirements.
+
+    The function scales the image proportionally based on configured minimum 
+    dimensions. Images with transparency are saved as PNG, otherwise JPEG.
+
+    Args:
+        img_bytes (bytes): Raw image bytes.
+
+    Returns:
+        tuple: (resized_image_bytes, extension) on success, (None, error_message) on failure.
+    """
+    
     try:
         with Image.open(io.BytesIO(img_bytes)) as im:
             w, h = im.size
@@ -200,6 +271,21 @@ def resize_image_bytes(img_bytes: bytes):
 
 # Helper: normalizes name from URL/basename
 def normalize_basename(name: str) -> str:
+    """
+    Normalize a filename extracted from a URL or path.
+
+    - Decodes percent-encoding.
+    - Removes control characters.
+    - Replaces slashes with underscores.
+    - Compresses multiple spaces into one.
+
+    Args:
+        name (str): Original filename or path fragment.
+
+    Returns:
+        str: A safe, normalized filename.
+    """
+    
     # Decode percent-encoding
     name = unquote(name or "")
     # Remove control characters
@@ -333,6 +419,27 @@ async def resize_image_and_upload(
     httpx_client: httpx.AsyncClient,
     test: Optional[bool] = False
 ) -> str:
+    """
+    Upload a file to an FTP server with retry logic.
+
+    Creates the target directory if it does not exist, then uploads the file. 
+    A temporary local file is created during the process and deleted after completion.
+
+    Args:
+        data (bytes): File content to upload.
+        filename (str): Local filename to assign during upload.
+        remote_dir (str): Remote directory path on the FTP server.
+        ean (str): Product EAN code, used for remote path construction.
+        ftp_client (aioftp.Client): Asynchronous FTP client instance.
+        max_retries (int, optional): Number of retry attempts. Defaults to 3.
+
+    Returns:
+        str: URL of the uploaded file on the FTP server.
+
+    Raises:
+        Exception: If upload fails after all retry attempts.
+    """
+    
     # 1. Download bytes
     img_bytes, err = await download_image_bytes(url, httpx_client)
     if img_bytes is None:

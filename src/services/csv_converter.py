@@ -13,8 +13,22 @@ logger = logging.getLogger(__name__)
 
 def make_csv(data):
     """
-    Converts JSON (dict | list[dict]) → CSV (string in memory).
+    Converts a JSON object or list of JSON objects into a CSV string.
+
+    The function accepts either a single dictionary or a list of dictionaries,
+    determines the field names dynamically (to support heterogeneous structures),
+    and writes the data into an in-memory CSV string.
+
+    Args:
+        data (dict | list[dict]): Input JSON data.
+
+    Returns:
+        str: CSV representation of the data as a string. Returns an empty string if input is invalid.
+
+    Raises:
+        None explicitly, but logs an error if non-dict objects are encountered.
     """
+    
     if not data:  # empty value
         logger.warning("make_csv received empty data")
         return ""
@@ -52,8 +66,22 @@ def make_csv(data):
 
 def make_big_csv(data):
     """
-    Converts list of JSON objects → CSV (string in memory).
+    Converts a list of JSON objects into a CSV string.
+
+    Unlike `make_csv`, this function only accepts a list of dictionaries.
+    It collects all keys across the list to support heterogeneous data structures
+    and writes the data into an in-memory CSV string.
+
+    Args:
+        data (list[dict]): List of JSON objects.
+
+    Returns:
+        str: CSV representation of the data as a string. Returns an empty string if input is invalid.
+
+    Raises:
+        None explicitly, but logs an error if non-dict objects are encountered.
     """
+    
     if not data or not isinstance(data, list):
         logger.error("make_big_csv received empty or invalid data")
         return ""

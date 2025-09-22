@@ -9,7 +9,6 @@ from logs.config_logs import setup_logging
 import httpx
 import logging
 import time
-import json
 import asyncio
 
 setup_logging()
@@ -23,9 +22,23 @@ _access_token_lock = asyncio.Lock()
 
 async def get_access_token(httpx_client: httpx.AsyncClient):
     """
-    Retrieves and manages Afterbuy API access token.
-    Uses caching to avoid unnecessary authentication requests.
+    Retrieves and caches the Afterbuy API access token.
+
+    The function uses global variables to store the token and its expiration time.
+    If a valid token already exists, the cached value is returned.
+    Otherwise, a new authentication request to the Afterbuy API is performed.
+
+    Args:
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client used for making requests.
+
+    Returns:
+        str: A valid access token.
+
+    Raises:
+        Exception: If the token cannot be retrieved due to a network error,
+            invalid response status, or empty response data.
     """
+    
     global _access_token, _access_token_expiry
     
     async with _access_token_lock:
@@ -109,8 +122,25 @@ async def get_brand_by_id(brand_id: int, httpx_client: httpx.AsyncClient):
 
 async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     """
-    Retrieves product data by EAN from Afterbuy API.
-    Includes HTML description if enabled in settings.
+    Retrieves product data from the Afterbuy API by EAN.
+
+    The function requests product information from Afterbuy, using a valid access token.
+    If enabled in settings, it also fetches the real HTML description for the product.
+    Otherwise, a sample HTML description is added.
+
+    Args:
+        ean (int): Product EAN (European Article Number).
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client used for API requests.
+
+    Returns:
+        dict: Product data including metadata and optionally an HTML description.
+
+    Raises:
+        Exception: If the access token cannot be retrieved,
+            if the request to Afterbuy fails,
+            if the response status is not 200,
+            if no product data is returned,
+            or if fetching the HTML description fails.
     """
     
     try:
@@ -158,7 +188,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     if isinstance(data, list) and data[0].get('id'):
         try:
             if settings.use_real_html_desc:
-                data[0]['html_description'] = await get_product_html_desc(data[0].get('id'), httpx_client)
+                data[0]['html_description'] = await _get_product_html_desc(data[0].get('id'), httpx_client)
             else:
                 logger.debug(f"Skipping fetching real html description for product with ean {ean} as per settings")
                 data[0]['html_description'] = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
@@ -170,7 +200,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     elif isinstance(data, dict) and data.get('id'):
         try:
             if settings.use_real_html_desc:
-                data['html_description'] = await get_product_html_desc(data.get('id'), httpx_client)
+                data['html_description'] = await _get_product_html_desc(data.get('id'), httpx_client)
             else:
                 logger.debug(f"Skipping fetching real html description for product with ean {ean} as per settings")
                 data['html_description'] = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
@@ -189,8 +219,27 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
 
 async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient):
     """
-    Retrieves all products associated with a specific fabric ID from Afterbuy API.
-    Processes products in parallel with semaphore for rate limiting.
+    Retrieves all products associated with a specific fabric ID from the Afterbuy API.
+
+    The function first resolves the internal fabric ID from the provided Afterbuy fabric ID.
+    It then requests all related products from Afterbuy, applying retry logic for reliability.
+    For each product, it optionally enriches the data with an HTML description, fetched
+    in parallel with a semaphore to limit concurrency.
+
+    Args:
+        afterbuy_fabric_id (int): The fabric identifier used in Afterbuy.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client for making API requests.
+
+    Returns:
+        dict: A dictionary containing:
+            - "products" (list[dict]): Successfully retrieved and enriched product data.
+            - "not_added_eans" (list[str]): List of EANs for products that failed to process.
+
+    Raises:
+        Exception: If access token retrieval fails,
+            if the request to Afterbuy repeatedly fails,
+            if no products are returned,
+            or if product enrichment encounters unrecoverable errors.
     """
     logger.info(f"get_products_and_data_by_fabric with afterbuy_fabric_id: {afterbuy_fabric_id} was accessed")
     
@@ -253,7 +302,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
                         # Retry logic for product description
                         for attempt in range(3):
                             try:
-                                product["html_description"] = await get_product_html_desc(product["id"], httpx_client)
+                                product["html_description"] = await _get_product_html_desc(product["id"], httpx_client)
                                 break
                             except Exception as e:
                                 if attempt == 2:
@@ -295,7 +344,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
     }
 
 
-async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient):
+async def _get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient):
     """
     Retrieves HTML description for a specific product from Afterbuy API.
     """
@@ -357,7 +406,24 @@ async def get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient
 
 async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient):
     """
-    Returns fabric ID in parser based on afterbuy_fabric_id for product search.
+    Retrieves the internal fabric ID for product search based on the Afterbuy fabric ID.
+
+    The function requests the fabric information from the Afterbuy API using the provided
+    Afterbuy fabric ID. Retry logic is applied for reliability. If multiple or single fabric
+    objects are returned, the corresponding internal fabric ID is extracted.
+
+    Args:
+        afterbuy_fabric_id (int): Fabric identifier in the Afterbuy system.
+        httpx_client (httpx.AsyncClient): Asynchronous HTTP client for API requests.
+
+    Returns:
+        int: The internal fabric ID used in the parser.
+
+    Raises:
+        Exception: If the access token cannot be retrieved,
+            if the API request repeatedly fails,
+            if no fabric data is returned,
+            or if the fabric ID cannot be extracted from the response.
     """
     
     try:
