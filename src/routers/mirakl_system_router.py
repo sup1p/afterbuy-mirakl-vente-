@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.mirakl_api_calls import (
     check_import_error,
-    check_platform_settings,
     check_non_integrated_products,
     check_offer_import_error
 )

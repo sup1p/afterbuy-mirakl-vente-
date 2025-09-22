@@ -186,7 +186,6 @@ def _parse_jpeg_size(data: bytes) -> Optional[Tuple[int,int]]:
                     return None
                 # precision = data[idx+2]; height = next two; width = next two
                 # But segment length includes these, so safe to read if present
-                precision = data[idx+2]
                 height = struct.unpack(">H", data[idx+3:idx+5])[0]
                 width = struct.unpack(">H", data[idx+5:idx+7])[0]
                 return width, height
