@@ -5,6 +5,7 @@ Handles authentication, product data retrieval, and brand information from After
 
 from src.core.settings import settings
 from logs.config_logs import setup_logging
+from typing import Optional
 
 import httpx
 import logging
@@ -120,13 +121,14 @@ async def get_brand_by_id(brand_id: int, httpx_client: httpx.AsyncClient):
     return data["name"]
 
 
-async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
+async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_fabric_id: Optional[int] = None):
     """
     Retrieves product data from the Afterbuy API by EAN.
 
     The function requests product information from Afterbuy, using a valid access token.
     If enabled in settings, it also fetches the real HTML description for the product.
     Otherwise, a sample HTML description is added.
+    If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
 
     Args:
         ean (int): Product EAN (European Article Number).
@@ -153,6 +155,9 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient):
     data = {
         "ean": str(ean)
     }
+    
+    if afterbuy_fabric_id:
+        data["fabric_id"] = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)
 
     limit = 100
     

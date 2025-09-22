@@ -26,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/test-import-product/{ean}", tags=["test"])
-async def test_import_product(ean: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+@router.post("/test-import-product/{ean}/", tags=["test"])
+async def test_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
     Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
+    If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
 
     Args:
         ean (str): EAN code of the product.
@@ -46,8 +47,9 @@ async def test_import_product(ean: str, httpx_client: httpx.AsyncClient = Depend
             status_code=400,
             detail=f"Invalid EAN {ean}"
         )
+        
     try:
-        data = await get_product_data(ean=int(ean), httpx_client=httpx_client)
+        data = await get_product_data(ean=int(ean), afterbuy_fabric_id=afterbuy_fabric_id,httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(

@@ -27,12 +27,14 @@ router = APIRouter()
 
 
 @router.post("/import-product/{ean}", tags=["product"])
-async def import_product(ean: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
     """
-    Import a single product by EAN from Afterbuy to Mirakl.
+    Import a single product by EAN from Afterbuy to Mirakl.Uses EAN and optional fabric id for getting product
+    
 
     Args:
-        ean (int): EAN code of the product to import.
+        ean (str): EAN code of the product to import.
+        afterbuy_fabric_id (int): Optional parameter if user wants to get exact product
         httpx_client (httpx.AsyncClient): HTTP client dependency.
 
     Returns:
@@ -50,7 +52,7 @@ async def import_product(ean: str, httpx_client: httpx.AsyncClient = Depends(get
         )
     
     try:
-        data = await get_product_data(ean=ean, httpx_client=httpx_client)
+        data = await get_product_data(ean=ean, afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(
