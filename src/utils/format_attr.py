@@ -226,6 +226,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "wie abgebildet": "5",
         "Bronze": "79",
         "White": "9",
+        "Ohne Rahmen": "9",
         "Weiß-Grau": "9",
         "Whte": "9",
         "Coral": "118529"
@@ -290,6 +291,7 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
         "Black + Orange": "33",      # черный в color_map → "33"
         "Blue,Black": "11",          # Blue → "11"
         "White,Blue": "9",           # White → "9"
+        "Ohne": "9",
         "Beige- Brown": "7",         # Beige → "7"
         "Blue + White": "11",        # Blue → "11"
         "Silver-Transparent": "5",   # есть в color_map
@@ -506,7 +508,7 @@ def format_17(input_value: List[str]) -> Optional[str]:
         return "375"
         
     form_mapping = {
-        # --- квадрат/прямоугольник ---
+        # --- квадрат/прямоугольник --- 
         "Rechteckig": "377",
         "Rectangular": "377",
         "Rectangle": "377",
@@ -620,6 +622,94 @@ def format_17(input_value: List[str]) -> Optional[str]:
         "Mond": None,
         "Sonne": "40361",
         "Blume": "40363",
+        # --- квадрат ---
+        "quadratisch": "375",
+        "Viereck": "375",
+        "Würfel": "375",
+        "Cube": "375",
+        "dice": "375",
+        "Eckig": "375",
+        "Eckform": "375",
+
+        "Recnagular": "377",
+        "Zeile": "377",
+        "Gerade": "377",
+        "Eckschreibtisch": "377",
+
+        "Runde": "379",
+        "rund": "379",
+        "Around": "379",
+        "Kugel": "379",
+        "Ball": "379",
+        "Circle": "379",
+
+        "oval": "381",
+
+        # --- треугольник ---
+        "Triangular": "119780",
+
+        # --- органическая форма ---
+        "Organisch": "40359",
+        "Organic": "40359",
+        "Organique": "40359",
+        "Irregular": "40359",
+        "Wellig": "40359",
+        "Besondere Form": "40359",
+        "Sonderform": "40359",
+        "Eckbank": "40359",
+        "Ecke": "40359",
+        "Winklig": "40359",
+
+        # --- цветок ---
+        "Flower": "40363",
+        "Fleur": "40363",
+        "Blatt": "40363",
+
+        # --- солнце ---
+        "Sun": "40361",
+        "Soleil": "40361",
+
+        # --- асимметричная ---
+        "Asymmetric": "24951",
+        "Asymétrique": "24951",
+
+        # --- четверть круга ---
+        "Quarter -circle": "24953",
+        "Quart de cercle": "24953",
+
+        # --- шестиугольник ---
+        "Hexagone": "40357",
+
+        # --- коническая ---
+        "Cone-shaped": "113431",
+        "Kegelförmig": "113431",
+        "Kegeldach": "113431",
+
+        # --- цилиндрическая ---
+        "Cylindrique": "113433",
+        "Zylindrisch": "113433",
+        "Cylinder": "113433",
+        "Säule": "113433",
+        "Column": "113433",
+        "Pillar": "113433",
+
+        # --- песочные часы ---
+        "Sablier": "113432",
+
+        # --- каплевидная / груша ---
+        "Bean bag": "114010",
+        "Birnenförmig": "114010",
+        "Ein Tropfen": "114010",
+
+        # --- ракушка ---
+        "Seashell": "125602",
+        "Snail Shell": "125602",
+
+        # --- дом / рука ---
+        "Home": "125600",
+
+        # --- яйцо ---
+        "Egg": "125601",
     }
     
     if form_mapping.get(get_first_value(input_value)) is None:
@@ -661,7 +751,68 @@ def format_19(input_value: List[str]) -> Optional[str]:
         "Moderner Stil": "393",
         "Mitte Jahrhundert Modern": "393",
         "Retro": "393",
-        "Designer": "391"
+        "Designer": "391",
+        # ---- Stil der Armlehne ----
+        "Abgerundeter Wedge Arm": "395",
+        "Quadratischer Arm": "395",
+        "Klasssisch": "395",
+        "Klasssich": "395",
+        "Rundarm": "395",
+        "Polester Arm": "395",
+        "Modern Englisch": "393",
+        "Armlos": "395",
+        "Polsytr Arm": "395",
+        "Polster Arm": "395",
+        "Zeitgenössischer Arm": "393",
+        "Klassischer": "395",
+        "Englischer Roll Arm": "395",
+        "Chesterfield": "397",
+        "Mdoern": "393",
+        "Polster  Arm": "395",
+        "Barock & Rokoko": "395",
+
+        "Modern/Zeitgenössisch3": "393",
+        "Design": "391",
+        "Classic": "395",
+        "Skandinavisch": "407",
+        "Modenr": "393",
+        "Romantik": "127331",
+        "Zeitgenössische Kunst": "393",
+        "Vintage/Retro": "397",
+        "Designklassiker": "391",
+        "MODERN": "393",
+        "Vintage": "397",
+        "Boho": "399",
+        "klassisch": "395",
+        "Skandinavisch/Nordisch": "407",
+        "Art Déco": "10073",
+        "Rustic": "127332",
+        "Cottage": "127332",
+        "Bauernhaus": "127332",
+        "Farmhouse": "127332",
+        "Industriell": "403",
+        "Industrial": "403",
+        "Loft": "403",
+
+        "Hohe Rückenlehne": "395",
+        "Ohrensessel": "395",
+        "Klasisch": "395",
+
+        "Baroque Racoco": "395",
+        "Baroque / Rococo": "395",
+        "Minimalism": "393",
+        "Antique": "395",
+        "Designers": "391",
+        "Modernw": "393",
+        "Chesterfield/Vintage": "397",
+        "Art Nouveau": "395",   # нет точного кода, ближе к Classic
+        "Romantic": "127331",
+        "Scandinavian": "407",
+        "Colonial": "395",
+
+        "Barock": "395",
+        "Abstrakt": "393",
+        
     }
     
     value = get_first_value(input_value)

@@ -19,5 +19,5 @@ Contains individual files for Mirakl attributes (e.g., `ATTR_106.py`, `ATTR_175.
   - Provides translation and value mapping for multilingual support
   - Ensures only allowed values are used for Mirakl imports
 
-## __init__.py
-Module initializer for package imports. No business logic.
+## Adding new:
+If you have found mistakes just replace keywords or codes, or if you want to add extra keys just change default `str` to `list` and just keep increasing it.

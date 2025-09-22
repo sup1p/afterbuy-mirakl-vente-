@@ -417,7 +417,7 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
               }
     """
     
-    logger.info(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
+    logger.debug(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
     
     if map_categories(data.get("category", 0)) in ("No mapping", 0):
         logger.info("No mapping for ean: %s \n", data.get("ean"))
