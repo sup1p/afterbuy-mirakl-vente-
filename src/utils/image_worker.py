@@ -10,9 +10,10 @@ from src.core.settings import settings
 import io
 import os
 import re
+import struct
 from urllib.parse import unquote, quote, urlparse
 from PIL import Image, UnidentifiedImageError
-from typing import Optional
+from typing import Tuple, Union, Optional
 
 import httpx
 import logging
@@ -21,6 +22,23 @@ import aioftp
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+SMALL_HEADER = 256
+MAX_BYTES_DEFAULT = 2_000_000
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF = 0.5
+TIMEOUT = 10.0  # секунд для stream
+
+BYTES_BY_FORMAT = {
+    "png": 1024,
+    "gif": 1024,
+    "bmp": 1024,
+    "webp": 16 * 1024,
+    "jpg": 64 * 1024,
+    "jpeg": 64 * 1024,
+    "tiff": 256 * 1024,
+    "default": MAX_BYTES_DEFAULT,
+}
 
 
 async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient, retries: int = 3, timeout: int = 5) -> bool:
@@ -67,50 +85,242 @@ async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient,
     return False
     
 
-async def get_image_size(url: str, httpx_client: httpx.AsyncClient):
-    """
-    Retrieve image dimensions by partially downloading the image.
 
-    Downloads the first 2 MB of the image to read its metadata and determine 
-    width and height without fetching the entire file.
 
-    Args:
-        url (str): Image URL.
-        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
+def _detect_format_from_magic(data: bytes) -> Optional[str]:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "gif"
+    if data.startswith(b"\xFF\xD8"):
+        return "jpeg"
+    if data.startswith(b"BM"):
+        return "bmp"
+    if data[0:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "webp"
+    # TIFF: II*\x00 or MM\x00*
+    if data.startswith(b"II*\x00") or data.startswith(b"MM\x00*"):
+        return "tiff"
+    return None
 
-    Returns:
-        tuple: A tuple (url, (width, height)) if successful, or (url, Exception) if an error occurred.
+def _parse_png_size(data: bytes) -> Optional[Tuple[int,int]]:
+    # IHDR chunk at fixed offset: bytes 8..24 contain IHDR
+    try:
+        if len(data) < 24:
+            return None
+        # IHDR chunk type at offset 12..16
+        if data[12:16] != b'IHDR':
+            return None
+        width, height = struct.unpack(">II", data[16:24])
+        return width, height
+    except Exception:
+        return None
 
-    Raises:
-        Exception: If all retry attempts fail or a non-recoverable error occurs.
-    """
-    
-    for attempt in range(3):
-        try:
-            headers = {"Range": "bytes=0-2000000"}  # Read first 2000KB
-            resp = await httpx_client.get(url, headers=headers, timeout=40.0)
-            if resp.status_code in [200, 206]:
-                try:
-                    img = Image.open(io.BytesIO(resp.content))
-                    logger.debug(f"Image {url[:50]} sizes: {img.size}")
-                    return url, img.size
-                except Exception as e:
-                    logger.warning(f"Image {url[:50]} error: {e}")
-                    return url, e
+def _parse_gif_size(data: bytes) -> Optional[Tuple[int,int]]:
+    try:
+        if len(data) < 10:
+            return None
+        w, h = struct.unpack("<HH", data[6:10])
+        return w, h
+    except Exception:
+        return None
+
+def _parse_bmp_size(data: bytes) -> Optional[Tuple[int,int]]:
+    try:
+        if len(data) < 26:
+            return None
+        # BITMAPINFOHEADER starts at offset 14, width/height at 18 and 22 (little endian)
+        width, height = struct.unpack("<ii", data[18:26])
+        return abs(width), abs(height)
+    except Exception:
+        return None
+
+def _parse_webp_size(data: bytes) -> Optional[Tuple[int,int]]:
+    try:
+        # minimal checks for VP8/VP8L/VP8X variants
+        if len(data) < 30:
+            return None
+        # VP8X: at offset 12 chunk "VP8X", then canvas size at 24..30 (3 bytes each little-endian)
+        if data[12:16] == b'VP8X' and len(data) >= 30:
+            # canvas size stored as 3 bytes minus 1
+            cw = int.from_bytes(data[24:27], 'little') + 1
+            ch = int.from_bytes(data[27:30], 'little') + 1
+            return cw, ch
+        # VP8 (lossy): chunk "VP8 " contains frame header starting a bit later; parse width/height from frame (needs more bytes)
+        # For reliability, fallback to Pillow if not VP8X
+        return None
+    except Exception:
+        return None
+
+def _parse_jpeg_size(data: bytes) -> Optional[Tuple[int,int]]:
+    # Scan markers for SOF0/1/2... as per JPEG spec.
+    # Need variable amount of data; return None if not enough bytes.
+    try:
+        if not data.startswith(b'\xFF\xD8'):
+            return None
+        idx = 2
+        L = len(data)
+        while idx + 4 <= L:
+            # find next 0xFF marker
+            if data[idx] != 0xFF:
+                # skip until next 0xFF
+                idx += 1
+                continue
+            # marker byte
+            marker = data[idx + 1]
+            idx += 2
+            # markers without length (e.g. 0xD0..0xD9) have no length field
+            if marker == 0xDA:  # Start of Scan: image data starts — size likely not found
+                break
+            if 0xD0 <= marker <= 0xD9:
+                continue
+            if idx + 2 > L:
+                return None
+            seg_len = struct.unpack(">H", data[idx:idx+2])[0]
+            if seg_len < 2:
+                return None
+            # Check SOF markers
+            if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+                # segment payload starts after len bytes
+                if idx + 2 + 5 > L:
+                    return None
+                # precision = data[idx+2]; height = next two; width = next two
+                # But segment length includes these, so safe to read if present
+                precision = data[idx+2]
+                height = struct.unpack(">H", data[idx+3:idx+5])[0]
+                width = struct.unpack(">H", data[idx+5:idx+7])[0]
+                return width, height
+            # skip segment
+            idx += seg_len
+        return None
+    except Exception:
+        return None
+
+async def _fetch_prefix(client: httpx.AsyncClient, url: str, n_bytes: int, timeout: float):
+    headers = {"Range": f"bytes=0-{max(0, n_bytes-1)}"}
+    async with client.stream("GET", url, headers=headers, timeout=timeout) as resp:
+        if resp.status_code not in (200, 206):
             resp.raise_for_status()
+        buf = bytearray()
+        async for chunk in resp.aiter_bytes():
+            if not chunk:
+                break
+            buf.extend(chunk)
+            if len(buf) >= n_bytes:
+                break
+        # close early to avoid reading rest
+        await resp.aclose()
+        return bytes(buf)
+
+async def get_image_size(url: str, httpx_client: httpx.AsyncClient) -> Tuple[str, Union[Tuple[int,int], Exception]]:
+    """
+    Optimized: tries to download minimal bytes and parse header for dimensions.
+    Returns (url, (w,h)) or (url, Exception)
+    """
+    # Try to guess format from URL extension first
+    ext_match = re.search(r"\.([a-zA-Z0-9]{1,5})(?:[?#]|$)", url)
+    ext = ext_match.group(1).lower() if ext_match else None
+
+    # pick initial size
+    def bytes_for_fmt(fmt: Optional[str]) -> int:
+        if fmt and fmt in BYTES_BY_FORMAT:
+            return BYTES_BY_FORMAT[fmt]
+        return SMALL_HEADER
+
+    # retry loop
+    last_exc: Optional[Exception] = None
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            # Step 1: small probe if extension unknown
+            if ext is None:
+                probe = await _fetch_prefix(httpx_client, url, SMALL_HEADER, TIMEOUT)
+                fmt = _detect_format_from_magic(probe)
+                # decide how many bytes we actually need
+                need = BYTES_BY_FORMAT.get(fmt, BYTES_BY_FORMAT["default"])
+                # if probe already contains enough bytes, use it; else fetch more
+                if len(probe) >= need:
+                    data = probe[:need]
+                else:
+                    # fetch full needed bytes in a ranged request
+                    data = await _fetch_prefix(httpx_client, url, need, TIMEOUT)
+            else:
+                # extension known: request corresponding bytes directly
+                need = bytes_for_fmt(ext)
+                data = await _fetch_prefix(httpx_client, url, need, TIMEOUT)
+                fmt = _detect_format_from_magic(data) or ext
+
+            # Try fast parsers
+            size = None
+            if fmt == "png":
+                size = _parse_png_size(data)
+            elif fmt == "gif":
+                size = _parse_gif_size(data)
+            elif fmt in ("jpg", "jpeg", "jpeg2000", "jpe", "jfif") or (fmt is None and data.startswith(b'\xFF\xD8')):
+                size = _parse_jpeg_size(data)
+            elif fmt == "bmp":
+                size = _parse_bmp_size(data)
+            elif fmt == "webp":
+                size = _parse_webp_size(data)
+            elif fmt == "tiff":
+                # TIFF parsing is complex; let Pillow try
+                size = None
+
+            # If fast parse succeeded:
+            if size:
+                return url, size
+
+            # If not enough bytes detected — try to progressively increase for JPEG/webp/tiff
+            # attempt doubling up to default max
+            wanted = BYTES_BY_FORMAT.get(fmt, BYTES_BY_FORMAT["default"])
+            if len(data) < wanted and wanted <= MAX_BYTES_DEFAULT:
+                # fetch full wanted
+                data = await _fetch_prefix(httpx_client, url, wanted, TIMEOUT)
+                # retry parsers
+                if fmt == "png":
+                    size = _parse_png_size(data)
+                elif fmt == "gif":
+                    size = _parse_gif_size(data)
+                elif fmt in ("jpg", "jpeg") or data.startswith(b'\xFF\xD8'):
+                    size = _parse_jpeg_size(data)
+                elif fmt == "bmp":
+                    size = _parse_bmp_size(data)
+                elif fmt == "webp":
+                    size = _parse_webp_size(data)
+
+                if size:
+                    return url, size
+
+            # Last fallback: try Pillow on what we have (Pillow may require more bytes; if so, it will error)
+            try:
+                img = Image.open(io.BytesIO(data))
+                img.verify()  # light verify
+                # reopen to get size (verify may close file)
+                img = Image.open(io.BytesIO(data))
+                return url, img.size
+            except Exception:
+                # if Pillow failed and we haven't yet tried large download, try larger fetch up to default max
+                if len(data) < MAX_BYTES_DEFAULT:
+                    data_full = await _fetch_prefix(httpx_client, url, MAX_BYTES_DEFAULT, TIMEOUT)
+                    try:
+                        img = Image.open(io.BytesIO(data_full))
+                        img.verify()
+                        img = Image.open(io.BytesIO(data_full))
+                        return url, img.size
+                    except Exception as e:
+                        last_exc = e
+                        raise e
+                else:
+                    raise
 
         except Exception as e:
-            if attempt == 2:
-                logger.warning(f"Image {url[:50]} error: {e}")
-                return url, e  # Return error along with url
-            await asyncio.sleep(0.5 * (attempt+1))
+            last_exc = e
+            # retry/backoff
+            if attempt == RETRY_ATTEMPTS - 1:
+                return url, e
+            await asyncio.sleep(RETRY_BACKOFF * (attempt + 1))
             continue
-            
-        # Handle non-200 status codes
-        if attempt == 2:  # Last attempt
-            logger.error(f"Failed to get check image existence: {resp.status_code}")
-            raise Exception(f"Error checking image existence: {resp.status_code}")
-        await asyncio.sleep(0.5 * (attempt + 1))  # Wait before retry
+
+    return url, last_exc or Exception("Unknown error")
             
 
 async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
