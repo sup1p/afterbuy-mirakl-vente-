@@ -1,0 +1,12 @@
+# Исключаем виртуальные окружения и лишнее
+.venv
+venv
+__pycache__
+*.pyc
+.git
+.gitignore
+.env
+*.log
+node_modules/
+dist/
+build/

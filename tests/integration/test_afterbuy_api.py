@@ -63,4 +63,3 @@ async def test_get_products_by_fabric_integration():
 
         # Логи ошибок (необязательных продуктов)
         if result["not_added_eans"]:
-            print(f"Не удалось обработать EAN: {result['not_added_eans']}")

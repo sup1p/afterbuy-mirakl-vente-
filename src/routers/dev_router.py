@@ -5,13 +5,13 @@ Provides testing endpoints for development and debugging purposes.
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.core.dependencies import get_httpx_client
+from src.core.dependencies import get_httpx_client, get_current_user
 from src.core.settings import settings
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mapping import map_attributes
 from src.utils.image_worker import resize_image_and_upload
 from src.utils.format_ean import is_valid_ean
-from src.schemas import TestImageResize, MappedProduct, FabricMappedProducts
+from src.schemas.product_schemas import TestImageResize, MappedProduct, FabricMappedProducts
 from src.services.csv_converter import make_big_csv
 
 from logs.config_logs import setup_logging
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/test-import-product/{ean}/", tags=["test"], response_model=MappedProduct)
-async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
     If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
@@ -68,7 +68,7 @@ async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,htt
     return mapped_data
 
 @router.post("/test-import-products-by-fabric/{afterbuy_fabric_id}", tags=["test"], response_model=FabricMappedProducts)
-async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, without importing to Mirakl).
 
@@ -157,7 +157,7 @@ async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: h
     }
 
 @router.post("/test-resize-image", tags=["test"], response_model=str)
-async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client)):
+async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for image resizing and FTP upload functionality.
 

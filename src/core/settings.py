@@ -44,6 +44,18 @@ class Settings(BaseSettings):
     special_quantity_word: str
     min_image_height: int
     min_image_width: int
+    
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+
+    # Database:
+    postgres_user: str
+    postgres_password: str
+    postgres_db: str
+    db_host: str
+    db_port: int
+    database_url: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
