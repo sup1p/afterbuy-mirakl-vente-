@@ -11,7 +11,7 @@ from src.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/create-user", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/create-user", response_model=UserOut, status_code=201)
 async def create_user_endpoint(user_in: UserCreate, session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
     existing = await get_user_by_username(session=session, username=user_in.username)
     if existing:

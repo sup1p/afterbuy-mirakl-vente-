@@ -26,4 +26,6 @@ dependencies = [
     "asyncpg>=0.30.0",
     "python-jose[cryptography]>=3.5.0",
     "passlib[bcrypt]>=1.7.4",
+    "pydantic-ai>=1.0.10",
+    "openai>=1.109.0",
 ]

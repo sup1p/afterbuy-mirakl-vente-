@@ -14,7 +14,7 @@ mapping_attr = { # key is Mirakl attribute, value is Afterbuy attribute or "NO M
     "ATTR_73": "Beleuchtungstechnik",
     "ATTR_82": "Anzahl der Schubladen",
     "ATTR_163": "Energieeffizienzklasse",
-    "ATTR_175": ["Anzahl der Sitzplätze","Anzahl der Einheiten","Anzahl der Sitzplätz","Anzahl der Sitzpl�tze","Personenanzahl","Anzahl der Teile", "Number fo Seaters", "Number", "Number of Seat", "Number of Seatas", "Number of Seaters", "Number of seaters", "Number of seats", "Number of Seats", "number of seats", "Number of Sests", "Number of Sets"],
+    "ATTR_175": ["Seating Capacity","Anzahl der Sitzplätze","Anzahl der Einheiten","Anzahl der Sitzplätz","Anzahl der Sitzpl�tze","Personenanzahl","Anzahl der Teile", "Number fo Seaters", "Number", "Number of Seat", "Number of Seatas", "Number of Seaters", "Number of seaters", "Number of seats", "Number of Seats", "number of seats", "Number of Sests", "Number of Sets"],
     "ATTR_183": ["Abteilung", "Abreilung", "Depaertment", "Departament", "Departement", "Departm", "Departmen", "Department", "Depatment"],
     "ATTR_267": "Stil der Armlehne",
     "ATTR_269": "NO MAPPING", # ---

@@ -44,10 +44,16 @@ class Settings(BaseSettings):
     special_quantity_word: str
     min_image_height: int
     min_image_width: int
+    max_description_chars: int
     
+    # Security
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
+
+    # AI
+    llm_model: str
+    openai_api_key: str
 
     # Database:
     postgres_user: str

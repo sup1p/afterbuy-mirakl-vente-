@@ -33,8 +33,6 @@ class MappedProduct(BaseModel):
     description: str
     description_de: str
     
-    # все остальные динамические поля
-    extra_attrs: Optional[Dict[str, Union[str, int, float]]] = {}
 
     class Config:
         validate_by_name = True

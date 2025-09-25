@@ -9,6 +9,7 @@ from src.routers.product_router import router as product_router
 from src.routers.mirakl_system_router import router as mirakl_system_router
 from src.routers.dev_router import router as dev_router 
 from src.routers.user_router import router as user_router 
+from src.services.agents import create_agent_with_httpx
 from src import resources
 import logging
 from logs.config_logs import setup_logging
@@ -24,16 +25,44 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager.
-    Initializes HTTP client on startup and properly closes it on shutdown.
+    Initializes HTTP client and LLM agent on startup,
+    and properly closes them on shutdown.
     """
-    # Initialize global HTTP client
+    # --- startup ---
     resources.client = httpx.AsyncClient()
     try:
+        # инициализируем глобальный агент (он сохранится в resources.llm_agent)
+        await create_agent_with_httpx(
+            resources.client
+        )
+
+        logger.info("Startup: httpx client, OpenAI client and LLM agent initialized")
+
         yield
+
     finally:
-        # Clean up HTTP client on shutdown
-        if resources.client:
-            await resources.client.aclose()
+        # --- shutdown ---
+        try:
+            if resources.openai_client:
+                await resources.openai_client.close()
+                logger.info("Shutdown: OpenAI client closed")
+        except Exception:
+            logger.exception("Shutdown: closing OpenAI client failed")
+
+        try:
+            if resources.client:
+                await resources.client.aclose()
+                logger.info("Shutdown: HTTP client closed")
+        except Exception:
+            logger.exception("Shutdown: closing HTTP client failed")
+
+        # cleanup globals
+        resources.client = None
+        resources.openai_client = None
+        resources.llm_agent = None
+        resources.llm_semaphore = None
+
+        logger.info("Shutdown: resources cleaned up")
     
 # Create FastAPI application with lifespan management
 app = FastAPI(lifespan=lifespan)

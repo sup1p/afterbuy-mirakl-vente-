@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mirakl_api_calls import import_product as import_product_mirakl
-from src.utils.format_ean import is_valid_ean
+from src.utils.format_little import is_valid_ean
 from src.schemas.product_schemas import ProductEan, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse
 from src.services.csv_converter import make_csv, make_big_csv
 from src.services.mapping import map_attributes

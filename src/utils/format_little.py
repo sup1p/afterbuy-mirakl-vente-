@@ -25,3 +25,7 @@ def is_valid_ean(code: str) -> bool:
 
     control = (10 - (total % 10)) % 10
     return control == checksum
+
+
+def get_delivery_days(fabric_name: str) -> int:
+    return 45 # временно заглуша

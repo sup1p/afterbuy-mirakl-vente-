@@ -6,7 +6,7 @@ This module provides utility functions for data formatting, image processing, an
 Functions for checking and formatting product quantity and other attributes.
 - **Example:** `product_quantity_check(value)` validates and normalizes quantity values.
 
-## format_ean.py
+## format_little.py
 EAN validation and formatting utilities.
 - **Example:** `is_valid_ean(ean)` checks if an EAN is valid for product import.
 

@@ -10,6 +10,7 @@ from src.core.security import decode_access_token
 from src.crud.user import get_user_by_username
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from jose import JWTError
 
 import httpx
 import aioftp
@@ -28,6 +29,10 @@ async def get_httpx_client() -> httpx.AsyncClient:
         raise RuntimeError("Client not initialized")
     return resources.client
 
+async def get_llm_agent():
+    if not resources.llm_agent:
+        raise HTTPException(status_code=503, detail="LLM agent is not initialized")
+    return resources.llm_agent
 
 async def get_session():
     async with AsyncSessionLocal() as session:
@@ -35,14 +40,13 @@ async def get_session():
         
     
 async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
-    from jose import JWTError
     try:
         token_data = decode_access_token(token)
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+        raise HTTPException(status_code=401, detail="Token is expired")
     user = await get_user_by_username(session=session, username=token_data.get("username"))
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(status_code=401, detail="User not found")
     return user
 
 async def require_admin_token(token: str = Depends(oauth2_scheme)):

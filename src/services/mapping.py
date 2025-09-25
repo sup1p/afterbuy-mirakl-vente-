@@ -12,9 +12,13 @@ from src.const.constants import (
     mapping_extra_attrs,
     default_html_description
 )
+from src.const.prompts import build_description_prompt
 from src.utils.substitute_formatter import substitute_attr
 from src.utils.format_attr import product_quantity_check
+from src.utils.format_little import get_delivery_days
 from src.core.settings import settings
+from src.schemas.ai_schemas import ProductDescriptionAI
+from src.services.agents import get_agent
 from src.utils.image_worker import check_image_existence, process_images, resize_image_and_upload
 from logs.config_logs import setup_logging
 from src.utils.format_html import extract_product_properties_from_html
@@ -218,7 +222,7 @@ def _parse_properties(properties_raw: str) -> dict:
     return filtered_properties
 
 
-def _build_html_description(data: dict) -> str | None:
+async def _build_html_description(data: dict, filtered_properties: dict) -> str | None:
     """
     Extracts and adjusts HTML product description.
 
@@ -233,20 +237,41 @@ def _build_html_description(data: dict) -> str | None:
         str | None: Processed HTML description or None if invalid.
     """
     
+    article = data.get("article")
+    delivery_days = get_delivery_days(data.get("collection"))
     html_desc = extract_product_properties_from_html(data.get("html_description"))
-    if not html_desc or len(html_desc) < 51:
-        html_desc = None
-    elif len(html_desc) < 100:
-        html_desc = html_desc * 2
-    _log_html_length(html_desc)
-    return html_desc
+    
+    if not html_desc:
+        html_desc = "No html description for this product"
+        logger.warning("Native html_desc is None")
+        
+    agent = get_agent()
+    sem = asyncio.Semaphore(8)
+
+    async with sem:
+        try:
+            result = await agent.run(
+                build_description_prompt(html_desc=html_desc, product_properties=filtered_properties, product_article=article, product_price=data.get("price"), delivery_days=delivery_days),
+                output_type=ProductDescriptionAI,
+                model_settings={"temperature": 0.0},
+            )
+            ai_html_desc_de = result.output.description_de.strip()
+            ai_html_desc_fr = result.output.description_fr.strip()
+            logger.info("AI desc length=%d", len(ai_html_desc_de))
+            return {"desc_de": ai_html_desc_de, "desc_fr": ai_html_desc_fr}
+        except Exception as e:
+            logger.error(f"LLM failed: {e}")
+            raise Exception(
+                f"Error while requesting description from AI: {e}",
+            )
 
 
 def _build_base_fields(
     data: dict,
     main_image: str,
     extra_images: list[str],
-    html_desc: str | None,
+    html_desc_de: str | None,
+    html_desc_fr: str | None,
 ) -> dict:
     """
     Builds base Mirakl product fields.
@@ -259,17 +284,18 @@ def _build_base_fields(
 
     Returns:
         dict: Dictionary with base product fields for Mirakl.
-    """
+    """        
     
     return {
         "sku": data.get("ean"),
         "product-id": data.get("ean"),
+        "offer-description": html_desc_fr if html_desc_fr else "",
         # "product-id": data.get("product_num"),
         "product-id-type": "EAN",
-        "price": data.get("price", "0.00"),
-        "state": 11,
+        "price": data.get("price"),
+        "state": 11, # new state
         "quantity": product_quantity_check(data.get("article", "")),
-        "brand": "",
+        "brand": "", # no brand
         "internal-description": "",
         "title_de": data.get("article"),
         "image_1": main_image,
@@ -284,8 +310,8 @@ def _build_base_fields(
         "image_10": safe_get(extra_images, 8),
         "category": map_categories(data.get("category", 0)),
         "ean": data.get("ean"),
-        "description": html_desc if html_desc else default_html_description,
-        "description_de": html_desc if html_desc else default_html_description,
+        "description": html_desc_de,
+        "description_de": html_desc_de,
     }
 
 
@@ -443,6 +469,11 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
             }
         }
     
+    if not data.get("price"):
+        raise Exception(
+            f"No price found for product with ean: {data.get("ean")}",
+        )
+    
     # --- images ---
     async with ftp_semaphore:
         async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password) as ftp_client:
@@ -453,10 +484,12 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     filtered_properties = _parse_properties(properties_raw)
 
     # --- html description ---
-    html_desc = _build_html_description(data)
+    html_desc = await _build_html_description(data=data, filtered_properties=filtered_properties)
+    html_desc_de = html_desc.get("desc_de")
+    html_desc_fr = html_desc.get("desc_fr")
 
     # --- base fields ---
-    data_for_mirakl = _build_base_fields(data, main_image, extra_images, html_desc)
+    data_for_mirakl = _build_base_fields(data=data, main_image=main_image, extra_images=extra_images, html_desc_de=html_desc_de, html_desc_fr=html_desc_fr)
 
     # --- category attributes ---
     category = data_for_mirakl["category"]

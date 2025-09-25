@@ -10,7 +10,7 @@ from src.core.settings import settings
 from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.mapping import map_attributes
 from src.utils.image_worker import resize_image_and_upload
-from src.utils.format_ean import is_valid_ean
+from src.utils.format_little import is_valid_ean
 from src.schemas.product_schemas import TestImageResize, MappedProduct, FabricMappedProducts
 from src.services.csv_converter import make_big_csv
 
