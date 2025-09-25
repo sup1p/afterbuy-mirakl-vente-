@@ -13,7 +13,6 @@ from sqlalchemy.orm import sessionmaker
 from jose import JWTError
 
 import httpx
-import aioftp
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 

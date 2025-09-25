@@ -5,10 +5,18 @@ Handles application lifecycle, HTTP client management, and router registration.
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from src.routers.product_router import router as product_router
-from src.routers.mirakl_system_router import router as mirakl_system_router
-from src.routers.dev_router import router as dev_router 
-from src.routers.user_router import router as user_router 
+
+from src.routers.user_router import router as user_router
+
+from src.routers.vente.product_vente_router import router as product_vente_router
+from src.routers.vente.mirakl_system_vente_router import router as mirakl_system_vente_router
+from src.routers.vente.dev_vente_router import router as dev_vente_router 
+
+from src.routers.lutz.fabric_lutz_router import router as fabric_lutz_router
+from src.routers.lutz.generate_csv_lutz_router import router as generate_csv_lutz_router
+from src.routers.lutz.offers_lutz_router import router as offers_lutz_router
+from src.routers.lutz.product_lutz_router import router as product_lutz_router
+
 from src.services.agents import create_agent_with_httpx
 from src import resources
 import logging
@@ -74,7 +82,14 @@ def root():
     return "We are live!"
 
 # Register all API routers
-app.include_router(product_router)
-app.include_router(mirakl_system_router)
-app.include_router(dev_router)
+# auth
 app.include_router(user_router)
+# vente
+app.include_router(product_vente_router)
+app.include_router(mirakl_system_vente_router)
+app.include_router(dev_vente_router)
+# lutz
+app.include_router(product_lutz_router)
+app.include_router(offers_lutz_router)
+app.include_router(generate_csv_lutz_router)
+app.include_router(fabric_lutz_router)

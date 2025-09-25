@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/import-product/{ean}", tags=["product"], response_model=MiraklImportResponse)
+@router.post("/import-product/vente/{ean}", tags=["product vente"], response_model=MiraklImportResponse)
 async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Import a single product by EAN from Afterbuy to Mirakl.Uses EAN and optional fabric id for getting product
@@ -101,7 +101,7 @@ async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_
     return await import_product_mirakl(csv_content, httpx_client=httpx_client)
 
 
-@router.post("/import-products", tags=["product"], response_model=ImportManyEanResponse)
+@router.post("/import-products/vente", tags=["product vente"], response_model=ImportManyEanResponse)
 async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Import multiple products by a list of EANs from Afterbuy to Mirakl.
@@ -198,7 +198,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
     }
 
 
-@router.post("/import-products-by-fabric/{afterbuy_fabric_id}", tags=["product"], response_model=ImportFabricProductsResponse)
+@router.post("/import-products-by-fabric/vente/{afterbuy_fabric_id}", tags=["product vente"], response_model=ImportFabricProductsResponse)
 async def import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Import products by Afterbuy fabric ID from Afterbuy to Mirakl.

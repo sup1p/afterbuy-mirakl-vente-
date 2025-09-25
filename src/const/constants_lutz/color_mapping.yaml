@@ -1,0 +1,22 @@
+# app/mappings/color_mapping.yaml
+
+grau: gray
+weiß: white
+weiss: white
+schwarz: black
+braun: brown
+beige: beige
+blau: blue
+rot: red
+grün: green
+gruen: green
+gelb: yellow
+anthrazit: anthracite
+silber: silver
+transparent: transparent
+lila: purple
+braun/grau: grayBrown
+mehrfarbig: multicolor
+graubraun: grayBrown
+braunwei: brown
+weigraubraun: brown

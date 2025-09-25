@@ -656,7 +656,7 @@ async def resize_image_and_upload(
     # 2. Check existence (file_exists_on_ftp now considers variants)
     existing_url = await file_exists_on_ftp(
         filename=orig_file_name,
-        remote_dir=f"/xlmoebel.at/image/afterbuy_resized_images_for_mirakl/{ean}",
+        remote_dir=f"{settings.ftp_base_dir}/{ean}",
         ean=ean,
         ftp_client=ftp_client
     )
@@ -688,7 +688,7 @@ async def resize_image_and_upload(
     ftp_url = await upload_to_ftp(
         data=resized_bytes,
         filename=orig_file_name,
-        remote_dir=f"/xlmoebel.at/image/afterbuy_resized_images_for_mirakl/{ean}",
+        remote_dir=f"{settings.ftp_base_dir}/{ean}",
         ean=ean,
         ftp_client=ftp_client
     )

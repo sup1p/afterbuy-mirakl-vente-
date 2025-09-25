@@ -40,9 +40,9 @@ async def check_offer_import_error(import_parameter: str, httpx_client: httpx.As
     """
     logger.info(f"Checking offer import error for parameter: {import_parameter}")
     headers = {
-        "Authorization": settings.mirakl_api_key,
+        "Authorization": settings.mirakl_api_key_vente,
     }
-    url = f"{settings.mirakl_url}/api/offers/imports/{import_parameter}/error_report"
+    url = f"{settings.mirakl_url_vente}/api/offers/imports/{import_parameter}/error_report"
 
     try:
         response = await httpx_client.get(url, headers=headers, timeout=40.0)
@@ -95,10 +95,10 @@ async def check_import_error(import_parameter: str, httpx_client: httpx.AsyncCli
     """
     logger.info(f"Checking import error for parameter: {import_parameter}")
     headers = {
-        "Authorization": settings.mirakl_api_key,
+        "Authorization": settings.mirakl_api_key_vente,
     }
     url = (
-        f"{settings.mirakl_url}/api/products/imports/"
+        f"{settings.mirakl_url_vente}/api/products/imports/"
         + import_parameter
         + "/transformation_error_report"
     )
@@ -175,10 +175,10 @@ async def check_non_integrated_products(import_parameter: str, httpx_client: htt
     
     logger.info(f"Checking non-integrated products for parameter: {import_parameter}")
     headers = {
-        "Authorization": settings.mirakl_api_key,
+        "Authorization": settings.mirakl_api_key_vente,
     }
     url = (
-        f"{settings.mirakl_url}/api/products/imports/"
+        f"{settings.mirakl_url_vente}/api/products/imports/"
         + import_parameter
         + "/error_report"
     )
@@ -248,10 +248,10 @@ async def check_platform_settings(httpx_client: httpx.AsyncClient):
     """
     
     logger.info("Checking Mirakl platform settings")
-    url = f"{settings.mirakl_url}/api/platform/configuration"
+    url = f"{settings.mirakl_url_vente}/api/platform/configuration"
 
     headers = {
-        "Authorization": settings.mirakl_api_key,
+        "Authorization": settings.mirakl_api_key_vente,
         "Accept": "application/json",
     }
     
@@ -303,18 +303,18 @@ async def import_product(csv_content, httpx_client: httpx.AsyncClient):
         "conversion_options[ai_enrichment][status]": "ENABLED",
         "conversion_options[ai_rewrite][status]": "ENABLED",
         "operator_format": "true",
-        "shop": settings.mirakl_shop_id,
+        "shop": settings.mirakl_shop_id_vente,
         
         "import_mode": "NORMAL",
         "with_products": "true",
     }
 
     headers = {
-        "Authorization": settings.mirakl_api_key,
+        "Authorization": settings.mirakl_api_key_vente,
         "Accept": "application/json",
     }
     
-    url = f"{settings.mirakl_url}/api/offers/imports"
+    url = f"{settings.mirakl_url_vente}/api/offers/imports"
     
     try:
         response = await httpx_client.post(url=url, data=payload, files=files, headers=headers, timeout=40.0)

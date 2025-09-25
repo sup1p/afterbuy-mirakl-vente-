@@ -20,22 +20,41 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Afterbuy API configuration
-    afterbuy_url: str
-    afterbuy_login: str
-    afterbuy_password: str
+    afterbuy_url_vente: str
+    afterbuy_login_vente: str
+    afterbuy_password_vente: str
     image_base_url: str
     
+    afterbuy_url_lutz: str
+    afterbuy_filter_url_lutz: str
+    afterbuy_auth_url_lutz: str
+    afterbuy_client_id_lutz: str
+    afterbuy_client_secret_lutz: str
+    
     # Mirakl API configuration
-    mirakl_url: str
-    mirakl_api_key: str
-    mirakl_shop_id: int
-    mirakl_connect: str
+    mirakl_url_vente: str
+    mirakl_api_key_vente: str
+    mirakl_shop_id_vente: int
+    mirakl_connect_vente: str
+    
+    mirakl_url_lutz: str
+    mirakl_price_url_lutz: str
+    mirakl_api_key_lutz: str
+    shop_id_lutz: int
+    
+    # === lawyer typ shi Lutz ===
+    distributor_name_lutz: str
+    distributor_street_lutz: str
+    distributor_zip_lutz: int
+    distributor_city_lutz: str
+    distributor_country_lutz: str
     
     # FTP server configuration
     ftp_host: str
     ftp_port: int
     ftp_user: str
     ftp_password: str
+    ftp_base_dir: str
     
     # Application behavior settings
     check_image_existence: bool = False
@@ -45,6 +64,8 @@ class Settings(BaseSettings):
     min_image_height: int
     min_image_width: int
     max_description_chars: int
+    
+    enable_image_resize_lutz: bool = True
     
     # Security
     secret_key: str

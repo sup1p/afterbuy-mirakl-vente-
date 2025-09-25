@@ -1,0 +1,972 @@
+{
+    "38204": {
+        "source_name": "Möbel & Wohnen | Möbel | Tische & Stehtische",
+        "target_id": "mkp-C3C3C5C3",
+        "target_name": "Bartisch"
+    },
+    "183322": {
+        "source_name": "Möbel & Wohnen | Möbel | Anrichten & Buffets",
+        "target_id": "mkp-C3C1C14C2C1",
+        "target_name": "Anrichte"
+    },
+    "38208": {
+        "source_name": "Möbel & Wohnen | Möbel | Sofas & Sessel",
+        "target_id": "mkp-C3C1C15C27",
+        "target_name": "Sofa"
+    },
+    "107578": {
+        "source_name": "Möbel & Wohnen | Möbel | Tisch- & Stuhl-Sets",
+        "target_id": "mkp-C3C3C3C4",
+        "target_name": "Tischgruppe"
+    },
+    "114397": {
+        "source_name": "Möbel & Wohnen | Möbel | Kommoden",
+        "target_id": "mkp-C3C1C14C2C9",
+        "target_name": "Kommode"
+    },
+    "54235": {
+        "source_name": "Möbel & Wohnen | Möbel | Stühle",
+        "target_id": "mkp-C3C3C2C10",
+        "target_name": "Stühle"
+    },
+    "20488": {
+        "source_name": "Möbel & Wohnen | Möbel | TV-Möbel & Schrankwände",
+        "target_id": "mkp-C3C1C8C7",
+        "target_name": "TV-Rack"
+    },
+    "175758": {
+        "source_name": "Möbel & Wohnen | Möbel | Betten | Betten & Bettgestelle",
+        "target_id": "mkp-C3C4C3C4",
+        "target_name": "Bett"
+    },
+    "20480": {
+        "source_name": "Möbel & Wohnen | Möbel | Schlafzimmer-Sets",
+        "target_id": "mkp-C3C1C1C19",
+        "target_name": "Schlafsessel"
+    },
+    "20487": {
+        "source_name": "Möbel & Wohnen | Möbel | Schränke & Wandschränke",
+        "target_id": "mkp-C9C2C5",
+        "target_name": "Geschirrschrank"
+    },
+    "103430": {
+        "source_name": "Möbel & Wohnen | Möbel | Kleiderschränke",
+        "target_id": "mkp-C3C4C7C1",
+        "target_name": "Kleiderschrank"
+    },
+    "20569": {
+        "source_name": "Möbel & Wohnen | Dekoration | Deko-Accessoires | Brunnen, Wasserwände & -säulen",
+        "target_id": "mkp-C5C2C10C4",
+        "target_name": "Wasserfontäne"
+    },
+    "32878": {
+        "source_name": "Möbel & Wohnen | Möbel | Schminktische",
+        "target_id": "mkp-C3C4C2",
+        "target_name": "Schminktisch"
+    },
+    "23682": {
+        "source_name": "Spielzeug | Lernspielzeug | Lernspiele",
+        "target_id": "mkp-C10C1C2C2",
+        "target_name": "Kinderspiele"
+    },
+    "72576": {
+        "source_name": "Sport | Weitere Sportarten | Dart | Scheiben",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "22564": {
+        "source_name": "Sport | Weitere Sportarten | Kicker | Tische",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "21213": {
+        "source_name": "Sport | Weitere Sportarten | Billard | Tische",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "13525": {
+        "source_name": "Sport | Weitere Sportarten | Sonstige",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "38199": {
+        "source_name": "Möbel & Wohnen | Möbel | Nachttische & Nachtkonsolen",
+        "target_id": "mkp-C3C4C1",
+        "target_name": "Nachttisch"
+    },
+    "20490": {
+        "source_name": "Möbel & Wohnen | Möbel | Ottomane & Fußhocker",
+        "target_id": "mkp-C3C1C15C21",
+        "target_name": "Ottomane"
+    },
+    "103431": {
+        "source_name": "Möbel & Wohnen | Möbel | Hocker & Barhocker",
+        "target_id": "mkp-C3C1C4",
+        "target_name": "Hocker"
+    },
+    "131604": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Betten & Bettgestelle",
+        "target_id": "mkp-C3C2C8C3",
+        "target_name": "Kinderbett"
+    },
+    "85879": {
+        "source_name": "Möbel & Wohnen | Küche | Küchenschränke",
+        "target_id": "mkp-C9C6C5",
+        "target_name": "Küchenschrank Organizers"
+    },
+    "176991": {
+        "source_name": "Möbel & Wohnen | Badezimmer | Badezimmerschränke",
+        "target_id": "mkp-C3C6C2C9",
+        "target_name": "Midischrank"
+    },
+    "88057": {
+        "source_name": "Möbel & Wohnen | Möbel | Schreibtische & Computermöbel",
+        "target_id": "mkp-C3C7C4C2",
+        "target_name": "Computertisch"
+    },
+    "131588": {
+        "source_name": "Möbel & Wohnen | Bettwaren, -wäsche & Matratzen | Matratzen",
+        "target_id": "mkp-C3C4C5C1",
+        "target_name": "Matratze"
+    },
+    "262980": {
+        "source_name": "Möbel & Wohnen | Möbel | Sitzbänke",
+        "target_id": "mkp-C3C3C3C9",
+        "target_name": "Sitzbank"
+    },
+    "139849": {
+        "source_name": "Garten & Terrasse | Möbel | Loungemöbel & Sitzgruppen",
+        "target_id": "mkp-C5C7C4C2C6",
+        "target_name": "Loungegarnitur"
+    },
+    "116880": {
+        "source_name": "Möbel & Wohnen | Beleuchtung | Wandleuchten",
+        "target_id": "mkp-C4C2C14C1",
+        "target_name": "Wandleuchte"
+    },
+    "20580": {
+        "source_name": "Möbel & Wohnen | Dekoration | Spiegel",
+        "target_id": "mkp-C8C1C2",
+        "target_name": "Standspiegel"
+    },
+    "127551": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Aktenschränke",
+        "target_id": "mkp-C3C7C3C1",
+        "target_name": "Aktenschrank"
+    },
+    "27685": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Kleinmöbel & Accessoires | Rollcontainer & -wagen",
+        "target_id": "mkp-C3C7C1C1",
+        "target_name": "Rollcontainer"
+    },
+    "3199": {
+        "source_name": "Möbel & Wohnen | Möbel | Regale & Aufbewahrung",
+        "target_id": "mkp-C3C4C7C15C45",
+        "target_name": "Regalboden"
+    },
+    "11832": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Tische | Schreibtische",
+        "target_id": "mkp-C3C7C4C30",
+        "target_name": "Schreibtisch"
+    },
+    "68464": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Sitzmöbel | Drehstühle & -sessel",
+        "target_id": "mkp-C3C1C1C4",
+        "target_name": "Sessel"
+    },
+    "62496": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Tische | Sonstige",
+        "target_id": "mkp-C3C7C4C30",
+        "target_name": "Schreibtisch"
+    },
+    "112590": {
+        "source_name": "Garten & Terrasse | Möbel | Tische",
+        "target_id": "mkp-C3C7C4C30",
+        "target_name": "Schreibtisch"
+    },
+    "43506": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Schuhaufbewahrung",
+        "target_id": "mkp-C3C5C8C6",
+        "target_name": "Schuhablage"
+    },
+    "166325": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Kleiderständer",
+        "target_id": "mkp-C3C5C7C1",
+        "target_name": "Kleiderständer"
+    },
+    "36024": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Wand-, Türgarderoben & Haken",
+        "target_id": "mkp-C7C1C9C1",
+        "target_name": "Haken"
+    },
+    "152035": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Schlafzimmer-Sets",
+        "target_id": "mkp-C1C1C2",
+        "target_name": "Bettenset"
+    },
+    "20563": {
+        "source_name": "Möbel & Wohnen | Dekokissen",
+        "target_id": "mkp-C1C1C1C6",
+        "target_name": "Kopfkissen"
+    },
+    "112581": {
+        "source_name": "Möbel & Wohnen | Beleuchtung | Lampen",
+        "target_id": "mkp-C4C2C15",
+        "target_name": "Schreibtischleuchte"
+    },
+    "117503": {
+        "source_name": "Möbel & Wohnen | Beleuchtung | Deckenlampen & Kronleuchter",
+        "target_id": "mkp-C4C2C3C4",
+        "target_name": "Kronleuchter"
+    },
+    "45505": {
+        "source_name": "Möbel & Wohnen | Kochen & Genießen | Gedeckter Tisch | Tabletts",
+        "target_id": "mkp-C9C4C1C6C6",
+        "target_name": "Tablett"
+    },
+    "16102": {
+        "source_name": "Möbel & Wohnen | Kerzen & Düfte | Kerzenständer & Teelichthalter",
+        "target_id": "mkp-C8C7C2",
+        "target_name": "Kerzenhalter"
+    },
+    "101415": {
+        "source_name": "Möbel & Wohnen | Dekoration | Blumentöpfe & Vasen",
+        "target_id": "mkp-C5C9C28C1",
+        "target_name": "Blumentopf"
+    },
+    "159889": {
+        "source_name": "Möbel & Wohnen | Dekoration | Wandtattoos & Wandbilder",
+        "target_id": "mkp-C8C2C7C4",
+        "target_name": "Wandtattoos & Sticker"
+    },
+    "31601": {
+        "source_name": "Möbel & Wohnen | Dekoration | Deko-Accessoires | Paravents",
+        "target_id": "mkp-C3C1C3",
+        "target_name": "Paravent"
+    },
+    "36025": {
+        "source_name": "Möbel & Wohnen | Dekoration | Figuren, Skulpturen & Statuen",
+        "target_id": "mkp-C8C6C2",
+        "target_name": "Skulpturen"
+    },
+    "79682": {
+        "source_name": "Garten & Terrasse | Möbel | Stühle",
+        "target_id": "mkp-C3C3C2C10",
+        "target_name": "Stühle"
+    },
+    "133693": {
+        "source_name": "Möbel & Wohnen | Badezimmer | Badezimmerzubehör | Badezimmerspiegel",
+        "target_id": "mkp-C7C4C1",
+        "target_name": "Badezimmerspiegel"
+    },
+    "15475": {
+        "source_name": "Baby | Möbel | Schränke",
+        "target_id": "mkp-C3C6C2C1",
+        "target_name": "Unterschrank"
+    },
+    "112555": {
+        "source_name": "Heimwerker | Bad & Küche | Bad | Duschen, Badewannen & Teile | Duschwannen",
+        "target_id": "mkp-C7C2C2C5",
+        "target_name": "Duschtasse"
+    },
+    "42025": {
+        "source_name": "Heimwerker | Bad & Küche | Bad | Duschen, Badewannen & Teile | Badewannen",
+        "target_id": "mkp-C7C2C2C4",
+        "target_name": "Badewanne"
+    },
+    "85892": {
+        "source_name": "Heimwerker | Fenster, Türen & Treppen | Türen & Türbeschläge | Türen",
+        "target_id": "mkp-C3C4C7C15C14",
+        "target_name": "Tür"
+    },
+    "166365": {
+        "source_name": "Möbel & Wohnen | Möbel | Badmöbelsets",
+        "target_id": "mkp-C3C6C3",
+        "target_name": "Badmöbel-Set"
+    },
+    "29514": {
+        "source_name": "Garten & Terrasse | Dekoration | Topfpflanzenständer",
+        "target_id": "mkp-C5C9C28C2",
+        "target_name": "Pflanzentopf"
+    },
+    "48319": {
+        "source_name": "Möbel & Wohnen | Möbel | Sitzsäcke & aufblasbare Sessel",
+        "target_id": "mkp-C3C1C5",
+        "target_name": "Sitzsack"
+    },
+    "19783": {
+        "source_name": "Möbel & Wohnen | Badezimmer | Badezimmerzubehör | Sonstige",
+        "target_id": "mkp-C7C1C2",
+        "target_name": "Bad-Accessoire-Set"
+    },
+    "127542": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Computermöbel | Schränke",
+        "target_id": "mkp-C3C6C2C1",
+        "target_name": "Unterschrank"
+    },
+    "181076": {
+        "source_name": "Möbel & Wohnen | Sonstige",
+        "target_id": "Unterschrank",
+        "target_name": "Unterschrank"
+    },
+    "10034": {
+        "source_name": "Möbel & Wohnen | Dekoration | Sonstige",
+        "target_id": "mkp-C8C6C1",
+        "target_name": "Dekoobjekt"
+    },
+    "66737": {
+        "source_name": "Möbel & Wohnen | Möbel | Betten | Betten- & Wasserbettenzubehör",
+        "target_id": "mkp-C1C1C2",
+        "target_name": "Bettenset"
+    },
+    "21865": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Flügeltürschränke",
+        "target_id": "mkp-C3C4C7C1",
+        "target_name": "Kleiderschrank"
+    },
+    "21867": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Tische | Besprechungs- & Konferenztische",
+        "target_id": "mkp-C3C7C4C9",
+        "target_name": "Konferenztisch"
+    },
+    "35330": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Schubladenschränke",
+        "target_id": "mkp-C3C4C7C15C31",
+        "target_name": "Schubladenset"
+    },
+    "62467": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Kleinmöbel & Accessoires | Trennwände & Paravents",
+        "target_id": "mkp-C3C1C3",
+        "target_name": "Paravent"
+    },
+    "21864": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Regale",
+        "target_id": "mkp-C3C4C7C15C45",
+        "target_name": "Regalboden"
+    },
+    "62491": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Schuh- & Garderobenschränke",
+        "target_id": "mkp-C3C5C6",
+        "target_name": "Garderobenschrank"
+    },
+    "21866": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Sitzmöbel | Besucher- & Konferenzstühle",
+        "target_id": "mkp-C3C3C2C5",
+        "target_name": "Besucherstuhl"
+    },
+    "11831": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Computermöbel | Tische",
+        "target_id": "mkp-C3C7C4C2",
+        "target_name": "Computertisch"
+    },
+    "68461": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Vitrinen & Schaukästen",
+        "target_id": "mkp-C3C1C16C4",
+        "target_name": "Vitrinenkombination"
+    },
+    "62474": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Schränke & Regale | Hängeregistraturschränke",
+        "target_id": "mkp-C3C7C3C3",
+        "target_name": "Hängeregisterelement"
+    },
+    "71283": {
+        "source_name": "Heimwerker | Bad & Küche | Bad | Waschbecken & Waschtische | Waschbecken",
+        "target_id": "mkp-C7C2C3",
+        "target_name": "Waschbecken"
+    },
+    "20689": {
+        "source_name": "Möbel & Wohnen | Kochen & Genießen | Bar & Wein-Accessoires | Weinregale",
+        "target_id": "mkp-C3C1C17C34",
+        "target_name": "Weinregal"
+    },
+    "260928": {
+        "source_name": "Garten & Terrasse | Möbel | Bänke",
+        "target_id": "mkp-C5C7C6C7C1",
+        "target_name": "Gartenbank"
+    },
+    "122771": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Kleiderschränke",
+        "target_id": "mkp-C3C2C12C1",
+        "target_name": "Kinderkleiderschrank"
+    },
+    "115749": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Regale & Aufbewahrung",
+        "target_id": "mkp-C3C2C12C2",
+        "target_name": "Kinderregal"
+    },
+    "260382": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Kommoden",
+        "target_id": "mkp-C3C1C14C2C7",
+        "target_name": "Kinderkommode"
+    },
+    "115750": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Schreibtische",
+        "target_id": "mkp-C3C2C11C2",
+        "target_name": "Kinderschreibtisch"
+    },
+    "127547": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Empfangs- & Thekenmöbel | Theken & Tresen",
+        "target_id": "mkp-C3C7C4C1",
+        "target_name": "Bürotisch"
+    },
+    "122766": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Schränke & Wandschränke",
+        "target_id": "mkp-C3C2C12C1",
+        "target_name": "Kinderkleiderschrank"
+    },
+    "20744": {
+        "source_name": "Haustierbedarf | Hunde | Betten",
+        "target_id": "mkp-C3C4C3C4",
+        "target_name": "Bett"
+    },
+    "50364": {
+        "source_name": "Heimwerker | Farben, Tapeten & Zubehör | Tapeten, Werkzeuge & Zubehör | Tapeten",
+        "target_id": "mkp-C8C2C7C2",
+        "target_name": "Vliestapete"
+    },
+    "177046": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Schminktische",
+        "target_id": "mkp-C3C1C14C2C8",
+        "target_name": "Kinderschminkkommode"
+    },
+    "38237": {
+        "source_name": "Möbel & Wohnen | Dekoration | Wandbehänge",
+        "target_id": "mkp-C6C6C23C2",
+        "target_name": "Wandbehang"
+    },
+    "29511": {
+        "source_name": "Garten & Terrasse | Dekoration | Gartenfiguren &    ",
+        "target_id": "mkp-C8C6C2",
+        "target_name": "Skulpturen"
+    },
+    "41511": {
+        "source_name": "Möbel & Wohnen | Dekoration | Bilder & Drucke",
+        "target_id": "mkp-C8C2C1C4",
+        "target_name": "Bilderset"
+    },
+    "20509": {
+        "source_name": "Garten & Terrasse | Beleuchtung | Zubehör",
+        "target_id": "mkp-C2C3C5",
+        "target_name": "Zubehör"
+    },
+    "127545": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Empfangs- & Thekenmöbel | Empfangstische",
+        "target_id": "mkp-C3C7C4C22",
+        "target_name": "Empfangstheke"
+    },
+    "57231": {
+        "source_name": "Möbel & Wohnen | Küche | Einbauküchen",
+        "target_id": "mkp-C9C1C2",
+        "target_name": "Einbauküche"
+    },
+    "107504": {
+        "source_name": "Möbel & Wohnen | Möbel | Betten | Wasserbetten",
+        "target_id": "mkp-C3C4C3C9",
+        "target_name": "Wasserbett"
+    },
+    "116743": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Kleiderbügel",
+        "target_id": "mkp-C7C1C29C8",
+        "target_name": "Wandhalter"
+    },
+    "21868": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Computermöbel | Sonstige",
+        "target_id": "mkp-C3C7C4C1",
+        "target_name": "Bürotisch"
+    },
+    "551": {
+        "source_name": "Antiquitäten & Kunst | Kunst | Malerei",
+        "target_id": "mkp-C10C1C2C17",
+        "target_name": "Malen & Basteln"
+    },
+    "19748": {
+        "source_name": "Baby | Möbel | Komplettzimmer",
+        "target_id": "mkp-C3C2C10C2",
+        "target_name": "Babyzimmer"
+    },
+    "20740": {
+        "source_name": "Haustierbedarf | Katzen | Kratzbäume & Möbel",
+        "target_id": "mkp-C10C1C1C1C5",
+        "target_name": "Sonstiges Gartenspielzeug"
+    },
+    "260383": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Tische",
+        "target_id": "mkp-C3C2C11C1",
+        "target_name": "Kindertisch"
+    },
+    "20507": {
+        "source_name": "Garten & Terrasse | Teiche, Bachläufe & Brunnen | Spring- & Zierbrunnen",
+        "target_id": "mkp-C5C2C10C4",
+        "target_name": "Wasserfontäne"
+    },
+    "20518": {
+        "source_name": "Garten & Terrasse | Pflanzenpflege, Boden & Zubehör | Körbe, Blumentöpfe, -kästen & Untersetzer",
+        "target_id": "mkp-C5C9C28C1",
+        "target_name": "Blumentopf"
+    },
+    "134648": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Sofas & Sessel",
+        "target_id": "mkp-C3C2C13C3",
+        "target_name": "Kindersessel"
+    },
+    "45510": {
+        "source_name": "Möbel & Wohnen | Teppiche & Teppichböden | Teppiche",
+        "target_id": "mkp-C6C6C12",
+        "target_name": "Teppich"
+    },
+    "97075": {
+        "source_name": "Sport | Weitere Ballsportarten | Tischtennis | Tische",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "62493": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Sitzmöbel | Sofas & Sessel",
+        "target_id": "mkp-C3C1C15C27",
+        "target_name": "Sofa"
+    },
+    "41204": {
+        "source_name": "Bastel- & Künstlerbedarf | Künstler- & Zeichenbedarf | Malen | Staffeleien",
+        "target_id": "mkp-C10C1C2C17",
+        "target_name": "Malen & Basteln"
+    },
+    "25964": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Spieltürme & Schaukeln | Schaukeln | Sonstige",
+        "target_id": "mkp-C10C1C2C21",
+        "target_name": "Sonstiges Spielzeug"
+    },
+    "84989": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Spieltürme & Schaukeln | Spieltürme",
+        "target_id": "mkp-C10C1C1C5C3",
+        "target_name": "Spielturm"
+    },
+    "136936": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Wippen",
+        "target_id": "mkp-C3C3C2C7",
+        "target_name": "Schwingstuhl"
+    },
+    "167517": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Spieltürme & Schaukeln | Schaukeln | Kleinkindschaukel",
+        "target_id": "mkp-C3C3C2C7",
+        "target_name": "Schwingstuhl"
+    },
+    "175756": {
+        "source_name": "Heimwerker | Heizen, Klima & Sanitär | Kamine, Öfen & Zubehör | Kamine",
+        "target_id": "mkp-C3C1C10C1C8",
+        "target_name": "Gaskamin"
+    },
+    "183392": {
+        "source_name": "Garten & Terrasse | Beleuchtung | Laternen & Windlichter",
+        "target_id": "Lanterns",
+        "target_name": "Laternen"
+    },
+    "360": {
+        "source_name": "Antiquitäten & Kunst | Kunst | Kunstdrucke",
+        "target_id": "mkp-C8C2C1C5",
+        "target_name": "Kunstdruck"
+    },
+    "43538": {
+        "source_name": "Garten & Terrasse | Gartenzäune, Sichtschutzwände & Gartentore | Spaliere",
+        "target_id": "mkp-C5C2C4",
+        "target_name": "Gartenpforte"
+    },
+    "166612": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Spieltürme & Schaukeln | Sonstige",
+        "target_id": "mkp-C10C1C2C21",
+        "target_name": "Sonstiges Spielzeug"
+    },
+    "115753": {
+        "source_name": "Möbel & Wohnen | Küche | Küchenwagen",
+        "target_id": "mkp-C9C5C4C20",
+        "target_name": "Sonstige Küchenhelfer"
+    },
+    "20695": {
+        "source_name": "Möbel & Wohnen | Kochen & Genießen | Gedeckter Tisch | Kaffeetassen & -becher",
+        "target_id": "mkp-C9C4C1C5C2",
+        "target_name": "Kaffeetasse"
+    },
+    "108884": {
+        "source_name": "Haustierbedarf | Hunde | Hundehütten",
+        "target_id": "mkp-C3C4C3C4",
+        "target_name": "Bett"
+    },
+    "166611": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Spieltürme & Schaukeln | Kletterutensilien",
+        "target_id": "mkp-C10C1C1C4",
+        "target_name": "Sonstige Outdoorspielzeuge"
+    },
+    "139956": {
+        "source_name": "Garten & Terrasse | Gartenbauten & Sonnenschutz | Gartenhäuser, Geräteschuppen & Carports",
+        "target_id": "mkp-C5C13C12",
+        "target_name": "Diverse Gartengeräte"
+    },
+    "19746": {
+        "source_name": "Baby | Möbel | Betten | Gitterbetten",
+        "target_id": "mkp-C3C2C9C6",
+        "target_name": "Gitterbett"
+    },
+    "77508": {
+        "source_name": "Möbel & Wohnen | Möbel | Betten | Lattenroste",
+        "target_id": "mkp-C3C4C4C1",
+        "target_name": "Lattenrost"
+    },
+    "159897": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Boxen",
+        "target_id": "mkp-C3C4C3C20C2",
+        "target_name": "Unterbettkommode"
+    },
+    "181074": {
+        "source_name": "Heimwerker | Schwimmbecken, Saunen & Außenwhirlpools |   & -hüllen",
+        "target_id": "mkp-C5C15C7C1",
+        "target_name": "Whirlpool-Abdeckhilfe"
+    },
+    "136934": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Sandkasten & Spielzeug | Sandkästen",
+        "target_id": "mkp-C10C1C1C8C1",
+        "target_name": "Sandkasten"
+    },
+    "22148": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Sonstige",
+        "target_id": "mkp-C10C1C1C4",
+        "target_name": "Sonstige Outdoorspielzeuge"
+    },
+    "127549": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Leuchten & Leuchtmittel | Deckenleuchten",
+        "target_id": "mkp-C4C2C1C1",
+        "target_name": "Deckenleuchten"
+    },
+    "79684": {
+        "source_name": "Garten & Terrasse | Möbel | Liegen",
+        "target_id": "mkp-C5C7C4C2C1",
+        "target_name": "Gartenset"
+    },
+    "45800": {
+        "source_name": "Heimwerker | Bodenbeläge & Fliesen | Boden- & Wandfliesen",
+        "target_id": "mkp-C6C3C6C1",
+        "target_name": "Terrassenfliese"
+    },
+    "46249": {
+        "source_name": "Heimwerker | Bad & Küche | Bad | Duschen, Badewannen & Teile | Indoor-Whirlpools",
+        "target_id": "mkp-C5C15C6",
+        "target_name": "Whirlpool"
+    },
+    "22653": {
+        "source_name": "Möbel & Wohnen | Möbel | CD- & Video-Regale",
+        "target_id": "mkp-C3C1C17C20",
+        "target_name": "CD-Regal"
+    },
+    "79700": {
+        "source_name": "Garten & Terrasse | Möbel | Hollywoodschaukeln",
+        "target_id": "mkp-C5C7C6C6",
+        "target_name": "Hollywoodschaukel"
+    },
+    "20719": {
+        "source_name": "Garten & Terrasse | Möbel | Hängematten",
+        "target_id": "mkp-C5C7C2C1C1",
+        "target_name": "Hängematte"
+    },
+    "10035": {
+        "source_name": "Garten & Terrasse | Möbel | Sonstige",
+        "target_id": "mkp-C10C1C1C1C5",
+        "target_name": "Sonstiges Gartenspielzeug"
+    },
+    "171949": {
+        "source_name": "Verschiedenes | Sonstige",
+        "target_id": "mkp-C2C3C5",
+        "target_name": "Zubehör"
+    },
+    "68467": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Tische | Stehpulte & -tische",
+        "target_id": "mkp-C3C7C4C1",
+        "target_name": "Bürotisch"
+    },
+    "84211": {
+        "source_name": "Heimwerker | Schwimmbecken, Saunen & Außenwhirlpools | Außenwhirlpools",
+        "target_id": "mkp-C5C15C6",
+        "target_name": "Whirlpool"
+    },
+    "181054": {
+        "source_name": "Heimwerker | Schwimmbecken, Saunen & Außenwhirlpools | Saunen, Dampfbäder & Infrarot-Wärmekabinen",
+        "target_id": "mkp-C7C3C2",
+        "target_name": "Sauna"
+    },
+    "180995": {
+        "source_name": "Garten & Terrasse | Gartenbauten & Sonnenschutz | Pavillons & Pergolen",
+        "target_id": "mkp-C5C7C5C4",
+        "target_name": "Pavillon"
+    },
+    "30104": {
+        "source_name": "Sport | Weitere Sportarten | Boxen | Boxsäcke",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "134650": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Sitzbänke & Hocker",
+        "target_id": "mkp-C3C3C3C9",
+        "target_name": "Sitzbank"
+    },
+    "98849": {
+        "source_name": "Möbel & Wohnen | Kochen & Genießen | Ordnung & Aufbewahrung | Brotkästen",
+        "target_id": "mkp-C9C6C13C1",
+        "target_name": "Brotkasten & -korb"
+    },
+    "66743": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Spieltisch- & Stuhl-Sets",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "126415": {
+        "source_name": "Heimwerker | Schwimmbecken, Saunen & Außenwhirlpools | Sauna-Zubehör",
+        "target_id": "mkp-C7C3C6C1",
+        "target_name": "Saunazubehör"
+    },
+    "66762": {
+        "source_name": "Haustierbedarf | Katzen | Betten",
+        "target_id": "mkp-C3C4C3C4",
+        "target_name": "Bett"
+    },
+    "68463": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Sitzmöbel | Kinder- & Jugendstühle",
+        "target_id": "mkp-C3C2C13C2",
+        "target_name": "Kinderstuhl"
+    },
+    "62494": {
+        "source_name": "Büro & Schreibwaren | Büromöbel | Sitzmöbel | Sonstige",
+        "target_id": "mkp-C3C7C2C4",
+        "target_name": "Bürohocker"
+    },
+    "38223": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Zeitungsständer & -halter",
+        "target_id": "mkp-C3C1C10C37",
+        "target_name": "Zeitungsständer"
+    },
+    "20706": {
+        "source_name": "Möbel & Wohnen | Beleuchtung | Leuchtmittel",
+        "target_id": "mkp-C3C1C10C37",
+        "target_name": "Zeitungsständer"
+    },
+    "159913": {
+        "source_name": "Garten & Terrasse | Sonstige",
+        "target_id": "mkp-C10C1C1C1C5",
+        "target_name": "Sonstiges Gartenspielzeug"
+    },
+    "40620": {
+        "source_name": "Möbel & Wohnen | Klein- & Hängeaufbewahrung | Schirmständer",
+        "target_id": "mkp-C3C5C7C6",
+        "target_name": "Schirmständer"
+    },
+    "118859": {
+        "source_name": "Garten & Terrasse | Garten- & Landschaftsbau | Terrassen- & Gehwegmaterialien | Gehwegplatten & -steine",
+        "target_id": "mkp-C10C1C1C1C5",
+        "target_name": "Sonstiges Gartenspielzeug"
+    },
+    "181121": {
+        "source_name": "Garten & Terrasse | Teiche, Bachläufe & Brunnen | Teich-Dekoration",
+        "target_id": "mkp-C5C2C10C3",
+        "target_name": "Teichset"
+    },
+    "20500": {
+        "source_name": "Garten & Terrasse | Vogel- & Wildtierzubehör | Vogeltränken",
+        "target_id": "mkp-C5C2C7",
+        "target_name": "Vogelbad"
+    },
+    "139950": {
+        "source_name": "Garten & Terrasse | Gartenzäune, Sichtschutzwände & Gartentore | Geländer & Handläufe",
+        "target_id": "mkp-C5C11C9C1",
+        "target_name": "Gartenschlauch"
+    },
+    "125085": {
+        "source_name": "Möbel & Wohnen | Möbel | Truhen & Kisten",
+        "target_id": "mkp-C3C4C3C20C2",
+        "target_name": "Unterbettkommode"
+    },
+    "64637": {
+        "source_name": "Sport | Funsport | Airsoft | Waffen | Pistolen",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "260926": {
+        "source_name": "Garten & Terrasse | Dekoration | Übertöpfe & Vasen",
+        "target_id": "mkp-C8C3C3",
+        "target_name": "Übertöpfe"
+    },
+    "124995": {
+        "source_name": "Heimwerker | Baustoffe & Holz | Wandverkleidung, Leisten & Außenverkleidung | Klinker",
+        "target_id": "mkp-C10C1C4C2",
+        "target_name": "Bauklötze"
+    },
+    "259244": {
+        "source_name": "Heimwerker | Baustoffe & Holz | Wandverkleidung, Leisten & Außenverkleidung | Wandverkleidung",
+        "target_id": "mkp-C8C2C7C3",
+        "target_name": "Wandverkleidung"
+    },
+    "553": {
+        "source_name": "Antiquitäten & Kunst | Kunst | Kunstskulpturen",
+        "target_id": "mkp-C8C6C2",
+        "target_name": "Skulpturen"
+    },
+    "259157": {
+        "source_name": "Möbel & Wohnen | Küche | Arbeitsplatten",
+        "target_id": "mkp-C3C7C4C5",
+        "target_name": "Schreibtischplatte"
+    },
+    "115625": {
+        "source_name": "Heimwerker | Bad & Küche | Bad | Waschbecken & Waschtische | Waschtische",
+        "target_id": "mkp-C3C6C2C12",
+        "target_name": "Waschtischunterschrank"
+    },
+    "31385": {
+        "source_name": "Möbel & Wohnen | Badezimmer | Badezimmerzubehör | Badezimmerregale",
+        "target_id": "mkp-C3C6C1C2",
+        "target_name": "Badezimmerregal"
+    },
+    "181126": {
+        "source_name": "Garten & Terrasse | Teiche, Bachläufe & Brunnen | Bachläufe & Wasserfälle",
+        "target_id": "mkp-C5C15C4C15",
+        "target_name": "Pool-Wasserfall"
+    },
+    "260381": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Möbel | Stühle",
+        "target_id": "mkp-C3C2C13C3",
+        "target_name": "Kindersessel"
+    },
+    "20561": {
+        "source_name": "Uhren & Schmuck | Uhren, -teile & -zubehör | Weitere Uhren | Wanduhren",
+        "target_id": "mkp-C8C5C1",
+        "target_name": "Wanduhr"
+    },
+    "61677": {
+        "source_name": "Business, Office & Industrial | Office Equipment & Supplies | Office Furniture | Office Chairs",
+        "target_id": "mkp-C3C7C2C4",
+        "target_name": "Bürohocker"
+    },
+    "3299": {
+        "source_name": "Business, Office & Industrial | Office Equipment & Supplies | Office Furniture | Filing Cabinets",
+        "target_id": "mkp-C3C7C3C3",
+        "target_name": "Hängeregisterelement"
+    },
+    "121895": {
+        "source_name": "Business, Office & Industrial | Office Equipment & Supplies | Office Furniture | Office Desks",
+        "target_id": "mkp-C3C7C4C1",
+        "target_name": "Bürotisch"
+    },
+    "40623": {
+        "source_name": "Möbel & Wohnen | Kindermöbel & Wohnen | Dekoration & Kleinaufbewahrung | Wand-, Türgarderoben & Haken",
+        "target_id": "mkp-C3C5C7C14",
+        "target_name": "Wandgarderobe"
+    },
+    "1197": {
+        "source_name": "Toys & Games | Preschool Toys & Pretend Play | Wooden Toys",
+        "target_id": "mkp-C10C1C4C6",
+        "target_name": "Sonstige Holzspielzeuge"
+    },
+    "20559": {
+        "source_name": "Home, Furniture & DIY | Clocks | Grandfather Clocks",
+        "target_id": "mkp-C8C5C2",
+        "target_name": "Tischuhr"
+    },
+    "3300": {
+        "source_name": "Business, Office & Industrial | Office Equipment & Supplies | Office Furniture | Other Office Furniture",
+        "target_id": "mkp-C3C7C2C4",
+        "target_name": "Bürohocker"
+    },
+    "109064": {
+        "source_name": "Home, Furniture & DIY | Furniture | Beds & Headboards | Headboards & Footboards",
+        "target_id": "mkp-C3C4C3C20C6",
+        "target_name": "Kopfteil"
+    },
+    "179690": {
+        "source_name": "Möbel & Wohnen | Möbel | Möbelteile",
+        "target_id": "mkp-C6C1C10C2",
+        "target_name": "Möbeluntersetzer"
+    },
+    "20551": {
+        "source_name": "Möbel & Wohnen | Dekoration | Deko-Accessoires | Buchstützen",
+        "target_id": "mkp-C8C9C3C3",
+        "target_name": "Geschenkbuch"
+    },
+    "34386": {
+        "source_name": "Möbel & Wohnen | Möbel | Möbelzubehör",
+        "target_id": "mkp-C2C3C5",
+        "target_name": "Zubehör"
+    },
+    "157815": {
+        "source_name": "Garten & Terrasse | Gartenzäune, Sichtschutzwände & Gartentore | Elektrozäune",
+        "target_id": "mkp-C5C4C2C1",
+        "target_name": "Gartenzaun"
+    },
+    "16038": {
+        "source_name": "Sport | Camping & Outdoor | Camping-Möbel",
+        "target_id": "mkp-C10C1C1C6C6",
+        "target_name": "Sonstige Sportspiele"
+    },
+    "151621": {
+        "source_name": "Garten & Terrasse | Grills, Heizstrahler & Picknickzubehör | Grills",
+        "target_id": "mkp-C5C8C1C2C1",
+        "target_name": "Gasgrill"
+    },
+    "27538": {
+        "source_name": "Heimwerker | Schwimmbecken, Saunen & Außenwhirlpools | Saunaöfen & Heizgeräte",
+        "target_id": "mkp-C7C3C5",
+        "target_name": "Saunaofen Set"
+    },
+    "181397": {
+        "source_name": "Sport | Camping & Outdoor | Camping-Hygiene | Camping-Toiletten",
+        "target_id": "mkp-C7C2C4C3",
+        "target_name": "Stand-WC"
+    },
+    "166609": {
+        "source_name": "Spielzeug | Spielzeug für draußen | Rutschen",
+        "target_id": "mkp-C10C1C1C1C3",
+        "target_name": "Kinderrutsche"
+    },
+    "260505": {
+        "source_name": "Heimwerker | Heizen, Klima & Sanitär | Warmwassergeräte | Durchlauferhitzer",
+        "target_id": "mkp-C5C3C3",
+        "target_name": "Heizgerät"
+    },
+    "19749": {
+        "source_name": "Baby | Möbel | Kommoden",
+        "target_id": "mkp-C3C1C14C2C7",
+        "target_name": "Kinderkommode"
+    },
+    "124325": {
+        "source_name": "Baby | Möbel | Betten | Beistellbetten",
+        "target_id": "mkp-C3C2C9C5",
+        "target_name": "Beistellbett"
+    },
+    "19751": {
+        "source_name": "Baby | Möbel | Tische & Stühle",
+        "target_id": "mkp-C3C2C11C1",
+        "target_name": "Kindertisch"
+    },
+    "139948": {
+        "source_name": "Garten & Terrasse | Gartenzäune, Sichtschutzwände & Gartentore | Gartentore",
+        "target_id": "mkp-C5C4C2C3",
+        "target_name": "Gartentor"
+    },
+    "260895": {
+        "source_name": "Business & Industrie | Baustoffe & Bauelemente | Industrielle Treppen | Geländer",
+        "target_id": "mkp-C10C4C1C3",
+        "target_name": "Treppenschutzgitter"
+    },
+    "260549": {
+        "source_name": "Heimwerker | Sicherheitstechnik | Sicherheitsgitter",
+        "target_id": "mkp-C10C4C1C4",
+        "target_name": "Türschutzgitter"
+    },
+    "52348": {
+        "source_name": "Heimwerker | Farben, Tapeten & Zubehör | Tapeten, Werkzeuge & Zubehör | Sonstige",
+        "target_id": "mkp-C2C3C5",
+        "target_name": "Zubehör"
+    },
+    "2034": {
+        "source_name": "Garten & Terrasse | Dekoration | Sonstige",
+        "target_id": "mkp-C10C1C1C1C5",
+        "target_name": "Sonstiges Gartenspielzeug"
+    },
+    "75592": {
+        "source_name": "Garten & Terrasse | Dekoration | Schilder & Tafeln",
+        "target_id": "mkp-C8C2C6",
+        "target_name": "Wandschilder"
+    }
+}

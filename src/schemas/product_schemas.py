@@ -1,6 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import List, Union, Optional, Dict
 
+class ProductRequest(BaseModel): # lutz
+    product_id: str
+
+class FabricRequest(BaseModel): # lutz
+    fabric_id: int
+
 class ProductEan(BaseModel):
     ean_list: List[str]
 

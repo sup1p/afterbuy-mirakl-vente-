@@ -1,0 +1,81 @@
+# app/mappings/mapping.yaml
+
+category: "category"
+ean:
+  - "gtin"
+  - "shop_sku"
+  - "ean"
+  - "sku"
+  - "product-id"
+  - "product-id-type"
+properties.EAN:
+  - "gtin"
+  - "shop_sku"
+  - "ean"
+  - "sku"
+  - "product-id"
+  - "product-id-type"
+article: "title"
+properties.Marke:
+  - "Brand-root-class"
+  - "Brand"
+html_description: "product_description"
+
+# Изображения
+pic_main: "images.main_image"
+pics: "images.secondary_image"
+
+# Specifications
+#properties.Farbe: "Color"
+#properties.Material: "Material"
+#properties.Breite: "DimensionWidth"
+#properties.Länge: "DimensionDepthLength"
+#properties.Höhe: "DimensionHeight"
+properties.Liegefläche:
+  - "specifications.lying_surface_width_cm"
+  - "specifications.lying_surface_length_cm"
+properties.Herstellergarantie: "specifications.manufacturer_warranty_years"
+
+properties.Farbe:
+  - "Color"
+  - "specifications.color"
+
+#properties.Füllmaterial:
+#  - "Material"
+#  - "specifications.main_material"
+#
+#properties.Polsterstoff:
+#  - "Material"
+#  - "specifications.main_material"
+
+properties.Gestellmaterial:
+  - "Material"
+  - "specifications.main_material"
+
+properties.Material:
+  - "Material"
+  - "specifications.main_material"
+
+properties.Breite:
+  - "DimensionWidth"
+  - "specifications.width_cm"
+
+properties.Gesamtbreite:
+  - "DimensionWidth"
+  - "specifications.width_cm"
+
+properties.Länge:
+  - "DimensionDepthLength"
+  - "specifications.length_depth_cm"
+
+properties.Gesamttiefe:
+  - "DimensionDepthLength"
+  - "specifications.length_depth_cm"
+
+properties.Höhe:
+  - "DimensionHeight"
+  - "specifications.height_cm"
+
+properties.Gesamthöhe:
+  - "DimensionHeight"
+  - "specifications.height_cm"

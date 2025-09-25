@@ -15,7 +15,6 @@ from src.schemas.product_schemas import TestImageResize, MappedProduct, FabricMa
 from src.services.csv_converter import make_big_csv
 
 from logs.config_logs import setup_logging
-
 import logging
 import asyncio
 import httpx
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/test-import-product/{ean}/", tags=["test"], response_model=MappedProduct)
+@router.post("/test-import-product/vente/{ean}/", tags=["test"], response_model=MappedProduct)
 async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
@@ -67,7 +66,7 @@ async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,htt
         )
     return mapped_data
 
-@router.post("/test-import-products-by-fabric/{afterbuy_fabric_id}", tags=["test"], response_model=FabricMappedProducts)
+@router.post("/test-import-products-by-fabric/vente/{afterbuy_fabric_id}", tags=["test"], response_model=FabricMappedProducts)
 async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, without importing to Mirakl).

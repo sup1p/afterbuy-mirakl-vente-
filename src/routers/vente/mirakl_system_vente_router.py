@@ -17,7 +17,7 @@ import httpx
 router = APIRouter()
 
 
-@router.get("/import-product-error/{import_parameter}", tags=["mirakl_platform"])
+@router.get("/import-product-error/{import_parameter}", tags=["mirakl_platform_vente"])
 async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Returns error of product import parameter - if exists
@@ -40,7 +40,7 @@ async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClie
 
 
 @router.get(
-    "/mirakl-product-non-integrated/{import_parameter}", tags=["mirakl_platform"]
+    "/mirakl-product-non-integrated/{import_parameter}", tags=["mirakl_platform_vente"]
 )
 async def get_product_non_integrated(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
@@ -62,7 +62,7 @@ async def get_product_non_integrated(import_parameter: str, httpx_client: httpx.
         raise HTTPException(status_code=404, detail=result.get("message", "Not found"))
     return {"message": result}
 
-@router.get("/mirakl-offer-import-error/{import_parameter}", tags=["mirakl_platform"])
+@router.get("/mirakl-offer-import-error/{import_parameter}", tags=["mirakl_platform_vente"])
 async def get_offer_import_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Returns offer error of import parameter - if exists

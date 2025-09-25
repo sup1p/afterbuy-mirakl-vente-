@@ -1,0 +1,71 @@
+## Пример нормализации материалов
+#holz: "Wood"
+#massivholz: "solidWood"
+#kunststoff: "Plastic"
+#metall: "Metal"
+#glas: "Glass"
+#leder: "Leather"
+#stoff: "Fabric"
+#spanplatte: "Chipboard"
+#marmor: "Marble"
+#fell: "Fur / Animal skin"
+##glas: "Glass"
+##holz: "Wood"
+#holzwerkstoff: "Composite wood"
+#karton: "Paperboard"
+#keramik: "Ceramics"
+##kunststoff: "Plastic"
+##leder: "Leather"
+##metall: "Metal"
+#naturmaterialien: "Natural Materials"
+#papier: "Paper"
+#stein: "Stone"
+#textil: "Textiles"
+#wellpappe: "Corrugated cardboard"
+#birkenholz: "BirchWood"
+#buchenholz: "BeechWood"
+#ahornholz: "MapleWood"
+#akazienholz: "Acacia"
+#eichenholz: "Oak"
+#teakholz: "Teak"
+#zedernholz: "CedarWood"
+#mangoholz: "MangoWood"
+#kirschbaumholz: "CherryWood"
+#bambusholz: "Bamboo"
+#paraffin: "Paraffin"
+
+# app/mappings/material_mapping.yaml
+
+fell: animalSkin
+glas: glass
+holz: wood
+massivholz: compositeWood
+holzwerkstoff: compositeWood
+karton: paperboard
+keramik: ceramics
+kunststoff: plastic
+leder: leather
+metall: metal
+naturmaterialien: naturalMaterials
+papier: paper
+stein: stone
+textil: textiles
+wellpappe: cardboard
+birkenholz: Birch
+ahornholz: Maple
+akazienholz: Acacia
+eichenholz: Oak
+teakholz: Teak
+zedernholz: Cedar
+mangoholz: Mango_Wood
+kirschbaumholz: cherry_wood
+bambusholz: Bamboo
+paraffin: paraffin
+acryl: acryl
+MDF/Spanplatte: wood
+holzfurnier: wood
+Aluminium: metal
+aluminium: metal
+Holz & Glas: wood
+leinen: animalSkin
+#MDF: wood

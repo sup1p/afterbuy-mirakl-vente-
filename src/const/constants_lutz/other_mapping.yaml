@@ -1,0 +1,9 @@
+# app/mappings/other_mapping.yaml
+
+# ключи — lowercased исходные значения, значения — целевые (как в CSV)
+acryl: Acryl
+polyester: Polyester
+polypropylen: Polypropylen
+
+# префикс для генерации кода
+prefix: sportsPlasticType
