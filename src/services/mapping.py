@@ -290,11 +290,12 @@ def _build_base_fields(
         "sku": data.get("ean"),
         "product-id": data.get("ean"),
         "offer-description": html_desc_fr if html_desc_fr else "",
-        # "product-id": data.get("product_num"),
         "product-id-type": "EAN",
         "price": data.get("price"),
         "state": 11, # new state
         "quantity": product_quantity_check(data.get("article", "")),
+        "leadtime-to-ship": int(get_delivery_days(data.get("collection"))/2),
+        # -----------------
         "brand": "", # no brand
         "internal-description": "",
         "title_de": data.get("article"),
