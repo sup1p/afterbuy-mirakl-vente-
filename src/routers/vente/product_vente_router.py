@@ -5,12 +5,12 @@ Provides endpoints for importing products from Afterbuy to Mirakl system.
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
-from src.services.mirakl_api_calls import import_product as import_product_mirakl
-from src.utils.format_little import is_valid_ean
+from src.services.vente_services.afterbuy_api_calls import get_product_data, get_products_by_fabric
+from src.services.vente_services.mirakl_api_calls import import_product as import_product_mirakl
+from src.utils.vente_utils.format_little import is_valid_ean
 from src.schemas.product_schemas import ProductEan, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse
-from src.services.csv_converter import make_csv, make_big_csv
-from src.services.mapping import map_attributes
+from src.services.vente_services.csv_converter import make_csv, make_big_csv
+from src.services.vente_services.mapping import map_attributes
 from src.core.dependencies import get_httpx_client, get_current_user
 from logs.config_logs import setup_logging
 

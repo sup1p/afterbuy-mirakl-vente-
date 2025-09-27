@@ -47,7 +47,7 @@ async def get_token() -> str:
         raise ValueError("Afterbuy не вернул access_token")
 
     # если Afterbuy возвращает expires_in (в секундах) — используем
-    expires_in = data.get("expires_in", 3600)  # по умолчанию 1 час
+    expires_in = 3600  # по умолчанию 1 час
     _token_cache["access_token"] = token
     _token_cache["expires_at"] = now + int(expires_in) - 30  # -30 сек запас
 

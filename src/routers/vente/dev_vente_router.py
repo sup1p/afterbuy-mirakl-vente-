@@ -7,12 +7,12 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from src.core.dependencies import get_httpx_client, get_current_user
 from src.core.settings import settings
-from src.services.afterbuy_api_calls import get_product_data, get_products_by_fabric
-from src.services.mapping import map_attributes
-from src.utils.image_worker import resize_image_and_upload
-from src.utils.format_little import is_valid_ean
+from src.services.vente_services.afterbuy_api_calls import get_product_data, get_products_by_fabric
+from src.services.vente_services.mapping import map_attributes
+from src.utils.vente_utils.image_worker import resize_image_and_upload
+from src.utils.vente_utils.format_little import is_valid_ean
 from src.schemas.product_schemas import TestImageResize, MappedProduct, FabricMappedProducts
-from src.services.csv_converter import make_big_csv
+from src.services.vente_services.csv_converter import make_big_csv
 
 from logs.config_logs import setup_logging
 import logging
@@ -137,6 +137,9 @@ async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: h
     )
     
     csv_content = make_big_csv(data_for_csv)
+    
+    with open("test_output2.csv", 'w') as f:
+        f.write(csv_content)
     
     if not csv_content:
         logger.error(f"Making csv failed or make_csv got no 'data' for fabric id: {afterbuy_fabric_id}")

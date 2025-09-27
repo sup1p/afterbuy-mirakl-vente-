@@ -17,7 +17,7 @@ from src.routers.lutz.generate_csv_lutz_router import router as generate_csv_lut
 from src.routers.lutz.offers_lutz_router import router as offers_lutz_router
 from src.routers.lutz.product_lutz_router import router as product_lutz_router
 
-from src.services.agents import create_agent_with_httpx
+from src.services.vente_services.agents import create_agent_with_httpx
 from src import resources
 import logging
 from logs.config_logs import setup_logging

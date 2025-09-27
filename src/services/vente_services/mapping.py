@@ -3,7 +3,7 @@ Product data mapping module.
 Transforms Afterbuy product data into Mirakl-compatible format with proper attribute mapping.
 """
 
-from src.const.constants import (
+from src.const.constants_vente.constants import (
     mapping_attr,
     category_attrs_map,
     mapping_attr_to_def_fallback,
@@ -13,15 +13,15 @@ from src.const.constants import (
     default_html_description
 )
 from src.const.prompts import build_description_prompt
-from src.utils.substitute_formatter import substitute_attr
-from src.utils.format_attr import product_quantity_check
-from src.utils.format_little import get_delivery_days
+from src.utils.vente_utils.substitute_formatter import substitute_attr
+from src.utils.vente_utils.format_attr import product_quantity_check
+from src.utils.vente_utils.format_little import get_delivery_days
 from src.core.settings import settings
 from src.schemas.ai_schemas import ProductDescriptionAI
-from src.services.agents import get_agent
-from src.utils.image_worker import check_image_existence, process_images, resize_image_and_upload
+from src.services.vente_services.agents import get_agent
+from src.utils.vente_utils.image_worker import check_image_existence, process_images, resize_image_and_upload
 from logs.config_logs import setup_logging
-from src.utils.format_html import extract_product_properties_from_html
+from src.utils.vente_utils.format_html import extract_product_properties_from_html
 
 import json
 import logging

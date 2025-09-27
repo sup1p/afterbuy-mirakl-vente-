@@ -5,7 +5,7 @@ Provides endpoints for checking Mirakl platform status, import errors, and syste
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.services.mirakl_api_calls import (
+from src.services.vente_services.mirakl_api_calls import (
     check_import_error,
     check_non_integrated_products,
     check_offer_import_error

@@ -1,6 +1,6 @@
 import pytest
 import httpx
-from src.services.afterbuy_api_calls import get_access_token, get_product_data, get_products_by_fabric
+from src.services.vente_services.afterbuy_api_calls import get_access_token, get_product_data, get_products_by_fabric
 
 pytest_plugins = "pytest_asyncio"
 
@@ -60,6 +60,3 @@ async def test_get_products_by_fabric_integration():
             assert "id" in product, "Отсутствует ключ 'id' в первом продукте"
             assert "ean" in product, "Отсутствует ключ 'ean' в первом продукте"
             assert "html_description" in product, "Отсутствует ключ 'html_description' в первом продукте"
-
-        # Логи ошибок (необязательных продуктов)
-        if result["not_added_eans"]:

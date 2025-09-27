@@ -3,7 +3,7 @@ Attribute substitution formatter module.
 Routes attribute formatting requests to appropriate formatting functions based on attribute codes.
 """
 
-from src.utils.format_attr import (
+from src.utils.vente_utils.format_attr import (
     format_2,
     format_3,
     format_5,

@@ -3,6 +3,7 @@ import json
 import logging
 from fastapi import HTTPException, APIRouter
 
+from src.services.vente_services.csv_converter import make_big_csv
 from src.services.lutz_services import afterbuy
 from src.utils.lutz_utils.image_processing import _process_images_for_product
 from src.utils.lutz_utils import mapping_tools, csv_tools
@@ -52,7 +53,10 @@ async def generate_fabric_csv(request: FabricRequest):
         if not all_mapped:
             raise HTTPException(status_code=400, detail="Нет продуктов для генерации CSV")
 
-        # csv_content = csv_tools.write_csv(fieldnames, all_mapped)
+        csv_content = make_big_csv(all_mapped)
+        
+        with open("test_output.csv", "w", encoding="utf-8") as f:
+            f.write(csv_content)
 
         return {
             "status": "success",

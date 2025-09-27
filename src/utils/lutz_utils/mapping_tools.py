@@ -3,7 +3,7 @@ import unicodedata
 import json
 import ast
 import logging
-from src.utils.lutz_utils.html_parser import extract_productdetails
+from src.utils.vente_utils.format_html import extract_product_properties_from_html
 from src.core.settings import settings
 from logs.config_logs import setup_logging
 
@@ -240,7 +240,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
             continue
 
         if src == "html_description":
-            value = extract_productdetails(value)
+            value = extract_product_properties_from_html(value)
 
             # ⚡ Ограничиваем описание максимум 3000 символами
             if value and len(value) > 3000:

@@ -8,7 +8,7 @@ import re
 import unicodedata
 from typing import Union, List, Optional, Any
 from src.const.attrs import ATTR_175, ATTR_928, ATTR_795, ATTR_927, ATTR_7, ATTR_106
-from src.const.constants import mapping_format_85, mapping_format_717
+from src.const.constants_vente.constants import mapping_format_85, mapping_format_717
 from src.core.settings import settings
 from logs.config_logs import setup_logging
 
