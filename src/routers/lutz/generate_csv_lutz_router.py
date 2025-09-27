@@ -54,9 +54,6 @@ async def generate_fabric_csv(request: FabricRequest):
             raise HTTPException(status_code=400, detail="Нет продуктов для генерации CSV")
 
         csv_content = make_big_csv(all_mapped)
-        
-        with open("test_output.csv", "w", encoding="utf-8") as f:
-            f.write(csv_content)
 
         return {
             "status": "success",

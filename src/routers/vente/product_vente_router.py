@@ -97,7 +97,7 @@ async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_
             status_code=404,
             detail=f"Product with ean {ean} not found or make_csv failed",
         )
-
+        
     return await import_product_mirakl(csv_content, httpx_client=httpx_client)
 
 
@@ -181,6 +181,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
             status_code=404,
             detail="Creating big csv failed",
         )
+        
         
     try:
         mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
@@ -281,18 +282,21 @@ async def import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx
             status_code=404,
             detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
         )
+        
+    with open("test_output.csv", "w") as f:
+        f.write(csv_content)
 
-    try:
-        mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
-    except Exception as e:
-        logger.error(f"Error importing products to Mirakl: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+    # try:
+    #     mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
+    # except Exception as e:
+    #     logger.error(f"Error importing products to Mirakl: {e}")
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=str(e),
+    #     )
     
     return {
-        "mirakl_answer": mirakl_answer,
+        # "mirakl_answer": mirakl_answer,
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
         "total_eans_in_fabric": len(all_eans),

@@ -138,18 +138,13 @@ async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: h
     
     csv_content = make_big_csv(data_for_csv)
     
-    with open("test_output2.csv", 'w') as f:
-        f.write(csv_content)
-    
     if not csv_content:
         logger.error(f"Making csv failed or make_csv got no 'data' for fabric id: {afterbuy_fabric_id}")
         raise HTTPException(
             status_code=404,
             detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
         )
-        
-    with open("output.csv", "w", encoding="utf-8", newline="") as f:
-        f.write(csv_content)
+
         
     return {
         "not_added_eans": not_added_eans,

@@ -11,7 +11,7 @@ from logs.config_logs import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-def make_csv(data):
+def make_csv(data: dict):
     """
     Converts a JSON object or list of JSON objects into a CSV string.
 
@@ -49,7 +49,7 @@ def make_csv(data):
 
     fieldnames = list(fieldnames)
 
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
 
     for row in rows:
@@ -99,7 +99,7 @@ def make_big_csv(data):
 
     fieldnames = list(fieldnames)
 
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
 
     for row in data:
