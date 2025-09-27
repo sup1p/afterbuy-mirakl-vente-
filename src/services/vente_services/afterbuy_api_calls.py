@@ -49,14 +49,14 @@ async def get_access_token(httpx_client: httpx.AsyncClient):
             return _access_token
 
         credentials = {
-            "login": settings.afterbuy_login_vente,
-            "password": settings.afterbuy_password_vente,
+            "login": settings.afterbuy_login,
+            "password": settings.afterbuy_password,
         }
 
         logger.info("Requesting access token from Afterbuy")
         
         try:
-            response = await httpx_client.post(f"{settings.afterbuy_url_vente}/v1/auth/login", json=credentials, timeout=40.0)
+            response = await httpx_client.post(f"{settings.afterbuy_url}/v1/auth/login", json=credentials, timeout=40.0)
                 
         except Exception as e:
             logger.error(f"Error while requesting access token: {e}")
@@ -116,7 +116,8 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
     }
     
     if afterbuy_fabric_id:
-        data["fabric_id"] = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)
+        fabric_data = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)
+        data["fabric_id"] = fabric_data.get("id")
 
     limit = 100
     
@@ -124,9 +125,9 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
     
     try:
         response = await httpx_client.post(
-            f"{settings.afterbuy_url_vente}/v1/products/filter?limit={limit}", headers=headers, json=data, timeout=40.0
+            f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data, timeout=40.0
         )
-        logger.debug(f"{settings.afterbuy_url_vente}/v1/products/filter?limit={limit} _-------------- {data}")
+        logger.debug(f"{settings.afterbuy_url}/v1/products/filter?limit={limit} _-------------- {data}")
     except Exception as e:
         logger.error(f"Error while requesting product data: {e}")
         raise Exception(
@@ -207,7 +208,9 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
     """
     logger.info(f"get_products_and_data_by_fabric with afterbuy_fabric_id: {afterbuy_fabric_id} was accessed")
     
-    fabric_id = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id, httpx_client)
+    fabric_data = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id, httpx_client)
+    fabric_id = fabric_data.get("id")
+    fabric_name = fabric_data.get("name")
     
     try:
         access_token = await get_access_token(httpx_client=httpx_client) 
@@ -228,7 +231,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
     for attempt in range(3):
         try:
             response = await httpx_client.post(
-                f"{settings.afterbuy_url_vente}/v1/products/filter?limit={limit}", headers=headers, json=data, timeout=40.0
+                f"{settings.afterbuy_url}/v1/products/filter?limit={limit}", headers=headers, json=data, timeout=40.0
             )
             if response.status_code == 200:
                 break
@@ -305,6 +308,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
     return {
         "products": full_data,
         "not_added_eans": not_added_eans,
+        "fabric_name": fabric_name
     }
 
 
@@ -326,7 +330,7 @@ async def _get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClien
     for attempt in range(3):
         try:
             response = await httpx_client.get(
-                f"{settings.afterbuy_url_vente}/v1/products/{product_id}", headers=headers, timeout=40.0
+                f"{settings.afterbuy_url}/v1/products/{product_id}", headers=headers, timeout=40.0
             )
             if response.status_code == 200:
                 break
@@ -406,7 +410,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
     for attempt in range(3):
         try:
             response = await httpx_client.post(
-                f"{settings.afterbuy_url_vente}/v1/fabrics/find", headers=headers, json=data, timeout=40.0
+                f"{settings.afterbuy_url}/v1/fabrics/find", headers=headers, json=data, timeout=40.0
             )
             if response.status_code == 200:
                 break
@@ -439,10 +443,12 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
     
     if isinstance(data, list):
         only_id = data[0]['id']
+        name = data[0]['name']
         logger.debug(f"Successfully fetched fabric id for afterbuy_fabric_id: {afterbuy_fabric_id}")
         
     elif isinstance(data, dict):
         only_id = data.get('id')
+        name = data.get('name')
         logger.debug(f"Successfully fetched fabric id for afterbuy_fabric_id: {afterbuy_fabric_id}")
         
     else:
@@ -453,4 +459,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
             f"Fabric with afterbuy_fabric_id {afterbuy_fabric_id} has no fabric id",
         )
     
-    return only_id
+    return {
+        "id": only_id,
+        "name": name
+    }

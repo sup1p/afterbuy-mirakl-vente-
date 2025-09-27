@@ -12,6 +12,7 @@ def build_description_prompt(html_desc: str, product_properties: dict, product_a
         "This text should focus on the commercial offer: mention price, delivery time, warranty, and other conditions relevant to French buyers. "
         "Highlight the value of the offer (e.g., fast delivery, affordable price, included guarantee). Do not just translate the German version — adapt it to emphasize the offer.\n\n"
         "Rules:\n"
+        "- You must NOT call any tools. "
         "- Remove HTML tags, promotional inserts, control characters, and irrelevant technical clutter (e.g. EAN codes, packaging details, surcharge notes).\n"
         "- Remove all special characters or editor symbols such as \\n, \\t, escaped quotes (\\\"), braces (\\{...\\}), or similar artifacts. "
         "The final descriptions must contain only clean, natural text.\n"

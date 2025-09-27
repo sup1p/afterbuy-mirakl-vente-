@@ -31,11 +31,11 @@ async def get_token() -> str:
 
     # 2. Запрашиваем новый токен у Afterbuy
     payload = {
-        "login": settings.afterbuy_client_id_lutz,
-        "password": settings.afterbuy_client_secret_lutz,
+        "login": settings.afterbuy_login,
+        "password": settings.afterbuy_password,
     }
     async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(settings.afterbuy_auth_url_lutz, json=payload)
+        response = await client.post(f"{settings.afterbuy_url}/v1/auth/login", json=payload)
         if response.status_code != 200:
             logger.error("Ошибка получения токена: %s", response.text)
             response.raise_for_status()
@@ -59,7 +59,7 @@ async def fetch_product(product_id: str) -> dict:
     """Асинхронно тянем JSON продукта по ID из Afterbuy с автоматическим получением токена."""
     token = await get_token()
     headers = {"access-token": token}
-    url = f"{settings.afterbuy_url_lutz}/{product_id}"
+    url = f"{settings.afterbuy_url}/v1/products/{product_id}"
 
     logger.debug("Запрос продукта %s: GET %s", product_id, url)
 
@@ -78,10 +78,10 @@ async def fetch_products_by_fabric(fabric_id: int) -> list[str]:
     headers = {"access-token": token}
     payload = {"fabric_id": fabric_id}
 
-    logger.debug("Запрос товаров по fabric_id=%s: POST %s", fabric_id, settings.afterbuy_filter_url_lutz)
+    logger.debug("Запрос товаров по fabric_id=%s: POST %s", fabric_id, f"{settings.afterbuy_url}/v1/products/filter")
 
     async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(settings.afterbuy_filter_url_lutz, json=payload, headers=headers)
+        response = await client.post(f"{settings.afterbuy_url}/v1/products/filter", json=payload, headers=headers)
         if response.status_code != 200:
             logger.error("Ошибка фильтрации по fabric_id=%s: %s", fabric_id, response.text)
             response.raise_for_status()

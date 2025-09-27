@@ -249,21 +249,33 @@ async def _build_html_description(data: dict, filtered_properties: dict) -> str 
     sem = asyncio.Semaphore(8)
 
     async with sem:
-        try:
-            result = await agent.run(
-                build_description_prompt(html_desc=html_desc, product_properties=filtered_properties, product_article=article, product_price=data.get("price"), delivery_days=delivery_days),
-                output_type=ProductDescriptionAI,
-                model_settings={"temperature": 0.0},
-            )
-            ai_html_desc_de = result.output.description_de.strip()
-            ai_html_desc_fr = result.output.description_fr.strip()
-            logger.info("AI desc length=%d", len(ai_html_desc_de))
-            return {"desc_de": ai_html_desc_de, "desc_fr": ai_html_desc_fr}
-        except Exception as e:
-            logger.error(f"LLM failed: {e}")
+        for attempt in range(3):
+            try:
+                result = await agent.run(
+                    build_description_prompt(
+                        html_desc=html_desc,
+                        product_properties=filtered_properties,
+                        product_article=article,
+                        product_price=data.get("price"),
+                        delivery_days=delivery_days,
+                    ),
+                    output_type=ProductDescriptionAI,
+                    model_settings={"temperature": 0.0}
+                )
+                ai_html_desc_de = result.output.description_de.strip()
+                ai_html_desc_fr = result.output.description_fr.strip()
+                logger.info("AI desc length=%d", len(ai_html_desc_de))
+                break
+            except Exception as e:
+                logger.error(
+                    f"Attempt {attempt+1}/3 failed for AI Description EAN={data.get('ean')}: {e}"
+                )
+        else:
             raise Exception(
-                f"Error while requesting description from AI: {e}",
+                f"All 3 attempts failed AI Descriptionfor EAN={data.get('ean')}"
             )
+    if ai_html_desc_de and ai_html_desc_fr:
+        return {"desc_de": ai_html_desc_de, "desc_fr": ai_html_desc_fr}
 
 
 def _build_base_fields(

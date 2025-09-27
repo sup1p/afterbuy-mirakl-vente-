@@ -11,7 +11,7 @@ from src.services.vente_services.afterbuy_api_calls import get_product_data, get
 from src.services.vente_services.mapping import map_attributes
 from src.utils.vente_utils.image_worker import resize_image_and_upload
 from src.utils.vente_utils.format_little import is_valid_ean
-from src.schemas.product_schemas import TestImageResize, MappedProduct, FabricMappedProducts
+from src.schemas.product_schemas import TestImageResize, MappedProduct, FabricMappedProducts, FabricWithDeliveryRequest
 from src.services.vente_services.csv_converter import make_big_csv
 
 from logs.config_logs import setup_logging
@@ -66,8 +66,8 @@ async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,htt
         )
     return mapped_data
 
-@router.post("/test-import-products-by-fabric/vente/{afterbuy_fabric_id}", tags=["test"], response_model=FabricMappedProducts)
-async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+@router.post("/test-import-products-by-fabric/vente", tags=["test"], response_model=FabricMappedProducts)
+async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, without importing to Mirakl).
 
@@ -81,6 +81,9 @@ async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: h
     Raises:
         HTTPException: 500 if data fetch fails, 404 if no products found or CSV creation fails.
     """
+    afterbuy_fabric_id = input_body.afterbuy_fabric_id
+    delivery_days = input_body.delivery_days
+    
     
     try:
         data = await get_products_by_fabric(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)        
@@ -99,6 +102,7 @@ async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: h
         
     products = data.get("products", [])
     not_added_eans = data.get("not_added_eans", [])
+    fabric_name = data.get("fabric_name")
     all_eans = {prod.get("ean") for prod in products}
     
     logger.info(f"Fetched {len(products)} products for fabric {afterbuy_fabric_id}")
@@ -149,6 +153,8 @@ async def dev_import_products_by_fabric(afterbuy_fabric_id: int, httpx_client: h
     return {
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
+        "fabric_name": fabric_name,
+        "delivery_days": delivery_days,
         "total_eans_in_fabric": len(all_eans),
         "data_for_csv_by_fabric": data_for_csv
     }

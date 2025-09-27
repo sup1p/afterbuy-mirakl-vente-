@@ -10,6 +10,11 @@ class FabricRequest(BaseModel): # lutz
 class ProductEan(BaseModel):
     ean_list: List[str]
 
+
+class FabricWithDeliveryRequest(BaseModel):
+    afterbuy_fabric_id: int
+    delivery_days: int
+    
 class TestImageResize(BaseModel):
     url: str
     ean: str
@@ -47,6 +52,8 @@ class MappedProduct(BaseModel):
 class FabricMappedProducts(BaseModel):
     not_added_eans: List[str]
     total_not_added: int
+    fabric_name: str
+    delivery_days: int
     total_eans_in_fabric: int
     data_for_csv_by_fabric: List[MappedProduct]
 

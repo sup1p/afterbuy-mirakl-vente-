@@ -20,17 +20,11 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Afterbuy API configuration
-    afterbuy_url_vente: str
-    afterbuy_login_vente: str
-    afterbuy_password_vente: str
+    afterbuy_url: str
+    afterbuy_login: str
+    afterbuy_password: str
     image_base_url: str
-    
-    afterbuy_url_lutz: str
-    afterbuy_filter_url_lutz: str
-    afterbuy_auth_url_lutz: str
-    afterbuy_client_id_lutz: str
-    afterbuy_client_secret_lutz: str
-    
+        
     # Mirakl API configuration
     mirakl_url_vente: str
     mirakl_api_key_vente: str

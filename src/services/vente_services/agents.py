@@ -29,5 +29,5 @@ async def create_agent_with_httpx(
     model = OpenAIChatModel(settings.llm_model, provider=provider)
 
     # сохраняем в resources, чтобы использовать глобально
-    resources.llm_agent = Agent(model)
+    resources.llm_agent = Agent(model, retries=3, output_retries=3, tools=[]) 
     return resources.llm_agent
