@@ -1,14 +1,16 @@
 # app/routers/import_products/product.py
 import json
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.lutz_services import afterbuy, mirakl
 from src.utils.lutz_utils.image_processing import _process_images_for_product
 from src.utils.lutz_utils import mapping_tools, csv_tools
 from src.const.constants_lutz import mapping, real_mapping_v12, color_mapping, material_mapping, brand_mapping
 
-from src.schemas.product_schemas import ProductRequest, FabricRequest
+from src.core.dependencies import get_current_user
+
+from src.schemas.product_schemas import FabricRequest
 from logs.config_logs import setup_logging
 
 setup_logging()
@@ -21,7 +23,7 @@ router = APIRouter()
 
 
 @router.post("/import-fabric-offers-lutz", tags=["lutz"])
-async def import_fabric_offers(request: FabricRequest):
+async def import_fabric_offers(request: FabricRequest, current_user = Depends(get_current_user)):
     """Импорт офферов по fabric_id"""
     try:
         product_ids = await afterbuy.fetch_products_by_fabric(request.fabric_id)

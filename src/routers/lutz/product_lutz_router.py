@@ -1,12 +1,14 @@
 # app/routers/import_products/product.py
 import json
 import logging
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, Depends
 
 from src.services.lutz_services import afterbuy, mirakl
 from src.utils.lutz_utils.image_processing import _process_images_for_product
 from src.utils.lutz_utils import mapping_tools, csv_tools
 from src.const.constants_lutz import mapping, real_mapping_v12, color_mapping, material_mapping, brand_mapping
+
+from src.core.dependencies import get_current_user
 
 from src.schemas.product_schemas import ProductRequest
 from logs.config_logs import setup_logging
@@ -20,7 +22,7 @@ fieldnames = csv_tools.build_fieldnames(mapping)
 router = APIRouter()
 
 @router.post("/import-product-lutz", tags=["lutz"])
-async def import_product(request: ProductRequest):
+async def import_product(request: ProductRequest, current_user = Depends(get_current_user)):
     try:
         raw_item = await afterbuy.fetch_product(request.product_id)
 

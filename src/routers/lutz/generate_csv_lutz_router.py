@@ -1,13 +1,15 @@
 # app/routers/import_products/product.py
 import json
 import logging
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, Depends
 
 from src.services.vente_services.csv_converter import make_big_csv
 from src.services.lutz_services import afterbuy
 from src.utils.lutz_utils.image_processing import _process_images_for_product
 from src.utils.lutz_utils import mapping_tools, csv_tools
 from src.const.constants_lutz import mapping, real_mapping_v12, color_mapping, material_mapping, brand_mapping
+
+from src.core.dependencies import get_current_user
 
 from src.schemas.product_schemas import FabricRequest
 from logs.config_logs import setup_logging
@@ -22,7 +24,7 @@ router = APIRouter()
 
 
 @router.post("/generate-fabric-csv-lutz", tags=["lutz"])
-async def generate_fabric_csv(request: FabricRequest):
+async def generate_fabric_csv(request: FabricRequest, current_user = Depends(get_current_user)):
     """Генерирует CSV для всех продуктов по fabric_id без отправки в Mirakl"""
     try:
         product_ids = await afterbuy.fetch_products_by_fabric(request.fabric_id)
