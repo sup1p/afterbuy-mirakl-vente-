@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     ftp_password: str
     ftp_base_dir: str
     
+    remove_bg_url: str
+    remove_bg_api_key: str
+    
     # Application behavior settings
     check_image_existence: bool = False
     use_real_html_desc: bool = False

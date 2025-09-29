@@ -279,6 +279,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                         )
                         ai_html_desc_de = ai_result.output.description_de.strip()
                         ai_html_desc_en = ai_result.output.description_en.strip()
+                        
                         logger.info("AI desc length DE=%d", len(ai_html_desc_de))
                         logger.info("AI desc length EN=%d", len(ai_html_desc_en))
                         break

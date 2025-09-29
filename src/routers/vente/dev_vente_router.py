@@ -3,7 +3,8 @@ Test router module.
 Provides testing endpoints for development and debugging purposes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile
+from fastapi.responses import StreamingResponse
 
 from src.core.dependencies import get_httpx_client, get_current_user
 from src.core.settings import settings
@@ -183,3 +184,20 @@ async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClien
             detail=str(e)
         )
     return result
+
+@router.post("/test-remove-bg-image", tags=["test"])
+async def remove_bg(image: UploadFile, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+    url = settings.remove_bg_url
+    headers = {"x-api-key": settings.remove_bg_api_key}
+    files = {"image_file": (image.filename, await image.read(), image.content_type)}
+
+    response = await httpx_client.post(url, headers=headers, files=files)
+
+    if response.status_code != 200:
+        return {"error": response.text}
+
+    # Возвращаем обработанное изображение прямо в браузер
+    return StreamingResponse(
+        iter([response.content]),
+        media_type="image/png"
+    )
