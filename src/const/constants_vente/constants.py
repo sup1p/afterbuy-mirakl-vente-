@@ -5557,3 +5557,5 @@ default_html_description = "<p>Sample description for testing purposes.</p> <p>S
 mapping_extra_attrs = {
     "Stil" : "ATTR_19",
 }
+
+ban_keywords_for_fabrics = ["delete", "dont touch", "not for marketplaces", "wrong"]

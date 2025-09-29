@@ -3,7 +3,9 @@ Afterbuy API integration module.
 Handles authentication, product data retrieval, and brand information from Afterbuy API.
 """
 
+from fastapi import HTTPException
 from src.core.settings import settings
+from src.const.constants_vente.constants import ban_keywords_for_fabrics
 from logs.config_logs import setup_logging
 from typing import Optional
 
@@ -458,6 +460,13 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
         raise Exception(
             f"Fabric with afterbuy_fabric_id {afterbuy_fabric_id} has no fabric id",
         )
+    
+    for ban_word in ban_keywords_for_fabrics:
+        if ban_word in name.casefold().strip():
+            raise HTTPException(
+                status_code=403,
+                detail=f"It is banned fabric, you cannot upload it to Mirakl! Fabric name: {name}"
+            )
     
     return {
         "id": only_id,
