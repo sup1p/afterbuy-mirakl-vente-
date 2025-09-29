@@ -33,7 +33,7 @@ def build_fieldnames(mapping: dict) -> list:
             fields.append(m)
 
     # Добавляем поля офферов (price/state/quantity) если ещё нет
-    for extra in ["price", "state", "quantity"]:
+    for extra in ["price", "state", "quantity", "offer-description"]:
         if extra not in fields:
             fields.append(extra)
 
