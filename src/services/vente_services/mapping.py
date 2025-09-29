@@ -12,12 +12,12 @@ from src.const.constants_vente.constants import (
     mapping_extra_attrs,
     default_html_description
 )
-from src.const.prompts import build_description_prompt
+from src.const.prompts import build_description_prompt_vente
 from src.utils.vente_utils.substitute_formatter import substitute_attr
 from src.utils.vente_utils.format_attr import product_quantity_check
 from src.utils.vente_utils.format_little import get_delivery_days
 from src.core.settings import settings
-from src.schemas.ai_schemas import ProductDescriptionAI
+from src.schemas.ai_schemas import ProductDescriptionAIVente
 from src.services.vente_services.agents import get_agent
 from src.utils.vente_utils.image_worker import check_image_existence, process_images, resize_image_and_upload
 from logs.config_logs import setup_logging
@@ -252,19 +252,20 @@ async def _build_html_description(data: dict, filtered_properties: dict) -> str 
         for attempt in range(3):
             try:
                 result = await agent.run(
-                    build_description_prompt(
+                    build_description_prompt_vente(
                         html_desc=html_desc,
                         product_properties=filtered_properties,
                         product_article=article,
                         product_price=data.get("price"),
                         delivery_days=delivery_days,
                     ),
-                    output_type=ProductDescriptionAI,
+                    output_type=ProductDescriptionAIVente,
                     model_settings={"temperature": 0.0}
                 )
                 ai_html_desc_de = result.output.description_de.strip()
                 ai_html_desc_fr = result.output.description_fr.strip()
-                logger.info("AI desc length=%d", len(ai_html_desc_de))
+                logger.info("AI desc length DE=%d", len(ai_html_desc_de))
+                logger.info("AI desc length FR=%d", len(ai_html_desc_fr))
                 break
             except Exception as e:
                 logger.error(

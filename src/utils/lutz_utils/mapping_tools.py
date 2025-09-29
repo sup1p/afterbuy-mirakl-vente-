@@ -4,8 +4,14 @@ import json
 import ast
 import logging
 from src.utils.vente_utils.format_html import extract_product_properties_from_html
+from src.utils.vente_utils.format_little import get_delivery_days
+from src.services.vente_services.agents import get_agent
+from src.const.prompts import build_description_prompt_lutz
+from src.schemas.ai_schemas import ProductDescriptionAILutz
 from src.core.settings import settings
 from logs.config_logs import setup_logging
+
+import asyncio
 
 setup_logging()
 
@@ -216,8 +222,8 @@ def safe_get(arr, idx, default=""):
 
 # --------------------- Main Mapper ---------------------
 async def map_product(data: dict, mapping: dict, fieldnames: list,
-                      real_mapping_v12: dict, color_mapping: dict,
-                      material_mapping: dict, other_mapping: dict, brand_mapping: dict) -> dict:
+                real_mapping_v12: dict, color_mapping: dict,
+                material_mapping: dict, other_mapping: dict, brand_mapping: dict) -> dict:
     result = {}
     _ensure_props_dict(data)
 
@@ -245,9 +251,50 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
             # ⚡ Ограничиваем описание максимум 3000 символами
             if value and len(value) > 3000:
                 value = value[:2997] + "..."
-
-            result["product_description"] = value
-            result["description [de]"] = value
+                
+            article = data.get("article")
+            delivery_days = get_delivery_days(data.get("collection"))
+            properties = extract_dimensions(data.get("properties", {}))
+            
+            if not value:
+                value = "No html description for this product"
+                logger.warning("Native html_desc is None")
+                
+            agent = get_agent()
+            sem = asyncio.Semaphore(8)
+            
+            async with sem:
+                for attempt in range(3):
+                    try:
+                        ai_result = await agent.run(
+                            build_description_prompt_lutz(
+                                html_desc=value,
+                                product_properties=properties,
+                                product_article=article,
+                                product_price=data.get("price"),
+                                delivery_days=delivery_days,
+                            ),
+                            output_type=ProductDescriptionAILutz,
+                            model_settings={"temperature": 0.0}
+                        )
+                        ai_html_desc_de = ai_result.output.description_de.strip()
+                        ai_html_desc_en = ai_result.output.description_en.strip()
+                        logger.info("AI desc length DE=%d", len(ai_html_desc_de))
+                        logger.info("AI desc length EN=%d", len(ai_html_desc_en))
+                        break
+                    except Exception as e:
+                        logger.error(
+                            f"Attempt {attempt+1}/3 failed for AI Description EAN={data.get('ean')}: {e}"
+                        )
+                else:
+                    raise Exception(
+                        f"All 3 attempts failed AI Descriptionfor EAN={data.get('ean')}"
+                    )
+                    
+            if ai_html_desc_de and ai_html_desc_en:
+                result["product_description"] = ai_html_desc_de
+                result["description [de]"] = ai_html_desc_de
+                
             continue
 
         if isinstance(dst, list) and (
@@ -306,10 +353,10 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
         mapped_brand = brand_mapping.get(key)
         if not mapped_brand:
             alt = (key
-                   .replace("ö", "o")
-                   .replace("ü", "u")
-                   .replace("ä", "a")
-                   .replace("ß", "ss"))
+                .replace("ö", "o")
+                .replace("ü", "u")
+                .replace("ä", "a")
+                .replace("ß", "ss"))
             mapped_brand = brand_mapping.get(alt)
 
     final_brand = mapped_brand or de_brand or ""
@@ -361,6 +408,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
     result["price"] = str(data.get("price", "0.00"))
     result["state"] = 11
     result["quantity"] = product_quantity_check(article_val)
+    result["offer-description"] = ai_html_desc_en
 
     # --- Финальный проход: автозаполнение заглушками ---
     if ENABLE_DEFAULTS:
