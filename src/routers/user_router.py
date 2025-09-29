@@ -7,7 +7,6 @@ from src.schemas.user_schemas import UserCreate, Token, UserOut
 from src.core.dependencies import get_session, require_admin_token
 from src.crud.user import get_user_by_username, create_user
 from src.core.security import verify_password, create_access_token
-from src.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

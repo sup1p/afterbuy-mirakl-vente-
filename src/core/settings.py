@@ -77,6 +77,8 @@ class Settings(BaseSettings):
     db_host: str
     db_port: int
     database_url: str
+    admin_username: str
+    admin_password: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

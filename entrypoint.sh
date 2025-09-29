@@ -58,6 +58,9 @@ PY
 echo "Applying alembic migrations..."
 alembic upgrade head
 
+echo "Ensuring admin user exists..."
+uv run python -m src.utils.create_admin
+
 # Запускаем приложение (используем uv из образа)
 echo "Starting uvicorn..."
 exec uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
