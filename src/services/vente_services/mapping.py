@@ -19,7 +19,7 @@ from src.utils.vente_utils.format_little import get_delivery_days
 from src.core.settings import settings
 from src.schemas.ai_schemas import ProductDescriptionAIVente
 from src.services.vente_services.agents import get_agent
-from src.utils.vente_utils.image_worker import check_image_existence, process_images, resize_image_and_upload
+from src.utils.vente_utils.image_worker import check_image_existence, process_images, resize_image_and_upload, remove_image_bg_and_upload
 from logs.config_logs import setup_logging
 from src.utils.vente_utils.format_html import extract_product_properties_from_html
 
@@ -130,8 +130,11 @@ async def _prepare_images(
         )
 
     main_image = normalize_url(main_image)
+    main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('ean'), ftp_client=ftp_client, httpx_client=httpx_client)
+    
     pure_main_image = main_image
 
+    logger.info(f"Main image: {main_image}")
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(
             f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"

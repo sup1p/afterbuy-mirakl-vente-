@@ -6,7 +6,6 @@ Handles image validation, resizing, and FTP upload operations.
 from logs.config_logs import setup_logging
 from src.core.settings import settings
 
-
 import io
 import os
 import re
@@ -38,6 +37,15 @@ BYTES_BY_FORMAT = {
     "jpeg": 64 * 1024,
     "tiff": 256 * 1024,
     "default": MAX_BYTES_DEFAULT,
+}
+
+MIME_MAP = {
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "webp": "image/webp",
+    "gif": "image/gif",
+    "bmp": "image/bmp",
+    "tiff": "image/tiff",
 }
 
 
@@ -513,6 +521,7 @@ async def upload_to_ftp(
     ean: str,
     ftp_client: aioftp.Client,
     max_retries: int = 3,
+    removed: bool = False
 ) -> str:
     """Asynchronous FTP upload via aioftp with retry logic."""
     
@@ -554,7 +563,10 @@ async def upload_to_ftp(
             if os.path.exists(temp_filename):
                 os.unlink(temp_filename)
 
-            return f"{settings.image_base_url}/{ean}/{filename_only}"
+            if removed:
+                return f"{settings.image_base_url}/removed_bg/{ean}/{filename_only}"
+                
+            return f"{settings.image_base_url}/resized/{ean}/{filename_only}"
 
         except Exception as e:
             logger.error(f"[Attempt {attempt+1}] FTP upload failed for {filename_only}: {e}")
@@ -571,7 +583,13 @@ async def upload_to_ftp(
 
 
 # Modified file_exists_on_ftp: tries multiple name variants
-async def file_exists_on_ftp(filename: str, remote_dir: str, ean: str, ftp_client: aioftp.Client) -> bool:
+async def file_exists_on_ftp(
+    filename: str,
+    remote_dir: str, 
+    ean: str, 
+    ftp_client: aioftp.Client,
+    removed: bool = False
+) -> bool:
     """
     Checks if file exists on FTP. Returns URL or False.
     Tries decoded name and encoded variants (for compatibility).
@@ -611,7 +629,10 @@ async def file_exists_on_ftp(filename: str, remote_dir: str, ean: str, ftp_clien
                 timeout=30.0
             )
             # Return URL with the name variant that was actually found
-            return f"{settings.image_base_url}/{ean}/{candidate}"
+            if removed:
+                return f"{settings.image_base_url}/removed_bg/{ean}/{candidate}"
+            
+            return f"{settings.image_base_url}/resized/{ean}/{candidate}"
         except aioftp.StatusCodeError as e:
             # Code 550 — file not found, try next variant
             if "550" in str(e):
@@ -656,7 +677,7 @@ async def resize_image_and_upload(
     # 2. Check existence (file_exists_on_ftp now considers variants)
     existing_url = await file_exists_on_ftp(
         filename=orig_file_name,
-        remote_dir=f"{settings.ftp_base_dir}/{ean}",
+        remote_dir=f"{settings.ftp_base_dir}/resized/{ean}",
         ean=ean,
         ftp_client=ftp_client
     )
@@ -688,7 +709,7 @@ async def resize_image_and_upload(
     ftp_url = await upload_to_ftp(
         data=resized_bytes,
         filename=orig_file_name,
-        remote_dir=f"{settings.ftp_base_dir}/{ean}",
+        remote_dir=f"{settings.ftp_base_dir}/resized/{ean}",
         ean=ean,
         ftp_client=ftp_client
     )
@@ -698,3 +719,90 @@ async def resize_image_and_upload(
             "sizes": await process_images([ftp_url], httpx_client=httpx_client)
         }
     return ftp_url
+
+
+async def remove_image_bg_and_upload(
+    url: str,
+    ean: str,
+    ftp_client: aioftp.Client,
+    httpx_client: httpx.AsyncClient
+) -> str:
+    
+    # 1. Form filename: decode basename and set correct extension
+    path = urlparse(url).path
+    orig_file_name = normalize_basename(path)
+    
+    # 2. Check existence (file_exists_on_ftp now considers variants)
+    existing_url = await file_exists_on_ftp(
+        filename=orig_file_name,
+        remote_dir=f"{settings.ftp_base_dir}/removed_bg/{ean}",
+        ean=ean,
+        ftp_client=ftp_client,
+        removed=True
+    )
+    
+    if existing_url:
+        logger.info(f"Image {orig_file_name} already exists in ftp server remove bg, returning its address")
+        return existing_url
+
+    # 3. Download bytes
+    img_bytes, err = await download_image_bytes(url, httpx_client)
+    if img_bytes is None:
+        logger.error(f"Error occurred while downloading image for remove bg: {url}, error: {err}")
+        raise Exception(f"While downloading image for remove bg: {url}, error: {err}")
+
+    # 4. Remove bg
+    removed_bg_bytes, ext_or_arr = await remove_img_bg(img_bytes=img_bytes, httpx_client=httpx_client)
+    if removed_bg_bytes is None:
+        logger.error(f"Remove bg error: {ext_or_arr}")
+        raise Exception(f"While removing image bg: {url}, error: {ext_or_arr}")
+    
+    logger.debug(f"Image {orig_file_name} does not exist in ftp server remove bg, importing there")
+
+    # 5. FTP upload — logic unchanged, pass normalized name
+    ftp_url = await upload_to_ftp(
+        data=removed_bg_bytes,
+        filename=orig_file_name,
+        remote_dir=f"{settings.ftp_base_dir}/removed_bg/{ean}",
+        ean=ean,
+        ftp_client=ftp_client,
+        removed=True
+    )
+    return ftp_url
+
+
+async def remove_img_bg(img_bytes: bytes, httpx_client: httpx.AsyncClient) -> tuple[bytes | None, str | None]:
+    """
+    Отправляет байты изображения на сервис удаления фона и возвращает:
+    - (processed_bytes, None) при успехе
+    - (None, error_message) при ошибке
+    """
+    try:
+        # определяем формат через Pillow
+        try:
+            with Image.open(io.BytesIO(img_bytes)) as im:
+                fmt = im.format
+                fmt = fmt.lower() if fmt else None
+        except Exception:
+            fmt = None
+
+        mime = MIME_MAP.get(fmt, "application/octet-stream")
+        filename = f"image.{fmt if fmt else 'bin'}"
+
+        headers = {"x-api-key": settings.remove_bg_api_key}
+        files = {"image_file": (filename, img_bytes, mime)}
+
+        resp = await httpx_client.post(settings.remove_bg_url, headers=headers, files=files)
+
+        if resp.status_code != 200:
+            logger.error("remove-bg service returned %s: %s", resp.status_code, resp.text)
+            return None, f"remove-bg error: {resp.status_code} - {resp.text}"
+
+        return resp.content, None
+
+    except httpx.RequestError as exc:
+        logger.exception("HTTP request error while calling remove-bg service")
+        return None, f"request error: {exc}"
+    except Exception as exc:
+        logger.exception("Unexpected error in remove_img_bytes")
+        return None, str(exc)
