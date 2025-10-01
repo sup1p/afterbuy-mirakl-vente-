@@ -27,6 +27,26 @@ def create_access_token(subject: str, is_admin: bool,expires_delta: Optional[tim
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def create_refresh_token(subject: str, is_admin: bool, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = {"sub": subject, "is_admin": is_admin}
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=settings.refresh_token_expire_days))
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_and_generate_access_from_refresh(refresh_token: str) -> str:
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise JWTError("Token is not a refresh token")
+        username = payload.get("sub")
+        is_admin = payload.get("is_admin", False)
+        if not username:
+            raise JWTError("Missing subject in token")
+        return create_access_token(subject=username, is_admin=is_admin)
+    except JWTError as e:
+        raise e
+
 def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])

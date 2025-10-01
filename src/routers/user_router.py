@@ -1,14 +1,13 @@
-import re
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
 from src.crud import user
-from src.schemas.user_schemas import UserCreate, Token, UserOut, UserUpdate
+from src.schemas.user_schemas import RefreshTokenRequest, UserCreate, Token, UserOut, UserUpdate
 from src.core.dependencies import get_current_user, get_session, require_admin_token
 from src.crud.user import get_user_by_username, create_user, get_user_by_id, get_users
-from src.core.security import verify_password, create_access_token
+from src.core.security import create_refresh_token, verify_and_generate_access_from_refresh, verify_password, create_access_token
 
 router = APIRouter()
 
@@ -28,7 +27,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token(subject=user.username, is_admin=user.is_admin, expires_delta=timedelta(minutes=60))
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(subject=user.username, is_admin=user.is_admin)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
 
 @router.get("/auth/me", response_model=UserOut, tags=["user"])
 async def read_users_me(current_user = Depends(get_current_user)):
@@ -37,6 +42,20 @@ async def read_users_me(current_user = Depends(get_current_user)):
         "username": current_user.username,
         "is_admin": current_user.is_admin
     }
+
+@router.post("/auth/refresh", tags=["user"])
+async def refresh_token(data: RefreshTokenRequest):
+    if not data.refresh_token:
+        raise HTTPException(status_code=400, detail="Refresh token required")
+    try:
+        new_access_token = verify_and_generate_access_from_refresh(data.refresh_token)
+        return {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
     
 @router.delete("/user/delete-user/{id}", status_code=204, tags=["user"])
 async def delete_user(id: int, session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
