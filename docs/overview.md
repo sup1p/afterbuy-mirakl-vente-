@@ -1,52 +1,84 @@
-# XXLmebel 1 API — Project Overview
+
+
+# XXLmebel API — Project Overview
 
 ## Purpose
-XXLmebel 1 API is a backend service designed to automate the migration and synchronization of large volumes of product data from the Afterbuy platform to the Mirakl (vente-unique) marketplace. It streamlines product management, data transformation, error reporting, and integration between e-commerce systems.
 
-## Architecture
-- **Framework:** FastAPI (asynchronous Python web framework)
-- **API Routers:**
-  - `product_router`: Endpoints for importing products (single, batch, by fabric ID)
-  - `mirakl_system_router`: Endpoints for Mirakl platform settings, error reports, and system checks
-  - `test_router`: Development/testing endpoints for product mapping and image processing
-- **Services:**
-  - `afterbuy_api_calls`: Handles authentication and product data retrieval from Afterbuy
-  - `mirakl_api_calls`: Manages product import, error checking, and platform configuration for Mirakl
-  - `mapping`: Transforms Afterbuy product data into Mirakl-compatible format
-  - `csv_converter`: Converts product data to CSV for Mirakl import
-- **Utilities:**
-  - Image processing and FTP upload
-  - EAN validation and formatting
-  - Attribute mapping and HTML description generation
-- **Configuration:**
-  - `.env` for credentials, API keys, and environment settings
-  - Logging with rotation (`logs/logs.log`)
+XXLmebel API is an asynchronous FastAPI backend service for automating the migration and synchronization of large volumes of product data between the Afterbuy platform and the Mirakl marketplace (vente-unique, Lutz). The service provides integration, transformation, CSV generation, error handling, user management, and centralized logging.
 
-## Main Packages & Technologies
-- `fastapi` — API framework
-- `httpx` — Asynchronous HTTP client
-- `aioftp` — Asynchronous FTP client for image uploads
-- `pandas` — CSV and error report parsing
-- `logging` — Centralized logging with rotation
-- `uv` — Dependency management and environment setup
+## Architecture & Main Components
 
-## Data Flow
-1. **Product Retrieval:**
-   - Products are fetched from Afterbuy via authenticated API calls.
-2. **Data Mapping:**
-   - Raw product data is mapped to Mirakl format, including attribute transformation and image handling.
-3. **CSV Generation:**
-   - Mapped data is converted to CSV for Mirakl import.
-4. **Import & Error Handling:**
-   - Products are imported to Mirakl; error reports and platform settings are accessible via dedicated endpoints.
+- **FastAPI** — main web framework.
+- **src/** — application source code:
+  - **main.py** — entry point, router registration, resource initialization.
+  - **models.py** — ORM models (e.g., User).
+  - **resources.py** — global objects (HTTP client, LLM agent).
+  - **core/** — settings, dependencies, security.
+  - **const/** — constants, attributes, YAML/JSON/mappings for data transformation.
+  - **routers/** — API routers:
+   - **vente/** — product import, errors, Mirakl settings.
+   - **lutz/** — separate routers for Lutz integration.
+   - **user_router.py** — authentication and user management.
+  - **services/** — business logic:
+   - **vente_services/** — Afterbuy/Mirakl integration, mapping, CSV generation.
+   - **lutz_services/** — similar for Lutz.
+  - **schemas/** — Pydantic schemas for data validation and serialization.
+  - **utils/** — utilities for image processing, attributes, HTML, CSV.
+- **alembic/** — database migrations.
+- **logs/** — logging configuration and log files.
+
+## Main Processes
+
+1. **Authentication & User Management**
+  - OAuth2, JWT, roles (admin/user).
+  - Routes: `/auth/create-user`, `/auth/login`.
+
+2. **Product Import**
+  - Fetching data from Afterbuy (by EAN, by fabric_id).
+  - Attribute mapping and normalization for Mirakl/Lutz.
+  - CSV generation for import.
+  - Image upload to FTP, processing and resizing.
+  - Product import to Mirakl/Lutz via API.
+
+3. **Error Handling & Reporting**
+  - Getting import status, errors, non-integrated products.
+  - Endpoints for reports and platform status.
+
+4. **Attributes & Constants Handling**
+  - Mapping, validation, value translation, multilingual support.
+  - YAML/JSON/py files for attribute correspondence.
+
+5. **Logging**
+  - All operations are logged in `logs/logs.log` with rotation.
+
+## Configuration
+
+- All parameters (keys, passwords, URLs) are set via `.env` and used through `core/settings.py`.
+- Alembic — for migrations and DB schema management.
 
 ## Extensibility
-- Modular service and router structure allows for easy extension and maintenance.
-- Environment variables and configuration files support flexible deployment.
+
+- Modular structure: easy to add new routers, services, utilities.
+- Constants and mappings are separated into dedicated files for easy maintenance.
+- Support for multiple marketplaces (vente-unique, Lutz).
 
 ## Usage
-- RESTful API endpoints for product import, error checking, and platform management
-- Interactive API documentation via Swagger UI (`/docs`)
+
+- REST API for all operations (import, errors, management).
+- Swagger UI (`/docs`) for interactive testing.
+- Request examples — see `README.md`.
+
+## Tests
+
+- Tests are located in `tests/unit/` and `tests/integration/`.
+
+## Quick Workflow
+
+1. User authenticates.
+2. Imports products (by EAN, list, by fabric_id).
+3. Service fetches data from Afterbuy, transforms, generates CSV, processes images.
+4. Imports products to Mirakl/Lutz, returns status and errors.
+5. All actions are logged.
 
 ## Deployment
 - Requires Python 3.11+

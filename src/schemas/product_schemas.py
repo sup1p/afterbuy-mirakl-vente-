@@ -74,7 +74,8 @@ class ImportManyEanResponse(BaseModel):
     total_not_added: int
 
 class ImportFabricProductsResponse(BaseModel):
-    mirakl_response: MiraklImportResponse
+    mirakl_answer: MiraklImportResponse
     not_added_eans: List[str]
     total_not_added: int
+    delivery_days: str
     total_eans_in_fabric: int

@@ -8,6 +8,15 @@ async def get_user_by_username(session: AsyncSession, username: str):
     res = await session.execute(q)
     return res.scalar_one_or_none()
 
+async def get_user_by_id(session: AsyncSession, user_id: int):
+    q = select(User).where(User.id == user_id)
+    res = await session.execute(q)
+    return res.scalar_one_or_none()
+
+async def get_users(session: AsyncSession):
+    q = select(User)
+    res = await session.execute(q)
+    return res.scalars().all()
 
 async def create_user(session: AsyncSession, username: str, password: str) -> User:
     user = User(username=username, hashed_password=get_password_hash(password))

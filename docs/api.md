@@ -1,6 +1,8 @@
 # Router API
 
-## Endpoints mirakl system
+# Vente
+
+## Endpoints mirakl 
 
 
 ### 1. Get Product Import Error
@@ -31,31 +33,10 @@ curl -X GET "http://<host>/import-product-error/12345"
 ```
 - **500 Internal Server Error** — Processing error.
 
----
-
-### 2. Get Mirakl Platform Settings
-**`GET /mirakl-platform-settings`**
-
-Returns all platform settings available from Mirakl API.
-
-#### Example Request
-```bash
-curl -X GET "http://<host>/mirakl-platform-settings"
-```
-
-#### Responses
-- **200 OK**
-```json
-{
-  "setting1": "...",
-  "setting2": "..."
-}
-```
-- **500 Internal Server Error** — Processing error.
 
 ---
 
-### 3. Get Non-Integrated Products
+### 2. Get Non-Integrated Products
 **`GET /mirakl-product-non-integrated/{import_parameter}`**
 
 Fetches products that were not integrated in Mirakl for the given import parameter.
@@ -85,7 +66,7 @@ curl -X GET "http://<host>/mirakl-product-non-integrated/12345"
 
 ---
 
-### 4. Get Offer Import Error
+### 3. Get Offer Import Error
 **`GET /mirakl-offer-import-error/{import_parameter}`**
 
 Checks if there are errors for a given offer import parameter.
@@ -117,8 +98,8 @@ curl -X GET "http://<host>/mirakl-offer-import-error/12345"
 
 ## Endpoints product
 
-### 1. Import Product by EAN
-**`POST /import-product/{ean}`**
+### 1. Import Product by EAN to vente
+**`POST /import-product/vente/{ean}`**
 
 Imports a single product from Afterbuy to Mirakl using EAN and optional fabric ID.
 
@@ -159,8 +140,8 @@ curl -X POST "http://<host>/import-product/1234567890123?afterbuy_fabric_id=1001
 
 ---
 
-### 2. Import Multiple Products by EAN List
-**`POST /import-products`**
+### 2. Import Multiple Products by EAN List to Vente
+**`POST /import-products/vente`**
 
 Imports multiple products from Afterbuy to Mirakl using a list of EANs.
 
@@ -204,17 +185,18 @@ curl -X POST "http://<host>/import-products" \
 
 ---
 
-### 3. Import Products by Afterbuy Fabric ID
-**`POST /import-products-by-fabric/{afterbuy_fabric_id}`**
+### 3. Import Products by Afterbuy Fabric ID to Vente
+**`POST /import-products-by-fabric/vente`**
 
 Imports all products from Afterbuy to Mirakl for a given fabric ID.
 
 #### Parameters
-- `afterbuy_fabric_id` *(integer, path)* — Afterbuy fabric ID to import products from.
+- `afterbuy_fabric_id` *(integer, body)* - Afterbuy fabric ID to import products from.
+- `delivery_days` *(integer, body)* - How long fabric will deliver products to customers
 
 #### Example Request
 ```bash
-curl -X POST "http://<host>/import-products-by-fabric/1001"
+curl -X POST "http://<host>/import-products-by-fabric/vente"
 ```
 
 #### Responses
@@ -252,13 +234,14 @@ curl -X POST "http://<host>/import-products-by-fabric/1001"
 ## Test Endpoints
 
 ### 1. Test Import Product by EAN
-**`POST /test-import-product/{ean}/`**
+**`POST /test-import-product/vente/{ean}/`**
 
 Test endpoint for importing a single product by EAN (returns mapped data for Mirakl, does not import).
 
 #### Parameters
 - `ean` *(string, path)* — EAN code of the product to test import.
 - `afterbuy_fabric_id` *(integer, query, optional)* — Afterbuy fabric ID for more precise product selection.
+
 
 #### Example Request
 ```bash
@@ -288,16 +271,17 @@ curl -X POST "http://<host>/test-import-product/1234567890123?afterbuy_fabric_id
 ---
 
 ### 2. Test Import Products by Afterbuy Fabric ID
-**`POST /test-import-products-by-fabric/{afterbuy_fabric_id}`**
+**`POST /test-import-products-by-fabric/vente`**
 
 Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, does not import).
 
 #### Parameters
 - `afterbuy_fabric_id` *(integer, path)* — Afterbuy fabric ID to test import products from.
+- `delivery_days` *(integer, body)* - How long fabric will deliver products to customers
 
 #### Example Request
 ```bash
-curl -X POST "http://<host>/test-import-products-by-fabric/1001"
+curl -X POST "http://<host>/test-import-products-by-fabric"
 ```
 
 #### Responses
@@ -362,3 +346,24 @@ curl -X POST "http://<host>/test-resize-image" \
 ```
 
 ---
+### 4. Test remove background image
+**`POST /test-remove-bg-image`**
+
+Test endpoint for image resizing and FTP upload functionality.
+
+#### Request Body
+- `image` - multipart-form/data, just uploading image
+
+#### Responses
+- **200 OK**
+```json
+{
+  // Result of image resize and upload operation
+}
+```
+- **422 Unprocessable Entity**
+```json
+{
+  "detail": "Error message"
+}
+```

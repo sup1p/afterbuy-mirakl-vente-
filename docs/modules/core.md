@@ -12,6 +12,9 @@ Defines application-wide settings and configuration logic.
 ## dependencies.py
 Implements dependency injection for FastAPI endpoints.
 - **HTTP Client Management:** Provides shared HTTP client instances for API calls.
-- **Resource Initialization:** Ensures resources are properly initialized and available for endpoints.
+- **Database Session:** Provides a managed database connection for each request.
+- **Checking user authentication:** Verifies that the user is logged in.
+- **Checking user auth level:** Checks user’s access rights.
+- **Initilizing LLM agent:** Prepares the AI agent for handling requests.
 - **Example function:**
   - `async def get_httpx_client()`: Returns a global HTTP client instance for use in endpoints.

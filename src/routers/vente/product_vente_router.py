@@ -193,7 +193,7 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
         )
 
     return {
-        "mirakl_response": mirakl_answer,
+        "mirakl_answer": mirakl_answer,
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans)
     }

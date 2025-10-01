@@ -15,13 +15,18 @@ FastAPI application entry point.
   ```
 
 ## resources.py
-Manages shared resources such as HTTP client instances for dependency injection.
-- **Global Resource Management:** Ensures HTTP clients and other resources are available for endpoints.
-- **Example:**
-  - `resources.client`: Global HTTP client instance.
 
-## schemas.py
-Defines Pydantic models and data schemas for request/response validation across API endpoints.
-- **Example:**
-  - `class ProductEan(BaseModel)`: Model for a list of EANs for batch import.
-  - `class TestImageResize(BaseModel)`: Model for image resize requests.
+Module for managing global shared resources used across the application.  
+Provides centralized initialization and access to HTTP clients and LLM-related objects.
+
+- **Global Resource Management:**  
+  Central place to create and reuse shared objects instead of instantiating them per request.  
+
+- **Shared Resources:**  
+  - `client`: Global `httpx.AsyncClient` for making external API calls (reused to avoid overhead).  
+  - `openai_client`: Global `AsyncOpenAI` instance, initialized on application startup.  
+  - `llm_agent`: `pydantic_ai.Agent` for handling LLM requests.  
+  - `llm_semaphore`: `asyncio.Semaphore` to control concurrency of simultaneous LLM calls.  
+
+- **Usage:**  
+  Import resources where needed and ensure proper initialization/cleanup during application startup/shutdown.
