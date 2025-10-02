@@ -6,12 +6,13 @@ Handles application lifecycle, HTTP client management, and router registration.
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from src.routers.user_router import router as user_router
 
 from src.routers.vente.product_vente_router import router as product_vente_router
 from src.routers.vente.mirakl_system_vente_router import router as mirakl_system_vente_router
 from src.routers.vente.dev_vente_router import router as dev_vente_router 
 
+from src.routers.user_router import router as user_router
+from src.routers.fabric_management import router as fabric_management_router
 from src.routers.lutz.fabric_lutz_router import router as fabric_lutz_router
 from src.routers.lutz.generate_csv_lutz_router import router as generate_csv_lutz_router
 from src.routers.lutz.offers_lutz_router import router as offers_lutz_router
@@ -23,6 +24,7 @@ import logging
 from logs.config_logs import setup_logging
 
 import httpx
+import asyncio
 
 # Initialize logging configuration
 setup_logging()
@@ -38,6 +40,10 @@ async def lifespan(app: FastAPI):
     """
     # --- startup ---
     resources.client = httpx.AsyncClient()
+    resources.llm_semaphore = asyncio.Semaphore(8)
+    resources.ftp_semaphore = asyncio.Semaphore(8)
+    logger.info("Startup: ftp and llm semaphore initialized")
+    
     try:
         # инициализируем глобальный агент (он сохранится в resources.llm_agent)
         await create_agent_with_httpx(
@@ -45,6 +51,7 @@ async def lifespan(app: FastAPI):
         )
 
         logger.info("Startup: httpx client, OpenAI client and LLM agent initialized")
+        
 
         yield
 
@@ -69,6 +76,7 @@ async def lifespan(app: FastAPI):
         resources.openai_client = None
         resources.llm_agent = None
         resources.llm_semaphore = None
+        resources.ftp_semaphore = None
 
         logger.info("Shutdown: resources cleaned up")
     
@@ -82,8 +90,9 @@ def root():
     return "We are live!"
 
 # Register all API routers
-# auth
+# mutual
 app.include_router(user_router)
+app.include_router(fabric_management_router)
 # vente
 app.include_router(product_vente_router)
 app.include_router(mirakl_system_vente_router)

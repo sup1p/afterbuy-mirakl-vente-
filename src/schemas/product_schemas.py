@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Literal
 
 class ProductRequest(BaseModel): # lutz
     product_id: str
@@ -7,8 +7,9 @@ class ProductRequest(BaseModel): # lutz
 class FabricRequest(BaseModel): # lutz
     fabric_id: int
 
-class ProductEan(BaseModel):
+class EansWithDeliveryRequest(BaseModel):
     ean_list: List[str]
+    delivery_days: int
 
 
 class FabricWithDeliveryRequest(BaseModel):
@@ -79,3 +80,41 @@ class ImportFabricProductsResponse(BaseModel):
     total_not_added: int
     delivery_days: str
     total_eans_in_fabric: int
+    
+
+# crud
+
+class saveUploadedFabric(BaseModel):
+    afterbuy_fabric_id: int
+    status: Literal["pending", "processed", "error"] = "pending"
+    user_id: int
+    date_time: str
+
+class saveUploadedEan(BaseModel):
+    ean: str
+    afterbuy_fabric_id: int
+    title: str
+    image_1: str
+    image_2: Optional[str] = ""
+    image_3: Optional[str] = ""
+    user_id: int
+    uploaded_fabric_id: int
+    status: Literal["pending", "processed", "error"] = "pending"
+    date_time: str
+    
+class eansByFabricRequest(BaseModel):
+    afterbuy_fabric_id: int
+
+class fabricsByStatusRequest(BaseModel):
+    status: Literal["pending", "processed", "error"]
+    
+class eansByStatusRequest(BaseModel):
+    afterbuy_fabric_id: int
+    status: Literal["pending", "processed", "error"]
+    
+class fabricsByUserRequest(BaseModel):
+    user_id: int
+
+class changeEanStatusRequest(BaseModel):
+    ean: str
+    new_status: Literal["pending", "processed", "error"]

@@ -1,3 +1,4 @@
+from src import resources
 import re
 import unicodedata
 import json
@@ -261,7 +262,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                 logger.warning("Native html_desc is None")
                 
             agent = get_agent()
-            sem = asyncio.Semaphore(8)
+            sem = resources.llm_semaphore
             
             async with sem:
                 for attempt in range(3):
@@ -275,7 +276,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                                 delivery_days=delivery_days,
                             ),
                             output_type=ProductDescriptionAILutz,
-                            model_settings={"temperature": 0.0}
+                            model_settings={"temperature": 0.0, "timeout": 30.0}
                         )
                         ai_html_desc_de = ai_result.output.description_de.strip()
                         ai_html_desc_en = ai_result.output.description_en.strip()

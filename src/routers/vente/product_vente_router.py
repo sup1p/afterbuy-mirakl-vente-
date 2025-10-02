@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from src.services.vente_services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.vente_services.mirakl_api_calls import import_product as import_product_mirakl
 from src.utils.vente_utils.format_little import is_valid_ean
-from src.schemas.product_schemas import ProductEan, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse, FabricWithDeliveryRequest
+from src.schemas.product_schemas import EansWithDeliveryRequest, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse, FabricWithDeliveryRequest
 from src.services.vente_services.csv_converter import make_csv, make_big_csv
 from src.services.vente_services.mapping import map_attributes
 from src.core.dependencies import get_httpx_client, get_current_user
@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/import-product/vente/{ean}", tags=["product vente"], response_model=MiraklImportResponse)
-async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+@router.post("/import-product/vente/{ean}/{delivery_days}", tags=["product vente"], response_model=MiraklImportResponse)
+async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Import a single product by EAN from Afterbuy to Mirakl.Uses EAN and optional fabric id for getting product
     
@@ -53,6 +53,7 @@ async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_
     
     try:
         data = await get_product_data(ean=ean, afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)
+        data["delivery_days"] = delivery_days
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(
@@ -102,12 +103,12 @@ async def import_product(ean: str, afterbuy_fabric_id: int | None = None, httpx_
 
 
 @router.post("/import-products/vente", tags=["product vente"], response_model=ImportManyEanResponse)
-async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Import multiple products by a list of EANs from Afterbuy to Mirakl.
 
     Args:
-        eans (ProductEan): List of EAN codes to import.
+        eans (EansWithDeliveryRequest): List of EAN codes to import.
         httpx_client (httpx.AsyncClient): HTTP client dependency.
 
     Returns:
@@ -129,9 +130,11 @@ async def import_products(eans: ProductEan, httpx_client: httpx.AsyncClient = De
     for idx, ean in enumerate(ean_list, start=1):
         async def wrapper(e=ean, i=idx):
             try:
-                res = await get_product_data(e, httpx_client)
+                prod = await get_product_data(e, httpx_client)
                 logger.info(f"[{i}/{len(ean_list)}] Got product with EAN={e}")
-                return res
+                
+                prod["delivery_days"] = eans.delivery_days
+                return prod
             except Exception as e:
                 logger.error(f"[{i}/{len(ean_list)}] Error processing product EAN={e}: {e}")
                 return e
@@ -246,6 +249,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
     for idx, prod in enumerate(products, start=1):
         async def wrapper(p=prod, i=idx):
             try:
+                p["delivery_days"] = delivery_days
                 res = await map_attributes(p, httpx_client)
                 logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('ean')}")
                 return res

@@ -3,6 +3,7 @@ Product data mapping module.
 Transforms Afterbuy product data into Mirakl-compatible format with proper attribute mapping.
 """
 
+from src import resources
 from src.const.constants_vente.constants import (
     mapping_attr,
     category_attrs_map,
@@ -15,7 +16,6 @@ from src.const.constants_vente.constants import (
 from src.const.prompts import build_description_prompt_vente
 from src.utils.vente_utils.substitute_formatter import substitute_attr
 from src.utils.vente_utils.format_attr import product_quantity_check
-from src.utils.vente_utils.format_little import get_delivery_days
 from src.core.settings import settings
 from src.schemas.ai_schemas import ProductDescriptionAIVente
 from src.services.vente_services.agents import get_agent
@@ -32,7 +32,6 @@ import re
 
 setup_logging()
 logger = logging.getLogger(__name__)
-ftp_semaphore = asyncio.Semaphore(5)
 
 
 
@@ -225,7 +224,7 @@ def _parse_properties(properties_raw: str) -> dict:
     return filtered_properties
 
 
-async def _build_html_description(data: dict, filtered_properties: dict) -> str | None:
+async def _build_html_description(data: dict, filtered_properties: dict):
     """
     Extracts and adjusts HTML product description.
 
@@ -241,7 +240,7 @@ async def _build_html_description(data: dict, filtered_properties: dict) -> str 
     """
     
     article = data.get("article")
-    delivery_days = get_delivery_days(data.get("collection"))
+    delivery_days = data.get("delivery_days")
     html_desc = extract_product_properties_from_html(data.get("html_description"))
     
     if not html_desc:
@@ -249,7 +248,7 @@ async def _build_html_description(data: dict, filtered_properties: dict) -> str 
         logger.warning("Native html_desc is None")
         
     agent = get_agent()
-    sem = asyncio.Semaphore(8)
+    sem = resources.llm_semaphore
 
     async with sem:
         for attempt in range(3):
@@ -263,7 +262,7 @@ async def _build_html_description(data: dict, filtered_properties: dict) -> str 
                         delivery_days=delivery_days,
                     ),
                     output_type=ProductDescriptionAIVente,
-                    model_settings={"temperature": 0.0}
+                    model_settings={"temperature": 0.0, "timeout": 30.0}
                 )
                 ai_html_desc_de = result.output.description_de.strip()
                 ai_html_desc_fr = result.output.description_fr.strip()
@@ -310,7 +309,7 @@ def _build_base_fields(
         "price": data.get("price"),
         "state": 11, # new state
         "quantity": product_quantity_check(data.get("article", "")),
-        "leadtime-to-ship": int(get_delivery_days(data.get("collection"))/2),
+        "leadtime-to-ship": data.get("delivery_days"),
         # -----------------
         "brand": "", # no brand
         "internal-description": "",
@@ -492,8 +491,8 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
         )
     
     # --- images ---
-    async with ftp_semaphore:
-        async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password) as ftp_client:
+    async with resources.ftp_semaphore:
+        async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password,socket_timeout=30) as ftp_client:
             main_image, extra_images, _ = await _prepare_images(data, httpx_client, ftp_client)
 
     # --- product properties ---

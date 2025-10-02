@@ -20,3 +20,4 @@ llm_agent: Optional[Agent] = None
 
 # семафор для ограничения одновременных вызовов к LLM
 llm_semaphore: Optional[asyncio.Semaphore] = None
+ftp_semaphore: Optional[asyncio.Semaphore] = None

@@ -54,7 +54,8 @@ async def _process_images_for_product(mapped: dict, raw_item: dict) -> dict:
             host=settings.ftp_host,
             port=settings.ftp_port,
             user=settings.ftp_user,
-            password=settings.ftp_password
+            password=settings.ftp_password,
+            socket_timeout=20
         ) as ftp_client, httpx.AsyncClient() as http_client:
 
             # Сначала скачиваем все картинки параллельно
@@ -133,7 +134,7 @@ def normalize_basename(name: str) -> str:
 async def download_image_bytes(url: str, httpx_client: httpx.AsyncClient) -> Tuple[Optional[bytes], Optional[str]]:
     """Скачиваем байты картинки по URL."""
     try:
-        resp = await httpx_client.get(url, timeout=20)
+        resp = await httpx_client.get(url, timeout=20.0)
         if resp.status_code == 200 and resp.headers.get("Content-Type", "").startswith("image/"):
             return resp.content, None
         return None, f"Invalid response: {resp.status_code} {resp.headers.get('Content-Type')}"

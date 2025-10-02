@@ -203,9 +203,9 @@ def _parse_jpeg_size(data: bytes) -> Optional[Tuple[int,int]]:
     except Exception:
         return None
 
-async def _fetch_prefix(client: httpx.AsyncClient, url: str, n_bytes: int, timeout: float):
+async def _fetch_prefix(httpx_client: httpx.AsyncClient, url: str, n_bytes: int, timeout: float):
     headers = {"Range": f"bytes=0-{max(0, n_bytes-1)}"}
-    async with client.stream("GET", url, headers=headers, timeout=timeout) as resp:
+    async with httpx_client.stream("GET", url, headers=headers, timeout=timeout) as resp:
         if resp.status_code not in (200, 206):
             resp.raise_for_status()
         buf = bytearray()
@@ -792,7 +792,7 @@ async def remove_img_bg(img_bytes: bytes, httpx_client: httpx.AsyncClient) -> tu
         headers = {"x-api-key": settings.remove_bg_api_key}
         files = {"image_file": (filename, img_bytes, mime)}
 
-        resp = await httpx_client.post(settings.remove_bg_url, headers=headers, files=files)
+        resp = await httpx_client.post(settings.remove_bg_url, headers=headers, files=files, timeout=30.0)
 
         if resp.status_code != 200:
             logger.error("remove-bg service returned %s: %s", resp.status_code, resp.text)

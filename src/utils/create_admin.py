@@ -16,7 +16,7 @@ async def create_admin():
         result = await session.execute(select(User).where(User.username == settings.admin_username))
         admin = result.scalar_one_or_none()
 
-        if admin:
+        if admin and admin.hashed_password == get_password_hash(settings.admin_password):
             print("✅ Admin already exists")
             return
 

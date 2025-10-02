@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/test-import-product/vente/{ean}/", tags=["test"], response_model=MappedProduct)
-async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+@router.post("/test-import-product/vente/{ean}/{delivery_days}", tags=["test"], response_model=MappedProduct)
+async def dev_import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
     If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
@@ -50,6 +50,7 @@ async def dev_import_product(ean: str, afterbuy_fabric_id: int | None = None,htt
         
     try:
         data = await get_product_data(ean=int(ean), afterbuy_fabric_id=afterbuy_fabric_id,httpx_client=httpx_client)
+        data["delivery_days"] = delivery_days
     except Exception as e:
         logger.error(f"Error fetching data for ean {ean}: {e}")
         raise HTTPException(
@@ -112,6 +113,7 @@ async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, h
     for idx, prod in enumerate(products, start=1):
         async def wrapper(p=prod, i=idx):
             try:
+                p["delivery_days"] = delivery_days
                 res = await map_attributes(p, httpx_client)
                 logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('ean')}")
                 return res
@@ -147,7 +149,7 @@ async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, h
         logger.error(f"Making csv failed or make_csv got no 'data' for fabric id: {afterbuy_fabric_id}")
         raise HTTPException(
             status_code=404,
-            detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
+            detail=f"Making csv failed or make_csv got no 'data' for fabric id: {afterbuy_fabric_id}\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
         )
 
         
@@ -191,7 +193,7 @@ async def remove_bg(image: UploadFile, httpx_client: httpx.AsyncClient = Depends
     headers = {"x-api-key": settings.remove_bg_api_key}
     files = {"image_file": (image.filename, await image.read(), image.content_type)}
 
-    response = await httpx_client.post(url, headers=headers, files=files)
+    response = await httpx_client.post(url, headers=headers, files=files, timeout=40.0)
 
     if response.status_code != 200:
         return {"error": response.text}
