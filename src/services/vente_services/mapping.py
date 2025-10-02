@@ -129,9 +129,10 @@ async def _prepare_images(
         )
 
     main_image = normalize_url(main_image)
-    main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('ean'), ftp_client=ftp_client, httpx_client=httpx_client)
+    pure_main_image = main_image  # сохраняем оригинал для сравнения с extra images
     
-    pure_main_image = main_image
+    if settings.use_image_bg_remover:
+        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('ean'), ftp_client=ftp_client, httpx_client=httpx_client)
 
     logger.info(f"Main image: {main_image}")
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
@@ -247,6 +248,9 @@ async def _build_html_description(data: dict, filtered_properties: dict):
         html_desc = "No html description for this product"
         logger.warning("Native html_desc is None")
         
+    if not settings.use_ai_description_generator:
+        return {"desc_de": html_desc, "desc_fr": html_desc}
+    
     agent = get_agent()
     sem = resources.llm_semaphore
 

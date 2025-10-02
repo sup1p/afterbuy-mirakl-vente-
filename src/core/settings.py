@@ -56,8 +56,12 @@ class Settings(BaseSettings):
     # Application behavior settings
     check_image_existence: bool = False
     use_real_html_desc: bool = False
-    use_ean_validator: bool = True  
+    use_ean_validator: bool = True
+    use_image_bg_remover: bool = False
+    use_ai_description_generator: bool = False
+    
     special_quantity_word: str
+    
     min_image_height: int
     min_image_width: int
     max_description_chars: int

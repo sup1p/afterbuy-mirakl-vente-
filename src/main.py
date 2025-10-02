@@ -4,6 +4,7 @@ Handles application lifecycle, HTTP client management, and router registration.
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 
@@ -83,6 +84,16 @@ async def lifespan(app: FastAPI):
 # Create FastAPI application with lifespan management
 app = FastAPI(lifespan=lifespan)
 
+origins = ['*']
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,            # кому разрешаем
+    allow_credentials=True,           # отправка куков / авторизации
+    allow_methods=["*"],              # какие методы (GET, POST...) разрешены
+    allow_headers=["*"],              # какие заголовки разрешены
+)
+
 @app.get("/")
 def root():
     """Health check endpoint to verify application is running."""
@@ -95,10 +106,10 @@ app.include_router(user_router)
 app.include_router(fabric_management_router)
 # vente
 app.include_router(product_vente_router)
-app.include_router(mirakl_system_vente_router)
-app.include_router(dev_vente_router)
+# app.include_router(mirakl_system_vente_router)
+# app.include_router(dev_vente_router)
 # lutz
-app.include_router(product_lutz_router)
-app.include_router(offers_lutz_router)
-app.include_router(generate_csv_lutz_router)
+# app.include_router(product_lutz_router)
+# app.include_router(offers_lutz_router)
+# app.include_router(generate_csv_lutz_router)
 app.include_router(fabric_lutz_router)

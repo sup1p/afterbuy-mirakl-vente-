@@ -23,7 +23,7 @@ class UploadedFabric(Base):
     date_time = Column(DateTime, default=datetime.now(), nullable=False)
 
     user = relationship("User", back_populates="uploaded_fabrics")
-    uploaded_eans = relationship("UploadedEan", back_populates="uploaded_fabric")
+    uploaded_eans = relationship("UploadedEan", back_populates="uploaded_fabric", cascade="all, delete-orphan")
     
 class UploadedEan(Base):
     __tablename__ = "uploaded_eans"

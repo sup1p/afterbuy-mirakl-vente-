@@ -88,7 +88,6 @@ class saveUploadedFabric(BaseModel):
     afterbuy_fabric_id: int
     status: Literal["pending", "processed", "error"] = "pending"
     user_id: int
-    date_time: str
 
 class saveUploadedEan(BaseModel):
     ean: str
@@ -100,7 +99,6 @@ class saveUploadedEan(BaseModel):
     user_id: int
     uploaded_fabric_id: int
     status: Literal["pending", "processed", "error"] = "pending"
-    date_time: str
     
 class eansByFabricRequest(BaseModel):
     afterbuy_fabric_id: int
@@ -116,5 +114,12 @@ class fabricsByUserRequest(BaseModel):
     user_id: int
 
 class changeEanStatusRequest(BaseModel):
-    ean: str
+    id: int
     new_status: Literal["pending", "processed", "error"]
+    
+class changeFabricStatusRequest(BaseModel):
+    afterbuy_fabric_id: int
+    new_status: Literal["pending", "processed", "error"]
+    
+class fabricsByMarketPlaceRequest(BaseModel):
+    marketplace: Literal["xxxlutz", "venteunique"]  # xxxlutz, venteunique

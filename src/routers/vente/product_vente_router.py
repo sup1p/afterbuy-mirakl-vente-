@@ -8,11 +8,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from src.services.vente_services.afterbuy_api_calls import get_product_data, get_products_by_fabric
 from src.services.vente_services.mirakl_api_calls import import_product as import_product_mirakl
 from src.utils.vente_utils.format_little import is_valid_ean
-from src.schemas.product_schemas import EansWithDeliveryRequest, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse, FabricWithDeliveryRequest
+from src.schemas.product_schemas import EansWithDeliveryRequest, MiraklImportResponse, ImportManyEanResponse, ImportFabricProductsResponse, FabricWithDeliveryRequest, saveUploadedFabric
 from src.services.vente_services.csv_converter import make_csv, make_big_csv
 from src.services.vente_services.mapping import map_attributes
-from src.core.dependencies import get_httpx_client, get_current_user
+from src.core.dependencies import get_httpx_client, get_current_user, get_session
+from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id
 from logs.config_logs import setup_logging
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import asyncio
 import logging
@@ -202,8 +205,9 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
     }
 
 
-@router.post("/import-products-by-fabric/vente", tags=["product vente"], response_model=ImportFabricProductsResponse)
-async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+# @router.post("/import-products-by-fabric/vente", tags=["product vente"], response_model=ImportFabricProductsResponse)
+@router.post("/import-products-by-fabric/vente", tags=["product vente"])
+async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     """
     Import products by Afterbuy fabric ID from Afterbuy to Mirakl.
 
@@ -291,19 +295,29 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
             detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
         )
 
-    try:
-        mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
-    except Exception as e:
-        logger.error(f"Error importing products to Mirakl: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+    # try:
+    #     mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
+    # except Exception as e:
+    #     logger.error(f"Error importing products to Mirakl: {e}")
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=str(e),
+    #     )
     
+    database_fabric_data = saveUploadedFabric(
+        afterbuy_fabric_id=afterbuy_fabric_id,
+        user_id=current_user.id,
+    )
+    database_created = "already exists"
+    if not await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id):
+        database_created = "created"
+        await create_uploaded_fabric(session=session, data=database_fabric_data)
+
     return {
-        "mirakl_answer": mirakl_answer,
+        # "mirakl_answer": mirakl_answer,
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
         "delivery days": delivery_days,
         "total_eans_in_fabric": len(all_eans),
+        "database_status": database_created,
     }
