@@ -17,6 +17,7 @@ from src.routers.user_router import router as user_router
 from src.routers.fabric_management import router as fabric_management_router
 
 from src.routers.lutz.fabric_lutz_router import router as fabric_lutz_router
+from src.routers.lutz.local_importer import router as local_importer_router
 from src.routers.lutz.generate_csv_lutz_router import router as generate_csv_lutz_router
 from src.routers.lutz.offers_lutz_router import router as offers_lutz_router
 from src.routers.lutz.product_lutz_router import router as product_lutz_router
@@ -119,3 +120,4 @@ app.include_router(product_vente_router)
 # app.include_router(offers_lutz_router)
 # app.include_router(generate_csv_lutz_router)
 app.include_router(fabric_lutz_router)
+app.include_router(local_importer_router)

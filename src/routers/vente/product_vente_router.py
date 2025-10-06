@@ -309,6 +309,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
         user_id=current_user.id,
     )
     database_created = "already exists"
+    
     if not await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id):
         database_created = "created"
         await create_uploaded_fabric(session=session, data=database_fabric_data)

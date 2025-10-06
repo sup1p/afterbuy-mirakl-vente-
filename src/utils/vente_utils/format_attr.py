@@ -376,7 +376,7 @@ def format_5(input_value: Union[List[str], str]) -> Optional[str]:
     """Size formatting based on volume"""
     
     try:
-        nums = list(map(int, re.findall(r"\d+", input_value)))
+        nums = list(map(int, re.findall(r"\d+", get_first_value(input_value))))
         logger.debug(f"Extracted numbers: {nums}")
         
         if len(nums) < 3:

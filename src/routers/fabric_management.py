@@ -71,7 +71,7 @@ async def get_eans_by_status(afterbuy_fabric_id: int,
     eans = await get_filtered_uploaded_eans(session, data=data, limit=limit, offset=offset)
     return eans
 
-@router.get("/uploaded-eans/fabrics-by-user", tags=["fabric management"])
+@router.get("/uploaded-fabrics/fabrics-by-user", tags=["fabric management"])
 async def get_fabrics_by_user(user_id: int,
                               session: AsyncSession = Depends(get_session),
                               current_user = Depends(get_current_user),

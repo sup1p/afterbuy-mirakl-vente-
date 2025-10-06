@@ -470,28 +470,22 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
 # FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-async def get_products_by_fabric_temporary(afterbuy_fabric_name: str):
+async def get_products_by_fabric_from_file(afterbuy_fabric_id: int):
+    
+    with open("src/const/import_data/fabric_id.json", "r", encoding="utf-8") as f:
+        fabric_data = json.load(f)
 
-    with open("src/const/import_data/02.10_Updated_data.json", "r", encoding="utf-8") as f:
+    afterbuy_fabric_name = fabric_data.get(afterbuy_fabric_id)
+    
+    if afterbuy_fabric_name is None:
+        afterbuy_fabric_name = fabric_data.get(str(afterbuy_fabric_id))
+        if afterbuy_fabric_name is None:
+            raise Exception(f"Fabric with afterbuy_fabric_id {afterbuy_fabric_id} not found in fabric_id.json")
+
+    with open(f"src/const/import_data/fabrics/{afterbuy_fabric_name}.json", "r", encoding="utf-8") as f:
         data = json.load(f)
-        
+    
     if not data:
-        logger.error("No data found in mock file")
-        raise Exception("No data found in mock file")
-    
-    fabric_index_in_list = 0
-    
-    for i, fabric_group in enumerate(data):
-        # for item in fabric_group:
-        #     logger.info(f"[{i}] fabric = {item.get('fabric')}")  # логирование
-
-        if any(item.get("fabric") == afterbuy_fabric_name for item in fabric_group):
-            fabric_index_in_list = i
-            break
-        
-    fabric_products = [prod for prod in data[fabric_index_in_list]]
-    
-    if not fabric_products:
         logger.error(f"No products found for fabric_name {afterbuy_fabric_name} in mock")
         raise Exception(f"No products found for fabric_name {afterbuy_fabric_name} in mock")
 
@@ -499,8 +493,8 @@ async def get_products_by_fabric_temporary(afterbuy_fabric_name: str):
     not_added_eans = []
 
     # add html
-    for prod in fabric_products:
-        fname = Path(f"src/const/import_data/HTML/{prod['CustomItemSpecifics']['EAN']}.html")
+    for prod in data:
+        fname = Path(f"src/const/import_data/HTML/{prod['EAN']}.html")
         prod['html_description'] = fname.read_text(encoding="utf-8")
         fabric_products_with_html.append(prod)
     
@@ -510,4 +504,4 @@ async def get_products_by_fabric_temporary(afterbuy_fabric_name: str):
         "products": fabric_products_with_html,
         "not_added_eans": not_added_eans,
         "fabric_name": afterbuy_fabric_name
-    }
+    }   

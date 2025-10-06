@@ -66,9 +66,6 @@ async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient,
     Returns:
         bool: True if the image is accessible (HTTP 200), False otherwise.
     """
-    
-    if settings.check_image_existence is False:
-        return True
 
     if not image_url:
         return False

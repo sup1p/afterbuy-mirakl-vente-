@@ -110,24 +110,24 @@ async def _prepare_images(
     main_image = data.get("GalleryURL", "")
     if not main_image:
         logger.error(
-            f"Main image not found(probably None or empty) ean: {data.get('CustomItemSpecifics').get('EAN')}"
+            f"Main image not found(probably None or empty) ean: {data.get('EAN')}"
         )
         raise Exception(
-            f"Main image not found(probably None or empty) ean: {data.get('CustomItemSpecifics').get('EAN')}"
+            f"Main image not found(probably None or empty) ean: {data.get('EAN')}"
         )
 
     main_image = normalize_url(main_image)
     pure_main_image = main_image  # сохраняем оригинал для сравнения с extra images
     
     if settings.use_image_bg_remover:
-        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('CustomItemSpecifics').get('EAN'), ftp_client=ftp_client, httpx_client=httpx_client)
+        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('EAN'), ftp_client=ftp_client, httpx_client=httpx_client)
 
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(
-            f"Main image not found or inaccessible for ean: {data.get('CustomItemSpecifics').get('EAN')}"
+            f"Main image not found or inaccessible for ean: {data.get('EAN')}"
         )
         raise Exception(
-            f"Main image not found or inaccessible for ean: {data.get('CustomItemSpecifics').get('EAN')}"
+            f"Main image not found or inaccessible for ean: {data.get('EAN')}"
         )
 
     amount_of_resized_images = 0
@@ -137,7 +137,7 @@ async def _prepare_images(
 
     if errors:
         logger.debug(f"Main image has ERRORS, {main_image}")
-        main_image = await resize_image_and_upload(url=main_image,ean=data.get("CustomItemSpecifics").get("EAN"),ftp_client=ftp_client,httpx_client=httpx_client)
+        main_image = await resize_image_and_upload(url=main_image,ean=data.get("EAN"),ftp_client=ftp_client,httpx_client=httpx_client)
         amount_of_resized_images = amount_of_resized_images + 1
 
     # --- extra images ---
@@ -175,7 +175,7 @@ async def _prepare_images(
     resized_error_images = [
         await resize_image_and_upload(
             url=img[0],
-            ean=data.get("CustomItemSpecifics").get("EAN"),
+            ean=data.get("EAN"),
             ftp_client=ftp_client,
             httpx_client=httpx_client,
         )
@@ -193,7 +193,7 @@ async def _prepare_images(
     return main_image, extra_images, amount_of_resized_images
 
 
-async def _build_html_description(data: dict, properties: dict):
+async def _build_html_description(data: dict):
     """
     Extracts and adjusts HTML product description.
 
@@ -228,7 +228,6 @@ async def _build_html_description(data: dict, properties: dict):
                 result = await agent.run(
                     build_description_prompt_vente(
                         html_desc=html_desc,
-                        product_properties=properties,
                         product_article=article,
                         product_price=data.get("Startpreis"),
                         delivery_days=delivery_days,
@@ -243,11 +242,11 @@ async def _build_html_description(data: dict, properties: dict):
                 break
             except Exception as e:
                 logger.error(
-                    f"Attempt {attempt+1}/3 failed for AI Description EAN={data.get('CustomItemSpecifics').get('EAN')}: {e}"
+                    f"Attempt {attempt+1}/3 failed for AI Description EAN={data.get('EAN')}: {e}"
                 )
         else:
             raise Exception(
-                f"All 3 attempts failed AI Descriptionfor EAN={data.get('CustomItemSpecifics').get('EAN')}"
+                f"All 3 attempts failed AI Description for EAN={data.get('EAN')}"
             )
     if ai_html_desc_de and ai_html_desc_fr:
         return {"desc_de": ai_html_desc_de, "desc_fr": ai_html_desc_fr}
@@ -274,8 +273,8 @@ def _build_base_fields(
     """        
     
     return {
-        "sku": data.get("CustomItemSpecifics").get("EAN"),
-        "product-id": data.get("CustomItemSpecifics").get("EAN"),
+        "sku": data.get("EAN"),
+        "product-id": data.get("EAN"),
         "offer-description": html_desc_fr if html_desc_fr else "",
         "product-id-type": "EAN",
         "price": data.get("Startpreis"),
@@ -297,7 +296,7 @@ def _build_base_fields(
         "image_9": safe_get(extra_images, 7),
         "image_10": safe_get(extra_images, 8),
         "category": map_categories(data.get("CategoryID", 0)),
-        "ean": data.get("CustomItemSpecifics").get("EAN"),
+        "ean": data.get("EAN"),
         "description": html_desc_de,
         "description_de": html_desc_de,
     }
@@ -339,13 +338,7 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
                 if isinstance(source_key, list):
                     logger.debug(f"Source key for {attr_code} is list")
                     value = filtered_properties.get(source_key[0])
-                    if filtered_properties.get(source_key[0]) is not None:
-                        logger.debug(
-                            f"Source key for {attr_code} - {source_key[0]} is not None, value = {value}"
-                        )
                     if len(source_key) > 2:
-                        logger.debug(f"Source key for {attr_code} is longer than 2")
-                        logger.debug(f"value_extra_set: {value_extra_set}")
                         if not value_extra_set:
                             for key in source_key:
                                 if filtered_properties.get(key) is not None:
@@ -354,7 +347,6 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
                                     )
                                     value_extra = filtered_properties.get(key)
                                     value_extra_set = True
-                                    logger.debug(f"value_extra_set became: {value_extra_set}")
                                     break
                     else:
                         value_extra = filtered_properties.get(source_key[1])
@@ -432,26 +424,23 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     """
         
     if map_categories(data.get("CategoryID", 0)) in ("No mapping", 0):
-        logger.error("No mapping for ean: %s \n", data.get("CustomItemSpecifics").get("EAN"))
+        logger.error("No mapping for ean: %s \n", data.get("EAN"))
         raise Exception(
-            f"No mapping found for product with ean: {data.get("CustomItemSpecifics").get("EAN")}",
+            f"No mapping found for product with ean: {data.get("EAN")}",
         )
 
     if not data.get("Startpreis"):
         raise Exception(
-            f"No price found for product with ean: {data.get("CustomItemSpecifics").get("EAN")}",
+            f"No price found for product with ean: {data.get("EAN")}",
         )
     
     # --- images ---
     async with resources.ftp_semaphore:
         async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password,socket_timeout=30) as ftp_client:
             main_image, extra_images, _ = await _prepare_images(data, httpx_client, ftp_client)
-
-    # --- product properties ---
-    properties = data.get("CustomItemSpecifics", {}) 
-
+    
     # --- html description ---
-    html_desc = await _build_html_description(data=data, properties=properties)
+    html_desc = await _build_html_description(data=data)
     html_desc_de = html_desc.get("desc_de")
     html_desc_fr = html_desc.get("desc_fr")
 
@@ -459,9 +448,9 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     data_for_mirakl = _build_base_fields(data=data, main_image=main_image, extra_images=extra_images, html_desc_de=html_desc_de, html_desc_fr=html_desc_fr)
 
     # --- category attributes ---
-    category = data_for_mirakl["category"]
-    filled_attrs = _fill_category_attributes(properties, category)
-
+    category = map_categories(data.get("CategoryID", 0))
+    filled_attrs = _fill_category_attributes(data, category)
+    
     # --- result ---
     data_for_mirakl.update(filled_attrs)
     logger.info(
