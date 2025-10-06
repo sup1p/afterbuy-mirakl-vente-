@@ -113,3 +113,27 @@ app.include_router(product_vente_router)
 # app.include_router(offers_lutz_router)
 # app.include_router(generate_csv_lutz_router)
 app.include_router(fabric_lutz_router)
+
+# ЭТО НУЖНО ЗАМЕРДЖИТЬ !!!
+# app/main.py
+from fastapi import FastAPI
+from app.logging_config import setup_logging
+from app.routers import product, fabric, offers, generate_csv, afterbuy_fabric, local_importer
+
+# Set up logging
+setup_logging()
+
+app = FastAPI(title="Midlmiddleware API")
+
+# Подключаем роутеры
+app.include_router(product.router, prefix="/api", tags=["Products"])
+app.include_router(fabric.router, prefix="/api", tags=["Fabrics"])
+app.include_router(afterbuy_fabric.router, prefix="/api", tags=["Afterbuy Fabrics"])
+app.include_router(offers.router, prefix="/api", tags=["Offers"])
+app.include_router(generate_csv.router, prefix="/api", tags=["CSV Generation"])
+app.include_router(local_importer.router, prefix="/api", tags=["Local Importer"])
+
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Server is running"}
