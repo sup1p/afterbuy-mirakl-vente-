@@ -7,12 +7,17 @@ from fastapi import HTTPException
 from src.core.settings import settings
 from src.const.constants_vente.constants import ban_keywords_for_fabrics
 from logs.config_logs import setup_logging
+
 from typing import Optional
+from pathlib import Path
 
 import httpx
 import logging
 import time
 import asyncio
+import json
+
+from src.services.lutz_services import afterbuy
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -154,11 +159,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
     
     if isinstance(data, list) and data[0].get('id'):
         try:
-            if settings.use_real_html_desc:
-                data[0]['html_description'] = await _get_product_html_desc(data[0].get('id'), httpx_client)
-            else:
-                logger.debug(f"Skipping fetching real html description for product with ean {ean} as per settings")
-                data[0]['html_description'] = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
+            data[0]['html_description'] = await _get_product_html_desc(data[0].get('id'), httpx_client)
         except Exception as e:
             raise e
         
@@ -166,11 +167,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
         
     elif isinstance(data, dict) and data.get('id'):
         try:
-            if settings.use_real_html_desc:
-                data['html_description'] = await _get_product_html_desc(data.get('id'), httpx_client)
-            else:
-                logger.debug(f"Skipping fetching real html description for product with ean {ean} as per settings")
-                data['html_description'] = "<p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p> <p>Sample description for testing purposes.</p>"
+            data['html_description'] = await _get_product_html_desc(data.get('id'), httpx_client)
         except Exception as e:
             raise e
         
@@ -266,22 +263,16 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
             if not product.get("id"):
                 return (product_ean, None)
             try:
-                if settings.use_real_html_desc:
-                    async with semaphore:
-                        # Retry logic for product description
-                        for attempt in range(3):
-                            try:
-                                product["html_description"] = await _get_product_html_desc(product["id"], httpx_client)
-                                break
-                            except Exception as e:
-                                if attempt == 2:
-                                    raise e
-                                await asyncio.sleep(0.5 * (attempt + 1))
-                else:
-                    logger.debug(
-                        f"Skipping fetching real html description for product with ean {product.get('ean')} as per settings"
-                    )
-                    product["html_description"] = "<p>Sample description for testing purposes.</p>" * 5
+                async with semaphore:
+                    # Retry logic for product description
+                    for attempt in range(3):
+                        try:
+                            product["html_description"] = await _get_product_html_desc(product["id"], httpx_client)
+                            break
+                        except Exception as e:
+                            if attempt == 2:
+                                raise e
+                            await asyncio.sleep(0.5 * (attempt + 1))
                 return (product_ean, product)
             except Exception as e:
                 logger.error(f"Error fetching html desc for product {product.get('id')}: {e}")
@@ -471,4 +462,52 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
     return {
         "id": only_id,
         "name": name
+    }
+    
+    
+    
+    
+# FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+async def get_products_by_fabric_temporary(afterbuy_fabric_name: str):
+
+    with open("src/const/import_data/02.10_Updated_data.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+        
+    if not data:
+        logger.error("No data found in mock file")
+        raise Exception("No data found in mock file")
+    
+    fabric_index_in_list = 0
+    
+    for i, fabric_group in enumerate(data):
+        # for item in fabric_group:
+        #     logger.info(f"[{i}] fabric = {item.get('fabric')}")  # логирование
+
+        if any(item.get("fabric") == afterbuy_fabric_name for item in fabric_group):
+            fabric_index_in_list = i
+            break
+        
+    fabric_products = [prod for prod in data[fabric_index_in_list]]
+    
+    if not fabric_products:
+        logger.error(f"No products found for fabric_name {afterbuy_fabric_name} in mock")
+        raise Exception(f"No products found for fabric_name {afterbuy_fabric_name} in mock")
+
+    fabric_products_with_html = []
+    not_added_eans = []
+
+    # add html
+    for prod in fabric_products:
+        fname = Path(f"src/const/import_data/HTML/{prod['CustomItemSpecifics']['EAN']}.html")
+        prod['html_description'] = fname.read_text(encoding="utf-8")
+        fabric_products_with_html.append(prod)
+    
+    logger.info(f"Fetched {len(fabric_products_with_html)} products for fabric {afterbuy_fabric_name}")
+    
+    return {
+        "products": fabric_products_with_html,
+        "not_added_eans": not_added_eans,
+        "fabric_name": afterbuy_fabric_name
     }

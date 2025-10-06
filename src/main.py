@@ -11,9 +11,11 @@ from contextlib import asynccontextmanager
 from src.routers.vente.product_vente_router import router as product_vente_router
 from src.routers.vente.mirakl_system_vente_router import router as mirakl_system_vente_router
 from src.routers.vente.dev_vente_router import router as dev_vente_router 
+from src.routers.vente.product_vente_from_file import router as product_vente_from_file_router
 
 from src.routers.user_router import router as user_router
 from src.routers.fabric_management import router as fabric_management_router
+
 from src.routers.lutz.fabric_lutz_router import router as fabric_lutz_router
 from src.routers.lutz.generate_csv_lutz_router import router as generate_csv_lutz_router
 from src.routers.lutz.offers_lutz_router import router as offers_lutz_router
@@ -104,11 +106,15 @@ def root():
 # mutual
 app.include_router(user_router)
 app.include_router(fabric_management_router)
+
 # vente
+app.include_router(product_vente_from_file_router)
 app.include_router(product_vente_router)
 # app.include_router(mirakl_system_vente_router)
 # app.include_router(dev_vente_router)
+
 # lutz
+
 # app.include_router(product_lutz_router)
 # app.include_router(offers_lutz_router)
 # app.include_router(generate_csv_lutz_router)

@@ -54,9 +54,6 @@ class Settings(BaseSettings):
     remove_bg_api_key: str
     
     # Application behavior settings
-    check_image_existence: bool = False
-    use_real_html_desc: bool = False
-    use_ean_validator: bool = True
     use_image_bg_remover: bool = False
     use_ai_description_generator: bool = False
     

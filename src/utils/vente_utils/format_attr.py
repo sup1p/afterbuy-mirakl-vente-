@@ -40,22 +40,6 @@ def safe_execute(func_name: str, _input_value: Any):
         return wrapper
     return decorator
 
-def validate_input(input_value: Any, expected_type: type = None) -> bool:
-    """Validates input data"""
-    if input_value is None:
-        logger.warning("Input value is None")
-        return False
-    
-    if expected_type and not isinstance(input_value, expected_type):
-        logger.warning(f"Expected type {expected_type.__name__}, got {type(input_value).__name__}")
-        return False
-    
-    if isinstance(input_value, list) and len(input_value) == 0:
-        logger.warning("Input list is empty")
-        return False
-    
-    return True
-
 
 def get_first_value(input_value: Union[List, Any]) -> Any:
     """Safely extracts first value from list or returns the value itself"""
@@ -65,11 +49,8 @@ def get_first_value(input_value: Union[List, Any]) -> Any:
 
 
 @safe_execute("format_2", "input_value")
-def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
+def format_2(input_value:  Union[List[str], str], locale: str = "de") -> Optional[str]:
     """Formatting for attribute 2 with localization"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_2, returning default value")
-        return  "9"
     
     color_map = {
         "Türkis": "13089",
@@ -344,11 +325,8 @@ def format_2(input_value: List[str], locale: str = "de") -> Optional[str]:
 
 
 @safe_execute("format_3", "input_value")
-def format_3(input_value: str) -> Optional[str]:
+def format_3(input_value: Union[List[str], str]) -> Optional[str]:
     """Material formatting"""
-    if not validate_input(input_value):
-        logger.warning("Invalid input for format_3, returning default value")
-        return "107"
         
     if isinstance(input_value, list):
         input_value = get_first_value(input_value).strip()    
@@ -394,11 +372,8 @@ def format_3(input_value: str) -> Optional[str]:
 
 
 @safe_execute("format_5", "input_value")
-def format_5(input_value: str) -> Optional[str]:
+def format_5(input_value: Union[List[str], str]) -> Optional[str]:
     """Size formatting based on volume"""
-    if not validate_input(input_value):
-        logger.warning("Invalid input for format_5, returning default value")
-        return None
     
     try:
         nums = list(map(int, re.findall(r"\d+", input_value)))
@@ -443,12 +418,8 @@ def format_5(input_value: str) -> Optional[str]:
 
 
 @safe_execute("format_7", "input_value")  
-def format_7(input_value: str) -> Optional[str]:
+def format_7(input_value: Union[List[str], str]) -> Optional[str]:
     """Size formatting in feet"""
-    if not validate_input(input_value):
-        logger.warning("Invalid input for format_7, returning default value")
-        return "213"
-    
     value = get_first_value(input_value).strip()
     
         
@@ -483,11 +454,8 @@ def format_7(input_value: str) -> Optional[str]:
 
 
 @safe_execute("format_8", "input_value")
-def format_8(input_value: str) -> Optional[str]:
+def format_8(input_value: Union[List[str], str]) -> Optional[str]:
     """Firmness formatting"""
-    if not validate_input(input_value):
-        logger.warning("Invalid input for format_8, returning default value")
-        return "313"
         
     firmness_mapping = {
         "Mittelweich": "313", 
@@ -501,11 +469,8 @@ def format_8(input_value: str) -> Optional[str]:
 
 
 @safe_execute("format_17", "input_value")
-def format_17(input_value: List[str]) -> Optional[str]:
+def format_17(input_value: Union[List[str], str]) -> Optional[str]:
     """Shape formatting"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_17, returning default value")
-        return "375"
         
     form_mapping = {
         # --- квадрат/прямоугольник --- 
@@ -641,7 +606,6 @@ def format_17(input_value: List[str]) -> Optional[str]:
         "Around": "379",
         "Kugel": "379",
         "Ball": "379",
-        "Circle": "379",
 
         "oval": "381",
 
@@ -720,11 +684,8 @@ def format_17(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_19", "input_value")
-def format_19(input_value: List[str]) -> Optional[str]:
+def format_19(input_value: Union[List[str], str]) -> Optional[str]:
     """Style formatting"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_19, returning default value")
-        return "393"
         
     style_mapping = {
         "Klassisch": "393",                # default Modern
@@ -824,11 +785,8 @@ def format_19(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_32", "input_value")
-def format_32(input_value: List[str]) -> Optional[str]:
+def format_32(input_value: Union[List[str], str]) -> Optional[str]:
     """Boolean value formatting (Yes/No)"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_32, returning default value")
-        return "24961"
         
     type_pose_map = {
         "Wandmontage": "24961",   # A fixer au mur (wall-mounted)
@@ -926,23 +884,17 @@ def format_32(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_48", "input_value")
-def format_48(input_value: List[str]) -> Optional[str]:
+def format_48(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование специальных значений"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_48, returning default value")
-        return "755"
         
     value = get_first_value(input_value)
     return "757" if value in ["42", "20"] else "755"
 
 
 @safe_execute("format_56", "input_value")
-def format_56(input_value: List[str]) -> Optional[str]:
+def format_56(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование длины с диапазонами"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_56, returning default value")
-        return "803"
-        
+
     try:
         value = get_first_value(input_value)
         # Очистка строки от лишних символов
@@ -977,32 +929,23 @@ def format_56(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_58", "input_value")
-def format_58(input_value: List[str]) -> Optional[str]:
+def format_58(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование Да/Нет с другими кодами"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_58, returning default value")
-        return "823"
         
     value = get_first_value(input_value)
     return "825" if value == "Ja" else "823"
 
 @safe_execute("format_61", "input_value")
-def format_61(input_value: List[str]) -> Optional[str]:
+def format_61(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование Да/Нет с другими кодами"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_61, returning default value")
-        return "11189"
         
     value = get_first_value(input_value)
     return "833" if value == "Ja" else "831"
 
 
 @safe_execute("format_68", "input_value") 
-def format_68(input_value: List[str]) -> Optional[str]:
+def format_68(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование инвертированного Да/Нет"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_68, returning default value")
-        return "879"
     
     mapping = {
         "1": "879",        # A l'unité (Pro Stück)
@@ -1100,22 +1043,16 @@ def format_68(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_73", "input_value")
-def format_73(input_value: List[str]) -> Optional[str]:
+def format_73(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование типа освещения"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_73, returning default value")
-        return "927"
         
     value = get_first_value(input_value)
     return "925" if value == "LED" else "927"
 
 
 @safe_execute("format_82", "input_value")
-def format_82(input_value: List[str]) -> Optional[str]:
+def format_82(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование численных значений с обработкой 'Mehr als'"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_82, returning default value")
-        return "977"
         
     try:
         value = get_first_value(input_value).replace("Mehr als", "").strip()
@@ -1144,16 +1081,13 @@ def format_82(input_value: List[str]) -> Optional[str]:
         return "977"
     
 @safe_execute("format_106", "input_value")
-def format_106(input_value: List[str]) -> Optional[str]:
+def format_106(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование по атрибуту 106 (Nombre total de jets).
     - Если в значении есть число → ищем ближайшее совпадение с 'jets' в справочнике attr_106.
     - Если число не найдено или пришёл текст → возвращаем дефолтное значение.
     """
     DEFAULT_CODE = "1369"  # дефолт, например "6 jets"
 
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_106, returning default value")
-        return DEFAULT_CODE
 
     try:
         value = get_first_value(input_value)
@@ -1188,11 +1122,8 @@ def format_106(input_value: List[str]) -> Optional[str]:
         return DEFAULT_CODE
 
 @safe_execute("format_163", "input_value")
-def format_163(input_value: List[str]) -> Optional[str]:
+def format_163(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование энергетического класса"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_163, returning default value")
-        return 
         
     value = get_first_value(input_value)
     if value is None:
@@ -1202,11 +1133,8 @@ def format_163(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_183", "input_value")
-def format_183(input_value: List[str]) -> Optional[str]:
+def format_183(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование типа дротиков"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_183, returning default value")
-        return "11189"
     
     dest_mapping = {
         # Baby
@@ -1294,10 +1222,7 @@ def format_183(input_value: List[str]) -> Optional[str]:
     return dest_mapping.get(value)
 
 @safe_execute("format_259", "input_value")
-def format_259(input_value: List[str]):
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_259, returning default value")
-        return "24117"
+def format_259(input_value: Union[List[str], str]):
     
     mapping = {
         "copper": None,
@@ -1325,11 +1250,8 @@ def format_259(input_value: List[str]):
 
 
 @safe_execute("format_267", "input_value")
-def format_267(input_value: List[str]) -> Optional[int]:
+def format_267(input_value: Union[List[str], str]) -> Optional[int]:
     """Форматирование стиля мебели"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_267, returning default value")
-        return "24135"
         
     style_mapping = {
         "Chesterfield": "24135",
@@ -1348,11 +1270,8 @@ def format_267(input_value: List[str]) -> Optional[int]:
 
 
 @safe_execute("format_287", "input_value")
-def format_287(input_value: List[str]) -> Optional[int]:
+def format_287(input_value: Union[List[str], str]) -> Optional[int]:
     """Форматирование особенностей мебели"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_287, returning default value")
-        return "24249"
         
     feature_mapping = {
         "Mit Schiebe-/Schwebetüren": "24249",  # Sliding doors
@@ -1394,22 +1313,16 @@ def format_287(input_value: List[str]) -> Optional[int]:
 
 
 @safe_execute("format_391", "input_value")
-def format_391(input_value: List[str]) -> Optional[str]:
+def format_391(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование оригинальности"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_319, returning default value")
-        return "29239"
         
     value = get_first_value(input_value)
     return "29237" if value == "Original" else "29239"
 
 
 @safe_execute("format_433", "input_value") 
-def format_433(input_value: List[str]) -> Optional[str]:
+def format_433(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование количества частей"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_433, returning default value")
-        return "39801"
         
     try:
         value = get_first_value(input_value)
@@ -1439,18 +1352,15 @@ def format_433(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_435", "input_value")
-def format_435(input_value: List[str]) -> str:
+def format_435(input_value: Union[List[str], str]) -> str:
     """Форматирование гарантии (всегда возвращает 1 год)"""
     logger.info("Returning default warranty value")
     return "39919"  # 1 year
 
 
 @safe_execute("format_557", "input_value")
-def format_557(input_value: List[str]) -> Optional[str]:
+def format_557(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование наличия опции"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_557, returning default value")
-        return "40187"
         
     value = get_first_value(input_value)
     has_option = "ohne" not in value.lower()
@@ -1460,11 +1370,8 @@ def format_557(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_585", "input_value")
-def format_585(input_value: List[str]) -> Optional[str]:
+def format_585(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование с использованием внешнего маппинга"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_585, returning default value")
-        return 41687
         
     try:
         value = get_first_value(input_value)
@@ -1483,11 +1390,8 @@ def format_585(input_value: List[str]) -> Optional[str]:
         return 41687
     
 @safe_execute("format_693", "input_value")
-def format_693(input_value: List[str]) -> Optional[str]:
+def format_693(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование типа мебели"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_693, returning default value")
-        return "73335"
         
     mapping = {
         "Schuhregal": "73331",
@@ -1503,11 +1407,8 @@ def format_693(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_717", "input_value")
-def format_717(input_value: List[str]) -> Optional[str]:
+def format_717(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование паттерна/узора"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_717, returning default value")
-        return "76295"
         
     pattern_mapping = {
         "Modern/Zeitgenössisch": "76291",  # Contemporary
@@ -1533,27 +1434,21 @@ def format_717(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_723", "input_value")
-def format_723(input_value: List[str]) -> Optional[str]:
+def format_723(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование типа подключения"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_723, returning default value")
-        return "77049"
         
     value = get_first_value(input_value)
     return "77049" if value == "Stecker/Kabel" else "77047"
 
 
 @safe_execute("format_741", "input_value")
-def format_741(input_value: Any) -> str:
+def format_741(input_value: Union[List[str], str]) -> str:
     """Форматирование с фиксированным значением"""
     logger.warning("Returning default fixed value for format_741")
     return "82913"
 
 safe_execute("format_745", "input_value")
-def format_745(input_value: List[str]):
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_745, returning default value")
-        return "89827"
+def format_745(input_value: Union[List[str], str]):
     
     mapping = {
         "Metall": None,
@@ -1668,11 +1563,8 @@ def format_745(input_value: List[str]):
 
 
 @safe_execute("format_747", "input_value")
-def format_747(input_value: List[str]) -> Optional[int]:
+def format_747(input_value: Union[List[str], str]) -> Optional[int]:
     """Форматирование материала (расширенная версия)"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_747, returning default value")
-        return "89969"
         
     material_mapping = {
         "Leinen":"89901",
@@ -1710,7 +1602,7 @@ def format_747(input_value: List[str]) -> Optional[int]:
     value = get_first_value(input_value)
     
     if material_mapping.get(value) is None:
-        logger.info(f"ATTR_747 - Material '{value}' not found in primary mapping, returning extra mapping")
+        logger.debug(f"ATTR_747 - Material '{value}' not found in primary mapping, returning extra mapping")
         material_mapping_extra = {
             "Textil": "89873",   # Stoff - Baumwolle (или "89861" если Textile → Polyester)
             "Massiv Holz": "89967",  # Holz, Platte - Holz
@@ -1814,18 +1706,15 @@ def format_747(input_value: List[str]) -> Optional[int]:
 
 
 @safe_execute("format_767", "input_value")
-def format_767(input_value: Any) -> str:
+def format_767(input_value: Union[List[str], str]) -> str:
     """Форматирование с фиксированным значением"""
     logger.warning("Returning default fixed value for format_767")
     return "98723"
 
 
 @safe_execute("format_769", "input_value")
-def format_769(input_value: List[str]) -> Optional[int]:
+def format_769(input_value: Union[List[str], str]) -> Optional[int]:
     """Форматирование типа фигуры"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_769, returning default value")
-        return "98729"
         
     figure_mapping = {
         "Standard": "98729",  # Standard decorative
@@ -1839,7 +1728,7 @@ def format_769(input_value: List[str]) -> Optional[int]:
     return figure_mapping.get(value)
 
 @safe_execute("format_779", "input_value")
-def format_779(input_value: List[str]) -> Optional[str]:
+def format_779(input_value: Union[List[str], str]) -> Optional[str]:
     
     mapping = {
         '1': '102309',
@@ -1866,11 +1755,8 @@ def format_779(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_795", "input_value")
-def format_795(input_value: List[str]) -> Optional[str]:
+def format_795(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование по атрибуту 795 с поиском в справочнике"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_795, returning default value")
-        return "103505"
         
     try:
         value = get_first_value(input_value)
@@ -1897,25 +1783,22 @@ def format_795(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_805", "input_value")
-def format_805(input_value: Any) -> str:
+def format_805(input_value: Union[List[str], str]) -> str:
     """Форматирование с фиксированным значением"""
     logger.warning("Returning default fixed value for format_805")
     return "107321"
 
 
 @safe_execute("format_875", "input_value")
-def format_875(input_value: Any) -> str:
+def format_875(input_value: Union[List[str], str]) -> str:
     """Форматирование с фиксированным значением"""
     logger.warning("Returning default fixed value for format_875")
     return "112838"
 
 
 @safe_execute("format_927", "input_value")
-def format_927(input_value: List[str]) -> Optional[str]:
+def format_927(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование по атрибуту 927 с поиском в справочнике"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_927, returning default value")
-        return "118978"
         
     try:
         value = get_first_value(input_value)
@@ -1942,11 +1825,8 @@ def format_927(input_value: List[str]) -> Optional[str]:
 
 
 @safe_execute("format_928", "input_value")
-def format_928(input_value: List[str]) -> Optional[int]:
+def format_928(input_value: Union[List[str], str]) -> Optional[int]:
     """Size formatting in feet"""
-    if not validate_input(input_value):
-        logger.warning("Invalid input for format_928, returning default value")
-        return "213"
     
     value = get_first_value(input_value).strip()
     
@@ -2053,11 +1933,8 @@ def format_150_151_152(
 
 
 @safe_execute("format_175", "input_value")
-def format_175(input_value: List[str]) -> Optional[str]:
+def format_175(input_value: Union[List[str], str]) -> Optional[str]:
     """Форматирование по атрибуту 175: поддержка чисел и текстов (например 'Mehr als 6')"""
-    if not validate_input(input_value, list):
-        logger.warning("Invalid input for format_175, returning default value")
-        return 
 
     try:
         reference = ATTR_175.attr_175[0]["values"]

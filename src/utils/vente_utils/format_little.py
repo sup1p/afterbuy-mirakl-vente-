@@ -5,10 +5,6 @@ def is_valid_ean(code: str) -> bool:
     Checks if the EAN is valid or invalid
     Returns false if incorrect and True if correct
     """
-    
-    if not settings.use_ean_validator:
-        return True
-    
     if not code.isdigit() or len(code) not in (8, 13):
         return False
 

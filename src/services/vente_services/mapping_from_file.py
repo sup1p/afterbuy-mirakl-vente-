@@ -107,28 +107,27 @@ async def _prepare_images(
         Exception: If the main image is missing or inaccessible.
     """
     # --- main image ---
-    main_image = data.get("pic_main", "")
+    main_image = data.get("GalleryURL", "")
     if not main_image:
         logger.error(
-            f"Main image not found(probably None or empty): {data.get('id')}, ean: {data.get('ean')}"
+            f"Main image not found(probably None or empty) ean: {data.get('CustomItemSpecifics').get('EAN')}"
         )
         raise Exception(
-            f"Main image not found(probably None or empty): {data.get('id')}, ean: {data.get('ean')}"
+            f"Main image not found(probably None or empty) ean: {data.get('CustomItemSpecifics').get('EAN')}"
         )
 
     main_image = normalize_url(main_image)
     pure_main_image = main_image  # сохраняем оригинал для сравнения с extra images
     
     if settings.use_image_bg_remover:
-        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('ean'), ftp_client=ftp_client, httpx_client=httpx_client)
+        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('CustomItemSpecifics').get('EAN'), ftp_client=ftp_client, httpx_client=httpx_client)
 
-    logger.info(f"Main image: {main_image}")
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(
-            f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
+            f"Main image not found or inaccessible for ean: {data.get('CustomItemSpecifics').get('EAN')}"
         )
         raise Exception(
-            f"Main image not found or inaccessible for product_id: {data.get('id')}, ean: {data.get('ean')}"
+            f"Main image not found or inaccessible for ean: {data.get('CustomItemSpecifics').get('EAN')}"
         )
 
     amount_of_resized_images = 0
@@ -138,19 +137,18 @@ async def _prepare_images(
 
     if errors:
         logger.debug(f"Main image has ERRORS, {main_image}")
-        main_image = await resize_image_and_upload(url=main_image,ean=data.get("ean"),ftp_client=ftp_client,httpx_client=httpx_client)
+        main_image = await resize_image_and_upload(url=main_image,ean=data.get("CustomItemSpecifics").get("EAN"),ftp_client=ftp_client,httpx_client=httpx_client)
         amount_of_resized_images = amount_of_resized_images + 1
 
     # --- extra images ---
     
     # Получаем строку с картинками
-    extra_images_not_checked_for_size = data.get("pics") or ""
+    extra_images_not_checked_for_size = data.get("pictureurls") or ""
     pics_list = []
     
     # Проверяем, есть ли в строке полные URL'ы с протоколом
     if 'http' in extra_images_not_checked_for_size:
-        # Для полных URL'ов используем регулярное выражение
-        pics_list = re.findall(r'https?://.*?(?=\s+https?://|$)', extra_images_not_checked_for_size)
+        pics_list = [url.strip() for url in extra_images_not_checked_for_size.split(';')]
     
     # Очищаем от лишних пробелов
     pics_list = [pic.strip() for pic in pics_list if pic.strip()]
@@ -162,7 +160,6 @@ async def _prepare_images(
     pics_list = [pic for pic in pics_list if pic != pure_main_image]
     
     if len(pics_list) < 1:
-        logger.debug("len of the pics_list from which extra_images creates is less than 1")
         return main_image, [], amount_of_resized_images
 
     # Проверка размеров extra image
@@ -178,7 +175,7 @@ async def _prepare_images(
     resized_error_images = [
         await resize_image_and_upload(
             url=img[0],
-            ean=data.get("ean"),
+            ean=data.get("CustomItemSpecifics").get("EAN"),
             ftp_client=ftp_client,
             httpx_client=httpx_client,
         )
@@ -191,29 +188,12 @@ async def _prepare_images(
     extra_images.extend(resized_error_images)
     amount_of_resized_images = amount_of_resized_images + len(resized_error_images)
 
+    if extra_images and len(extra_images) == 0:
+        logger.warning("extra_images length is 0, returning empty list")
     return main_image, extra_images, amount_of_resized_images
 
 
-def _parse_properties(properties_raw: str) -> dict:
-    """
-    Parses product properties from JSON string.
-
-    Args:
-        properties_raw (str): Raw JSON string containing product properties.
-
-    Returns:
-        dict: Parsed properties, or empty dict if invalid JSON.
-    """
-    try:
-        filtered_properties = json.loads(properties_raw)
-    except json.JSONDecodeError:
-        logger.warning("Invalid JSON in 'properties': %s", properties_raw)
-        filtered_properties = {}
-    logger.info("Product properties: %s", filtered_properties)
-    return filtered_properties
-
-
-async def _build_html_description(data: dict, filtered_properties: dict):
+async def _build_html_description(data: dict, properties: dict):
     """
     Extracts and adjusts HTML product description.
 
@@ -228,7 +208,7 @@ async def _build_html_description(data: dict, filtered_properties: dict):
         str | None: Processed HTML description or None if invalid.
     """
     
-    article = data.get("article")
+    article = data.get("Artikelbeschreibung")
     delivery_days = data.get("delivery_days")
     html_desc = extract_product_properties_from_html(data.get("html_description"))
     
@@ -248,9 +228,9 @@ async def _build_html_description(data: dict, filtered_properties: dict):
                 result = await agent.run(
                     build_description_prompt_vente(
                         html_desc=html_desc,
-                        product_properties=filtered_properties,
+                        product_properties=properties,
                         product_article=article,
-                        product_price=data.get("price"),
+                        product_price=data.get("Startpreis"),
                         delivery_days=delivery_days,
                     ),
                     output_type=ProductDescriptionAIVente,
@@ -263,11 +243,11 @@ async def _build_html_description(data: dict, filtered_properties: dict):
                 break
             except Exception as e:
                 logger.error(
-                    f"Attempt {attempt+1}/3 failed for AI Description EAN={data.get('ean')}: {e}"
+                    f"Attempt {attempt+1}/3 failed for AI Description EAN={data.get('CustomItemSpecifics').get('EAN')}: {e}"
                 )
         else:
             raise Exception(
-                f"All 3 attempts failed AI Descriptionfor EAN={data.get('ean')}"
+                f"All 3 attempts failed AI Descriptionfor EAN={data.get('CustomItemSpecifics').get('EAN')}"
             )
     if ai_html_desc_de and ai_html_desc_fr:
         return {"desc_de": ai_html_desc_de, "desc_fr": ai_html_desc_fr}
@@ -294,18 +274,18 @@ def _build_base_fields(
     """        
     
     return {
-        "sku": data.get("ean"),
-        "product-id": data.get("ean"),
+        "sku": data.get("CustomItemSpecifics").get("EAN"),
+        "product-id": data.get("CustomItemSpecifics").get("EAN"),
         "offer-description": html_desc_fr if html_desc_fr else "",
         "product-id-type": "EAN",
-        "price": data.get("price"),
+        "price": data.get("Startpreis"),
         "state": 11, # new state
-        "quantity": product_quantity_check(data.get("article", "")),
+        "quantity": product_quantity_check(data.get("Artikelbeschreibung", "")),
         "leadtime-to-ship": data.get("delivery_days"),
         # -----------------
         "brand": "", # no brand
         "internal-description": "",
-        "title_de": data.get("article"),
+        "title_de": data.get("Artikelbeschreibung"),
         "image_1": main_image,
         "image_2": safe_get(extra_images, 0),
         "image_3": safe_get(extra_images, 1),
@@ -316,8 +296,8 @@ def _build_base_fields(
         "image_8": safe_get(extra_images, 6),
         "image_9": safe_get(extra_images, 7),
         "image_10": safe_get(extra_images, 8),
-        "category": map_categories(data.get("category", 0)),
-        "ean": data.get("ean"),
+        "category": map_categories(data.get("CategoryID", 0)),
+        "ean": data.get("CustomItemSpecifics").get("EAN"),
         "description": html_desc_de,
         "description_de": html_desc_de,
     }
@@ -450,36 +430,16 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
                   "data_for_mirakl": dict
               }
     """
-    
-    logger.debug(f"Mapping attributes for product_id: {data.get('id')}, ean: {data.get('ean')}")
-    
-    if map_categories(data.get("category", 0)) in ("No mapping", 0):
-        logger.info("No mapping for ean: %s \n", data.get("ean"))
-
-        return {
-            "ean": data.get("ean"),
-            
-            "data_for_mirakl": {
-                "sku": data.get("ean"),
-                "product-id": data.get("ean"),
-                "product-id-type": "EAN",
-                "price": data.get("price", 0.00),
-                "state": 11,
-                "quantity": product_quantity_check(data.get("article", "")),
-                "brand": "",
-                "internal-description": "",
-                "title_de": data.get("article"),
-                "image_1": "https://example.com",
-                "category": map_categories(data.get("category", 0)),
-                "ean": data.get("ean"),
-                "description": default_html_description,
-                "description_de": default_html_description,
-            }
-        }
-    
-    if not data.get("price"):
+        
+    if map_categories(data.get("CategoryID", 0)) in ("No mapping", 0):
+        logger.error("No mapping for ean: %s \n", data.get("CustomItemSpecifics").get("EAN"))
         raise Exception(
-            f"No price found for product with ean: {data.get("ean")}",
+            f"No mapping found for product with ean: {data.get("CustomItemSpecifics").get("EAN")}",
+        )
+
+    if not data.get("Startpreis"):
+        raise Exception(
+            f"No price found for product with ean: {data.get("CustomItemSpecifics").get("EAN")}",
         )
     
     # --- images ---
@@ -488,11 +448,10 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
             main_image, extra_images, _ = await _prepare_images(data, httpx_client, ftp_client)
 
     # --- product properties ---
-    properties_raw = data.get("properties", "{}")
-    filtered_properties = _parse_properties(properties_raw)
+    properties = data.get("CustomItemSpecifics", {}) 
 
     # --- html description ---
-    html_desc = await _build_html_description(data=data, filtered_properties=filtered_properties)
+    html_desc = await _build_html_description(data=data, properties=properties)
     html_desc_de = html_desc.get("desc_de")
     html_desc_fr = html_desc.get("desc_fr")
 
@@ -501,7 +460,7 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
 
     # --- category attributes ---
     category = data_for_mirakl["category"]
-    filled_attrs = _fill_category_attributes(filtered_properties, category)
+    filled_attrs = _fill_category_attributes(properties, category)
 
     # --- result ---
     data_for_mirakl.update(filled_attrs)
