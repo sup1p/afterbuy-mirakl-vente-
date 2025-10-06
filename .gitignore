@@ -17,8 +17,6 @@ venv/
 .env
 
 #const
-src/const/import_data/*
-
 !src/const/import_data/
 
 # Logs
