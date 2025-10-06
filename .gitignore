@@ -16,6 +16,10 @@ venv/
 .env
 .env
 
+#const
+import_data/*
+!import_data/
+
 # Logs
 logs.log
 *.log
