@@ -17,7 +17,11 @@ venv/
 .env
 
 #const
-src/const/import_data/*
+src/const/import_data/fabric_id.json
+src/const/import_data/HTML_xl/*
+src/const/import_data/HTML_jv/*
+src/const/import_data/fabrics_jv/*
+src/const/import_data/fabrics_xl/*
 
 # Logs
 logs.log

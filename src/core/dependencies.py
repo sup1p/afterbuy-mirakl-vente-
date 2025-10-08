@@ -48,8 +48,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
-async def require_admin_token(token: str = Depends(oauth2_scheme)):
+async def require_admin_token(token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
     data = decode_access_token(token)
     if not data.get("is_admin"):
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return data
+    admin_user = await get_user_by_username(session=session, username=data.get("username"))
+    if not admin_user or not admin_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return admin_user

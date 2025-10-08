@@ -48,6 +48,8 @@ XXLmebel 1 API is a FastAPI-based backend application designed for automated tra
    ```
 4. Copy the `.env` file and specify the required parameters for Afterbuy and Mirakl.
 
+5. Add the fabric_id.json
+
 ### Server Launch
 ```bash
 uv run uvicorn src.main:app

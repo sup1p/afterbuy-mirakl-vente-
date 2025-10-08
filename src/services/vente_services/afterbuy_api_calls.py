@@ -470,7 +470,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
 # FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-async def get_products_by_fabric_from_file(afterbuy_fabric_id: int):
+async def get_products_by_fabric_from_file(afterbuy_fabric_id: int, market: str):
     
     with open("src/const/import_data/fabric_id.json", "r", encoding="utf-8") as f:
         fabric_data = json.load(f)
@@ -482,7 +482,7 @@ async def get_products_by_fabric_from_file(afterbuy_fabric_id: int):
         if afterbuy_fabric_name is None:
             raise Exception(f"Fabric with afterbuy_fabric_id {afterbuy_fabric_id} not found in fabric_id.json")
 
-    with open(f"src/const/import_data/fabrics/{afterbuy_fabric_name}.json", "r", encoding="utf-8") as f:
+    with open(f"src/const/import_data/fabrics_{market}/{afterbuy_fabric_name}.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     
     if not data:
@@ -494,7 +494,7 @@ async def get_products_by_fabric_from_file(afterbuy_fabric_id: int):
 
     # add html
     for prod in data:
-        fname = Path(f"src/const/import_data/HTML/{prod['EAN']}.html")
+        fname = Path(f"src/const/import_data/HTML_{market}/{prod['EAN']}.html")
         prod['html_description'] = fname.read_text(encoding="utf-8")
         fabric_products_with_html.append(prod)
     

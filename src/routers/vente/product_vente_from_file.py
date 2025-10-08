@@ -50,7 +50,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
     market = input_body.market
     
     try:
-        data = await get_products_by_fabric_from_file(afterbuy_fabric_id=afterbuy_fabric_id)
+        data = await get_products_by_fabric_from_file(afterbuy_fabric_id=afterbuy_fabric_id, market=market)
     except Exception as e:
         logger.error(f"Error fetching data for fabric {afterbuy_fabric_id}: {e}")
         raise HTTPException(
