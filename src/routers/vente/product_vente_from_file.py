@@ -5,8 +5,8 @@ Provides endpoints for importing products from Afterbuy to Mirakl system.
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id
-from src.schemas.product_schemas import saveUploadedFabric, FabricWithDeliveryRequest
+from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id, create_uploaded_ean, get_uploaded_ean_by_ean_and_fabric, update_uploaded_ean
+from src.schemas.product_schemas import saveUploadedFabric, FabricWithDeliveryAndMarketRequest, saveUploadedEan
 from src.services.vente_services.mirakl_api_calls import import_product as import_product_mirakl
 from src.services.vente_services.afterbuy_api_calls import get_products_by_fabric_from_file
 from src.services.vente_services.csv_converter import make_big_csv
@@ -29,7 +29,7 @@ router = APIRouter()
 
 
 @router.post("/import-products-by-fabric-from-file/vente", tags=["product vente by fabric"])
-async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     """
     Import products by Afterbuy fabric ID from Afterbuy to Mirakl.
 
@@ -47,6 +47,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
 
     afterbuy_fabric_id = input_body.afterbuy_fabric_id
     delivery_days = input_body.delivery_days
+    market = input_body.market
     
     try:
         data = await get_products_by_fabric_from_file(afterbuy_fabric_id=afterbuy_fabric_id)
@@ -116,31 +117,59 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
             detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
         )
 
-    try:
-        mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
-    except Exception as e:
-        logger.error(f"Error importing products to Mirakl: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+    # try:
+    #     mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
+    # except Exception as e:
+    #     logger.error(f"Error importing products to Mirakl: {e}")
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=str(e),
+    #     )
 
-    # database_fabric_data = saveUploadedFabric(
-    #     afterbuy_fabric_id=afterbuy_fabric_id,
-    #     user_id=current_user.id,
-    # )
-    # database_created = "already exists"
+    # DATABASE SAVING FABRIC
+    database_fabric_data = saveUploadedFabric(
+        afterbuy_fabric_id=afterbuy_fabric_id,
+        user_id=current_user.id,
+        market=market,
+    )
+    fabric_obj = await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id)
+    database_created = "already exists"
     
-    # if not await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id):
-    #     database_created = "created"
-    #     await create_uploaded_fabric(session=session, data=database_fabric_data)
+    if not fabric_obj:
+        fabric_obj = await create_uploaded_fabric(session=session, data=database_fabric_data)
+        database_created = "created"
+        logger.info(f"Created new UploadedFabric entry for Afterbuy fabric ID {afterbuy_fabric_id}")
+        
+    # DATABASE SAVING EANS
+    for prod_idx, prod in enumerate(data_for_csv, start=1):
+        database_ean_data = saveUploadedEan(
+            ean=prod.get("ean"),
+            afterbuy_fabric_id=afterbuy_fabric_id,
+            title=prod.get("title_de"),
+            image_1=prod.get("image_1"),
+            image_2=prod.get("image_2"),
+            image_3=prod.get("image_3"),
+            user_id=current_user.id,
+            uploaded_fabric_id=fabric_obj.id,
+        )
+        existing_ean = await get_uploaded_ean_by_ean_and_fabric(session=session, ean=prod.get("ean"), afterbuy_fabric_id=afterbuy_fabric_id)
+        if existing_ean:
+            await update_uploaded_ean(session=session, ean_obj=existing_ean, data=database_ean_data)
+            logger.info(f"[{prod_idx}/{len(data_for_csv)}] Updated EAN {prod.get('ean')} in database.")
+        else:
+            await create_uploaded_ean(session=session, data=database_ean_data)
+            logger.info(f"[{prod_idx}/{len(data_for_csv)}] Saved EAN {prod.get('ean')} to database.")
+    
+
+    
 
     return {
-        "mirakl_answer": mirakl_answer,
+        # "mirakl_answer": mirakl_answer,
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
         "delivery days": delivery_days,
         "total_eans_in_fabric": len(all_eans),
         "afterbuty_fabric_name": afterbuy_fabric_name,
+        "database_status": database_created,
         "data_for_csv_by_fabric": data_for_csv
     }

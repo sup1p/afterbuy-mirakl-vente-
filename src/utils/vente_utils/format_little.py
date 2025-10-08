@@ -25,3 +25,6 @@ def is_valid_ean(code: str) -> bool:
 
 def get_delivery_days(fabric_name: str) -> int:
     return 45 # временно заглуша
+
+def is_set(article: str) -> bool:
+    return "set" in article.casefold()

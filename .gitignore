@@ -22,7 +22,7 @@ src/const/import_data/
 # Logs
 logs.log
 *.log
-logs/logs/
+logs/logs/*
 
 # IDEs
 .vscode/

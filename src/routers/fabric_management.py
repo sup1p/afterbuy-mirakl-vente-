@@ -25,31 +25,10 @@ async def get_uploaded_fabrics(session: AsyncSession = Depends(get_session),
     fabrics = await get_all_uploaded_fabrics(session=session, limit=limit, offset=offset)
     return fabrics
 
-@router.get("/uploaded-fabrics/{afterbuy_fabric_id}", tags=["fabric management"])
-async def get_uploaded_fabric(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
-    fabric = await get_uploaded_fabric_by_afterbuy_id(session, afterbuy_fabric_id=afterbuy_fabric_id)
-    if not fabric:
-        raise HTTPException(status_code=404, detail="Fabric not found")
-    return fabric
 
-@router.get("/uploaded-fabrics/{afterbuy_fabric_id}/eans", tags=["fabric management"])
-async def get_uploaded_fabric_eans(afterbuy_fabric_id: int,
-                                   session: AsyncSession = Depends(get_session),
-                                   current_user = Depends(get_current_user),
-                                   limit: int = Query(10, ge=1, le=100),
-                                   offset: int = Query(0, ge=0)
-                                   ):
-    eans = await get_eans_by_afterbuy_fabric_id(session=session,
-                                                  afterbuy_fabric_id=afterbuy_fabric_id,
-                                                  limit=limit,
-                                                  offset=offset
-    )
-    if eans == "Not Found":
-        raise HTTPException(status_code=404, detail="EANs not found")
-    return eans
 
 @router.get("/uploaded-fabrics/fabrics-by-status", tags=["fabric management"])
-async def get_fabrics_by_status(status: Literal["pending", "processed", "error"],
+async def get_fabrics_by_status(status: str = Query("pending", pattern="^(pending|processed|error)$"),
                                 session: AsyncSession = Depends(get_session),
                                 current_user = Depends(get_current_user),
                                 limit: int = Query(10, ge=1, le=100),
@@ -97,3 +76,27 @@ async def delete_fabric(afterbuy_fabric_id: int, session: AsyncSession = Depends
     if not result:
         raise HTTPException(status_code=404, detail="Fabric not found")
     return {"detail": "Fabric deleted successfully"}
+
+
+@router.get("/uploaded-fabrics/{afterbuy_fabric_id}", tags=["fabric management"])
+async def get_uploaded_fabric(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    fabric = await get_uploaded_fabric_by_afterbuy_id(session, afterbuy_fabric_id=afterbuy_fabric_id)
+    if not fabric:
+        raise HTTPException(status_code=404, detail="Fabric not found")
+    return fabric
+
+@router.get("/uploaded-fabrics/{afterbuy_fabric_id}/eans", tags=["fabric management"])
+async def get_uploaded_fabric_eans(afterbuy_fabric_id: int,
+                                   session: AsyncSession = Depends(get_session),
+                                   current_user = Depends(get_current_user),
+                                   limit: int = Query(10, ge=1, le=100),
+                                   offset: int = Query(0, ge=0)
+                                   ):
+    eans = await get_eans_by_afterbuy_fabric_id(session=session,
+                                                  afterbuy_fabric_id=afterbuy_fabric_id,
+                                                  limit=limit,
+                                                  offset=offset
+    )
+    if eans == "Not Found":
+        raise HTTPException(status_code=404, detail="EANs not found")
+    return eans

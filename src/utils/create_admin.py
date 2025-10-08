@@ -16,12 +16,20 @@ async def create_admin():
         result = await session.execute(select(User).where(User.username == settings.admin_username))
         admin = result.scalar_one_or_none()
 
-        if admin and admin.hashed_password == get_password_hash(settings.admin_password):
-            print("✅ Admin already exists")
-            return
+        hashed_pw = get_password_hash(settings.admin_password)
+
+        if admin:
+            if admin.hashed_password == hashed_pw:
+                print("✅ Admin already exists")
+                return
+            else:
+                # Обновляем пароль, если отличается
+                admin.hashed_password = hashed_pw
+                await session.commit()
+                print("🔄 Admin password updated")
+                return
 
         # Создаём нового админа
-        hashed_pw = get_password_hash(settings.admin_password)
         admin = User(
             username=settings.admin_username,
             hashed_password=hashed_pw,

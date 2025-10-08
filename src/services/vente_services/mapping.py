@@ -14,6 +14,7 @@ from src.const.constants_vente.constants import (
     default_html_description
 )
 from src.const.prompts import build_description_prompt_vente
+from src.utils.vente_utils.format_little import is_set
 from src.utils.vente_utils.substitute_formatter import substitute_attr
 from src.utils.vente_utils.format_attr import product_quantity_check
 from src.core.settings import settings
@@ -120,7 +121,11 @@ async def _prepare_images(
     pure_main_image = main_image  # сохраняем оригинал для сравнения с extra images
     
     if settings.use_image_bg_remover:
-        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('ean'), ftp_client=ftp_client, httpx_client=httpx_client)
+        if data.get("article") and is_set(data.get("article")):
+            logger.info(f"Product is a set, skipping bg removal for ean: {data.get('ean')}")
+        else:
+            logger.info(f"Product is not a set, applying bg removal for ean: {data.get('ean')}")
+            main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('ean'), ftp_client=ftp_client, httpx_client=httpx_client)
 
     logger.info(f"Main image: {main_image}")
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):

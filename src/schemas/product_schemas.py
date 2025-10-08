@@ -84,9 +84,15 @@ class ImportFabricProductsResponse(BaseModel):
 
 # crud
 
+class FabricWithDeliveryAndMarketRequest(BaseModel):
+    afterbuy_fabric_id: int
+    delivery_days: int
+    market: Literal["xl", "jv"]
+
 class saveUploadedFabric(BaseModel):
     afterbuy_fabric_id: int
     status: Literal["pending", "processed", "error"] = "pending"
+    market: Literal["xl", "jv"] 
     user_id: int
 
 class saveUploadedEan(BaseModel):
@@ -122,4 +128,4 @@ class changeFabricStatusRequest(BaseModel):
     new_status: Literal["pending", "processed", "error"]
     
 class fabricsByMarketPlaceRequest(BaseModel):
-    marketplace: Literal["xxxlutz", "venteunique"]  # xxxlutz, venteunique
+    marketplace: Literal["xl", "jv"]  # xxxlutz, venteunique

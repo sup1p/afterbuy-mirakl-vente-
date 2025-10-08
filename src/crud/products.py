@@ -52,6 +52,7 @@ async def create_uploaded_fabric(session: AsyncSession, data: saveUploadedFabric
     new_fabric = UploadedFabric(
         afterbuy_fabric_id=data.afterbuy_fabric_id,
         user_id=data.user_id,
+        market=data.market,
     )
     session.add(new_fabric)
     await session.commit()
@@ -110,3 +111,22 @@ async def delete_fabric_by_afterbuy_id(session: AsyncSession, afterbuy_fabric_id
     await session.delete(fabric)
     await session.commit()
     return True
+
+async def get_uploaded_ean_by_ean_and_fabric(session: AsyncSession, ean: str, afterbuy_fabric_id: int):
+    q = select(UploadedEan).where(
+        (UploadedEan.ean == ean) & (UploadedEan.afterbuy_fabric_id == afterbuy_fabric_id)
+    )
+    res = await session.execute(q)
+    return res.scalars().first()
+
+async def update_uploaded_ean(session: AsyncSession, ean_obj: UploadedEan, data: saveUploadedEan) -> UploadedEan:
+    ean_obj.title = data.title
+    ean_obj.image_1 = data.image_1
+    ean_obj.image_2 = data.image_2
+    ean_obj.image_3 = data.image_3
+    ean_obj.user_id = data.user_id
+    ean_obj.uploaded_fabric_id = data.uploaded_fabric_id
+    ean_obj.status = data.status
+    await session.commit()
+    await session.refresh(ean_obj)
+    return ean_obj

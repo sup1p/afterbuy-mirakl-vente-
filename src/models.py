@@ -18,6 +18,7 @@ class UploadedFabric(Base):
     __tablename__ = "uploaded_fabrics"
     id = Column(Integer, primary_key=True, index=True)
     afterbuy_fabric_id = Column(Integer, nullable=False)
+    market = Column(String, nullable=False)  # "xl" "jv"
     status = Column(String, default="pending")  # pending, processed, error
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     date_time = Column(DateTime, default=datetime.now(), nullable=False)

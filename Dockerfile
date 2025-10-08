@@ -13,14 +13,14 @@ COPY pyproject.toml uv.lock /app/
 
 # Сборка зависимостей проекта в .venv
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-install-project --no-dev
+    uv sync --no-install-project --no-dev
 
 # Копируем весь проект после создания .venv
 COPY . /app
 
 # Устанавливаем проект (локальный пакет, если нужен)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+    uv sync --no-dev
 
 # ---- runtime: минимальный образ с готовой виртуальной средой ----
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS runtime
@@ -31,6 +31,9 @@ WORKDIR /app
 COPY --from=builder /app /app
 
 RUN mkdir -p /app/logs/logs && [ -f /app/logs/logs/logs.log ] || touch /app/logs/logs/logs.log
+
+# Делаем entrypoint.sh исполняемым
+RUN chmod +x /app/entrypoint.sh
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1

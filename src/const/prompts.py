@@ -1,6 +1,6 @@
 from src.core.settings import settings
 
-def build_description_prompt_vente(html_desc: str, product_article: str, product_price: float | int, delivery_days: int = 90, product_properties: dict | None = None):
+def build_description_prompt_vente(product_article: str, product_price: float | int, delivery_days: int = 90, product_properties: dict | None = None, html_desc: str | None = None):
     description_prompt = (
         "You are an e-commerce content assistant. "
         "Your task is to take the provided raw product text, properties, article title, and additional offer details, "
