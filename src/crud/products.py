@@ -74,6 +74,7 @@ async def create_uploaded_ean(session: AsyncSession, data: saveUploadedEan) -> U
     session.add(new_ean)
     await session.commit()
     await session.refresh(new_ean)
+    await update_fabric_status_based_on_eans(session, new_ean.uploaded_fabric_id)
     return new_ean
 
 async def change_fabric_status(session: AsyncSession, data: changeFabricStatusRequest) -> UploadedFabric:
@@ -100,6 +101,7 @@ async def change_ean_status(session: AsyncSession, data: changeEanStatusRequest)
     ean_obj.status = data.new_status
     await session.commit()
     await session.refresh(ean_obj)
+    await update_fabric_status_based_on_eans(session, ean_obj.uploaded_fabric_id)
     return ean_obj
 
 async def delete_fabric_by_afterbuy_id(session: AsyncSession, afterbuy_fabric_id: int) -> bool:
@@ -129,4 +131,35 @@ async def update_uploaded_ean(session: AsyncSession, ean_obj: UploadedEan, data:
     ean_obj.status = data.status
     await session.commit()
     await session.refresh(ean_obj)
+    await update_fabric_status_based_on_eans(session, ean_obj.uploaded_fabric_id)
     return ean_obj
+
+async def update_fabric_status_based_on_eans(session: AsyncSession, uploaded_fabric_id: int):
+    print(f"Updating fabric status based on EANs for fabric ID {uploaded_fabric_id}")
+    # Получить все EAN'ы для fabric
+    q = select(UploadedEan).where(UploadedEan.uploaded_fabric_id == uploaded_fabric_id)
+    res = await session.execute(q)
+    eans = res.scalars().all()
+    
+    if not eans:
+        return  # Нет EAN'ов, ничего не делать
+    
+    statuses = {ean.status for ean in eans}
+    
+    if "error" in statuses:
+        new_status = "error"
+        print(f"Setting fabric ID {uploaded_fabric_id} status to 'error' due to EAN errors")
+    elif all(status == "processed" for status in statuses):
+        new_status = "processed"
+        print(f"Setting fabric ID {uploaded_fabric_id} status to 'processed' as all EANs are processed")
+    else:
+        new_status = "pending"
+        print(f"Setting fabric ID {uploaded_fabric_id} status to 'pending' as there are pending EANs")
+    
+    # Обновить статус fabric
+    q_fabric = select(UploadedFabric).where(UploadedFabric.id == uploaded_fabric_id)
+    res_fabric = await session.execute(q_fabric)
+    fabric = res_fabric.scalars().first()
+    if fabric and fabric.status != new_status:
+        fabric.status = new_status
+        await session.commit()

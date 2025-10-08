@@ -54,7 +54,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
     except Exception as e:
         logger.error(f"Error fetching data for fabric {afterbuy_fabric_id}: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=403,
             detail=str(e),
         )
     
