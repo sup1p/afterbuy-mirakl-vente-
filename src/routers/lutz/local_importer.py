@@ -25,6 +25,7 @@ router = APIRouter()
 
 # Define the paths to the local data files
 DATA_DIR = "app/new data"
+DATA_DIR = "src/const/import_data"
 FABRICS_DIR = os.path.join(DATA_DIR, "FABRICS")
 FABRIC_ID_FILE = os.path.join(DATA_DIR, "fabric_id.json")
 

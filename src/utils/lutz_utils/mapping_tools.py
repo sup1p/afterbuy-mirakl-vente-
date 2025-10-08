@@ -252,18 +252,18 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
             # ⚡ Ограничиваем описание максимум 3000 символами
             if value and len(value) > 3000:
                 value = value[:2997] + "..."
-                
+
             article = data.get("article")
             delivery_days = get_delivery_days(data.get("collection"))
             properties = extract_dimensions(data.get("properties", {}))
-            
-            if not value:
+
+            if not value or not settings.use_ai_description_generator:
                 value = "No html description for this product"
                 logger.warning("Native html_desc is None")
-                
+
             agent = get_agent()
             sem = resources.llm_semaphore
-            
+
             async with sem:
                 for attempt in range(3):
                     try:
@@ -280,7 +280,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                         )
                         ai_html_desc_de = ai_result.output.description_de.strip()
                         ai_html_desc_en = ai_result.output.description_en.strip()
-                        
+
                         logger.info("AI desc length DE=%d", len(ai_html_desc_de))
                         logger.info("AI desc length EN=%d", len(ai_html_desc_en))
                         break
@@ -292,11 +292,11 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                     raise Exception(
                         f"All 3 attempts failed AI Descriptionfor EAN={data.get('ean')}"
                     )
-                    
+
             if ai_html_desc_de and ai_html_desc_en:
                 result["product_description"] = ai_html_desc_de
                 result["description [de]"] = ai_html_desc_de
-                
+
             continue
 
         if isinstance(dst, list) and (
@@ -424,3 +424,23 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                     result[field] = "material_plastic"
 
     return {field: result.get(field, "") for field in fieldnames}
+
+import math
+
+
+def process_uvp(price: float) -> float:
+    """
+    Рассчитывает рекомендованную розничную цену (UVP) на основе базовой цены.
+    Логика основана на предоставленном PHP-коде.
+    """
+    if price > 5000:
+        value = price * 1.10
+    elif 2500 <= price <= 4999:
+        value = price * 1.18
+    elif 1000 <= price <= 2499:
+        value = price * 1.25
+    else:  # цена меньше 1000
+        value = price * 1.35
+
+    # Округляем до следующего десятка вверх
+    return math.ceil(value / 10) * 10

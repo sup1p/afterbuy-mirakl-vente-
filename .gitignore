@@ -22,6 +22,8 @@ src/const/import_data/HTML_xl/*
 src/const/import_data/HTML_jv/*
 src/const/import_data/fabrics_jv/*
 src/const/import_data/fabrics_xl/*
+src/const/import_data/FABRICS/*
+src/const/import_data/HTML/*
 
 # Logs
 logs.log
