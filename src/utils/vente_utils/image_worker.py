@@ -39,6 +39,51 @@ BYTES_BY_FORMAT = {
     "default": MAX_BYTES_DEFAULT,
 }
 
+# Simple circuit breaker для часто ломающихся URL
+# В продакшене это должно быть в Redis или базе данных
+_failed_urls = {}  # {url: {"count": int, "last_failure": timestamp}}
+_CIRCUIT_BREAKER_THRESHOLD = 3  # Максимум ошибок перед блокировкой
+_CIRCUIT_BREAKER_TIMEOUT = 300  # 5 минут блокировки
+
+
+def _is_url_circuit_broken(url: str) -> bool:
+    """Проверить, заблокирован ли URL из-за частых ошибок."""
+    import time
+    
+    if url not in _failed_urls:
+        return False
+    
+    failure_info = _failed_urls[url]
+    
+    # Если прошло достаточно времени, сбрасываем счетчик
+    if time.time() - failure_info["last_failure"] > _CIRCUIT_BREAKER_TIMEOUT:
+        del _failed_urls[url]
+        return False
+    
+    # Проверяем превышен ли лимит ошибок
+    return failure_info["count"] >= _CIRCUIT_BREAKER_THRESHOLD
+
+
+def _record_url_failure(url: str):
+    """Записать ошибку для URL."""
+    import time
+    
+    current_time = time.time()
+    if url in _failed_urls:
+        _failed_urls[url]["count"] += 1
+        _failed_urls[url]["last_failure"] = current_time
+    else:
+        _failed_urls[url] = {"count": 1, "last_failure": current_time}
+    
+    if _failed_urls[url]["count"] >= _CIRCUIT_BREAKER_THRESHOLD:
+        logger.warning(f"Circuit breaker activated for URL (too many failures): {url}")
+
+
+def _record_url_success(url: str):
+    """Записать успех для URL - сбрасывает счетчик ошибок."""
+    if url in _failed_urls:
+        del _failed_urls[url]
+
 MIME_MAP = {
     "jpeg": "image/jpeg",
     "png": "image/png",
@@ -49,44 +94,101 @@ MIME_MAP = {
 }
 
 
-async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient, retries: int = 3, timeout: int = 5) -> bool:
+async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient, retries: int = 2, timeout: int = 5) -> bool:
     """
     Verify whether an image is accessible at the given URL.
 
-    The function attempts to check the image's availability using an HTTP HEAD request. 
-    If HEAD is not supported (403/405), it falls back to GET. Retries with exponential 
-    backoff are used in case of failures.
+    Improved version with:
+    - Global timeout protection (max 20 seconds total)
+    - Reduced retries for faster failure
+    - Fast-fail on certain error types
+    - Circuit breaker for frequently failing URLs
+    - Better logging for troubleshooting
 
     Args:
         image_url (str): The URL of the image.
         httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
-        retries (int, optional): Number of retry attempts. Defaults to 3.
+        retries (int, optional): Number of retry attempts. Defaults to 2.
         timeout (int, optional): Timeout per request in seconds. Defaults to 5.
 
     Returns:
         bool: True if the image is accessible (HTTP 200), False otherwise.
     """
-
-    if not image_url:
+    if not image_url or not isinstance(image_url, str):
+        return False
+    
+    # Check circuit breaker
+    if _is_url_circuit_broken(image_url):
+        logger.debug(f"Circuit breaker: skipping frequently failing URL: {image_url}")
+        return False
+    
+    # Quick URL validation
+    if not image_url.lower().startswith(('http://', 'https://')) or len(image_url) > 2000:
+        logger.debug(f"Invalid URL format: {image_url[:100]}...")
         return False
 
-    image_url = unquote(image_url)
+    # Global timeout for entire operation
+    total_timeout = min(20.0, timeout * retries * 2)
+    
+    try:
+        result = await asyncio.wait_for(
+            _check_image_existence_internal(image_url, httpx_client, retries, timeout),
+            timeout=total_timeout
+        )
+        
+        # Record success/failure for circuit breaker
+        if result:
+            _record_url_success(image_url)
+        else:
+            _record_url_failure(image_url)
+            
+        return result
+        
+    except asyncio.TimeoutError:
+        logger.warning(f"Total timeout ({total_timeout}s) exceeded for image existence check: {image_url}")
+        _record_url_failure(image_url)
+        return False
+    except Exception as e:
+        logger.warning(f"Unexpected error checking image existence: {e}")
+        _record_url_failure(image_url)
+        return False
 
+
+async def _check_image_existence_internal(image_url: str, httpx_client: httpx.AsyncClient, retries: int, timeout: int) -> bool:
+    """Internal implementation without global timeout wrapper."""
+    
     for attempt in range(1, retries + 1):
         try:
-            response = await httpx_client.head(image_url, timeout=40.0)
+            # Try HEAD first (faster)
+            response = await httpx_client.head(image_url, timeout=float(timeout))
             if response.status_code == 200:
                 return True
             elif response.status_code in (403, 405):  
-                # 403 Forbidden или 405 Method Not Allowed — часто указывает, что HEAD не поддерживается
-                response = await httpx_client.get(image_url, timeout=40.0)
+                # HEAD не поддерживается, пробуем GET
+                response = await httpx_client.get(image_url, timeout=float(timeout))
                 return response.status_code == 200
+            elif response.status_code in (404, 410):
+                # Definitely doesn't exist, no point retrying
+                logger.debug(f"Image not found (HTTP {response.status_code}): {image_url}")
+                return False
+            else:
+                logger.debug(f"Attempt {attempt}/{retries} failed for {image_url}: HTTP {response.status_code}")
         except Exception as e:
-            logger.warning(f"Attempt {attempt}/{retries} failed for {image_url}: {e}")
-            if attempt < retries:
-                await asyncio.sleep(2 ** attempt)  # экспоненциальная задержка
+            error_str = str(e).lower()
+            logger.debug(f"Attempt {attempt}/{retries} failed for {image_url}: {str(e)[:100]}")
+            
+            # Fast-fail on certain network errors
+            if any(keyword in error_str for keyword in ['name resolution failed', 'connection refused', 'ssl error']):
+                logger.debug(f"Fast-failing on network error: {e}")
+                return False
+        
+        # Retry logic - только если это не последняя попытка
+        if attempt < retries:
+            # Reduced backoff delay
+            delay = min(2 ** attempt, 4)  # Максимум 4 секунды
+            await asyncio.sleep(delay)
 
-    logger.error(f"Image not accessible at {image_url} after {retries} attempts")
+    logger.debug(f"Image not accessible at {image_url} after {retries} attempts")
     return False
     
 
@@ -201,26 +303,134 @@ def _parse_jpeg_size(data: bytes) -> Optional[Tuple[int,int]]:
         return None
 
 async def _fetch_prefix(httpx_client: httpx.AsyncClient, url: str, n_bytes: int, timeout: float):
+    """
+    Fetch image bytes with global timeout protection and better error handling.
+    """
+    # Добавляем глобальный таймаут на всю операцию (в 2 раза больше локального)
+    global_timeout = max(timeout * 2, 30.0)
+    
+    try:
+        # Оборачиваем всю операцию в asyncio.wait_for для принудительного таймаута
+        return await asyncio.wait_for(
+            _fetch_prefix_internal(httpx_client, url, n_bytes, timeout),
+            timeout=global_timeout
+        )
+    except asyncio.TimeoutError:
+        logger.warning(f"Global timeout ({global_timeout}s) exceeded for URL: {url}")
+        raise Exception(f"Global timeout exceeded: {global_timeout}s")
+    except Exception as e:
+        logger.warning(f"Failed to fetch prefix from {url}: {e}")
+        raise
+
+
+async def _fetch_prefix_internal(httpx_client: httpx.AsyncClient, url: str, n_bytes: int, timeout: float):
+    """Internal fetch implementation without global timeout wrapper."""
+    # Защита от чрезмерно больших запросов
+    if n_bytes > 10 * 1024 * 1024:  # 10MB max
+        logger.warning(f"Requested too many bytes ({n_bytes}) for URL: {url}")
+        raise Exception(f"Requested bytes too large: {n_bytes}")
+    
     headers = {"Range": f"bytes=0-{max(0, n_bytes-1)}"}
-    async with httpx_client.stream("GET", url, headers=headers, timeout=timeout) as resp:
-        if resp.status_code not in (200, 206):
-            resp.raise_for_status()
-        buf = bytearray()
-        async for chunk in resp.aiter_bytes():
-            if not chunk:
-                break
-            buf.extend(chunk)
-            if len(buf) >= n_bytes:
-                break
-        # close early to avoid reading rest
-        await resp.aclose()
-        return bytes(buf)
+    
+    try:
+        async with httpx_client.stream("GET", url, headers=headers, timeout=timeout) as resp:
+            if resp.status_code not in (200, 206):
+                logger.debug(f"Bad status code {resp.status_code} for URL: {url}")
+                resp.raise_for_status()
+            
+            buf = bytearray()
+            chunk_count = 0
+            max_chunks = 1000  # Защита от бесконечного цикла
+            
+            async for chunk in resp.aiter_bytes():
+                chunk_count += 1
+                if chunk_count > max_chunks:
+                    logger.warning(f"Too many chunks ({chunk_count}) for URL: {url}")
+                    break
+                    
+                if not chunk:
+                    break
+                    
+                buf.extend(chunk)
+                if len(buf) >= n_bytes:
+                    break
+                    
+            # Принудительно закрываем соединение
+            await resp.aclose()
+            
+            if len(buf) == 0:
+                raise Exception("No data received")
+                
+            return bytes(buf)
+            
+    except httpx.ReadTimeout:
+        raise Exception(f"Read timeout after {timeout}s")
+    except httpx.ConnectTimeout:
+        raise Exception(f"Connection timeout after {timeout}s")
+    except httpx.HTTPStatusError as e:
+        raise Exception(f"HTTP error {e.response.status_code}")
+    except Exception as e:
+        # Логируем и пробрасываем дальше
+        raise Exception(f"Network error: {str(e)}")
 
 async def get_image_size(url: str, httpx_client: httpx.AsyncClient) -> Tuple[str, Union[Tuple[int,int], Exception]]:
     """
     Optimized: tries to download minimal bytes and parse header for dimensions.
     Returns (url, (w,h)) or (url, Exception)
+    
+    Improved with:
+    - Global timeout protection (max 60 seconds total)
+    - Fast-fail for obviously bad URLs
+    - Reduced retry attempts for faster failure
+    - Circuit breaker for frequently failing URLs
     """
+    # Quick validation
+    if not url or not isinstance(url, str):
+        return url, Exception("Invalid URL")
+    
+    # Check circuit breaker
+    if _is_url_circuit_broken(url):
+        logger.debug(f"Circuit breaker: skipping frequently failing URL: {url}")
+        return url, Exception("Circuit breaker: URL frequently fails")
+    
+    # Check for obviously problematic URLs
+    if len(url) > 2000:  # URLs longer than 2000 chars are suspicious
+        return url, Exception("URL too long")
+    
+    # Protocol check
+    if not url.lower().startswith(('http://', 'https://')):
+        return url, Exception("Invalid protocol")
+    
+    # Global timeout for entire operation
+    total_timeout = 60.0
+    
+    try:
+        # Wrap entire operation in global timeout
+        result = await asyncio.wait_for(
+            _get_image_size_internal(url, httpx_client),
+            timeout=total_timeout
+        )
+        
+        # Record success if we got a valid size
+        if isinstance(result, tuple) and len(result) == 2:
+            _, size_or_error = result
+            if isinstance(size_or_error, (tuple, list)) and len(size_or_error) >= 2:
+                _record_url_success(url)
+        
+        return result
+        
+    except asyncio.TimeoutError:
+        logger.warning(f"Total timeout ({total_timeout}s) exceeded for image size check: {url}")
+        _record_url_failure(url)
+        return url, Exception(f"Total timeout exceeded: {total_timeout}s")
+    except Exception as e:
+        _record_url_failure(url)
+        return url, e
+
+
+async def _get_image_size_internal(url: str, httpx_client: httpx.AsyncClient) -> Tuple[str, Union[Tuple[int,int], Exception]]:
+    """Internal implementation without global timeout wrapper."""
+    
     # Try to guess format from URL extension first
     ext_match = re.search(r"\.([a-zA-Z0-9]{1,5})(?:[?#]|$)", url)
     ext = ext_match.group(1).lower() if ext_match else None
@@ -231,9 +441,11 @@ async def get_image_size(url: str, httpx_client: httpx.AsyncClient) -> Tuple[str
             return BYTES_BY_FORMAT[fmt]
         return SMALL_HEADER
 
-    # retry loop
+    # Reduced retry attempts for faster failure on bad URLs
+    max_retries = 2  # Было RETRY_ATTEMPTS (обычно 3-5)
     last_exc: Optional[Exception] = None
-    for attempt in range(RETRY_ATTEMPTS):
+    
+    for attempt in range(max_retries):
         try:
             # Step 1: small probe if extension unknown
             if ext is None:
@@ -318,21 +530,35 @@ async def get_image_size(url: str, httpx_client: httpx.AsyncClient) -> Tuple[str
 
         except Exception as e:
             last_exc = e
-            # retry/backoff
-            if attempt == RETRY_ATTEMPTS - 1:
+            logger.debug(f"Attempt {attempt + 1}/{max_retries} failed for {url}: {str(e)[:100]}")
+            
+            # Быстрое завершение для определенных типов ошибок
+            error_str = str(e).lower()
+            if any(keyword in error_str for keyword in ['timeout', 'connection refused', 'name resolution failed', 'ssl error']):
+                logger.warning(f"Fast-failing on network error for {url}: {e}")
                 return url, e
-            await asyncio.sleep(RETRY_BACKOFF * (attempt + 1))
+            
+            # retry/backoff только если не последняя попытка
+            if attempt == max_retries - 1:
+                return url, e
+            
+            # Уменьшенная задержка для более быстрого завершения
+            backoff_delay = min(2.0 * (attempt + 1), 5.0)  # Максимум 5 секунд задержки
+            await asyncio.sleep(backoff_delay)
             continue
 
-    return url, last_exc or Exception("Unknown error")
+    return url, last_exc or Exception("All attempts failed")
             
 
 async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
     """
     Validate multiple images asynchronously and check their dimensions.
 
-    Uses asyncio.gather to fetch image sizes in parallel. 
-    Validates dimensions against configured minimum width and height.
+    Improved version with:
+    - Global timeout protection (max 120 seconds total)
+    - Limited parallelism to prevent resource exhaustion
+    - Fast-fail on too many URLs
+    - Better error tracking
 
     Args:
         urls (list[str]): List of image URLs to process.
@@ -343,41 +569,109 @@ async def process_images(urls: list[str], httpx_client: httpx.AsyncClient):
             - sizes (dict): Mapping {url: (width, height)} for valid images.
             - errors (list): List of (url, error) tuples for invalid or small images.
     """
+    if not urls:
+        return {"sizes": {}, "errors": []}
+    
+    # Защита от слишком большого количества изображений
+    if len(urls) > 50:
+        logger.warning(f"Too many URLs to process ({len(urls)}), limiting to first 50")
+        urls = urls[:50]
+    
+    # Global timeout for entire batch processing
+    total_timeout = min(120.0, len(urls) * 10.0)  # 10 seconds per URL max
+    
+    try:
+        return await asyncio.wait_for(
+            _process_images_internal(urls, httpx_client),
+            timeout=total_timeout
+        )
+    except asyncio.TimeoutError:
+        logger.error(f"Batch image processing timeout ({total_timeout}s) for {len(urls)} URLs")
+        # Return all URLs as errors
+        return {
+            "sizes": {},
+            "errors": [(url, "batch_timeout") for url in urls]
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error in batch image processing: {e}")
+        return {
+            "sizes": {},
+            "errors": [(url, f"batch_error: {e}") for url in urls]
+        }
+
+
+async def _process_images_internal(urls: list[str], httpx_client: httpx.AsyncClient):
+    """Internal implementation without global timeout wrapper."""
     
     if len(urls) > 1:
-        tasks = [get_image_size(url, httpx_client) for url in urls]
+        # Ограничиваем параллелизм для предотвращения перегрузки сервера
+        semaphore = asyncio.Semaphore(min(5, len(urls)))  # Максимум 5 одновременных запросов
+        
+        async def bounded_get_image_size(url):
+            async with semaphore:
+                return await get_image_size(url, httpx_client)
+        
+        tasks = [bounded_get_image_size(url) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        logger.debug(f"Results: {results}")
+        logger.debug(f"Batch processing results for {len(urls)} URLs")
 
         sizes = {}
         errors = []
 
-        for url, res in results:
-            if isinstance(res, Exception):
-                errors.append((url, res))
-            elif isinstance(res,(tuple, list)) and len(res) >= 2:
-                if res[0] < settings.min_image_width or res[1] < settings.min_image_height:
-                    errors.append((url, "small"))
+        for i, result in enumerate(results):
+            url = urls[i]
+            
+            if isinstance(result, Exception):
+                logger.debug(f"Error processing {url}: {result}")
+                errors.append((url, result))
+            elif isinstance(result, tuple) and len(result) == 2:
+                # result is (url, (w,h) or Exception)
+                actual_url, size_or_error = result
+                if isinstance(size_or_error, Exception):
+                    errors.append((actual_url, size_or_error))
+                elif isinstance(size_or_error, (tuple, list)) and len(size_or_error) >= 2:
+                    w, h = size_or_error[0], size_or_error[1]
+                    if w < settings.min_image_width or h < settings.min_image_height:
+                        errors.append((actual_url, f"too_small_{w}x{h}"))
+                    else:
+                        sizes[actual_url] = (w, h)
                 else:
-                    sizes[url] = res  # (w, h)
+                    errors.append((actual_url, f"invalid_size_format: {size_or_error}"))
+            else:
+                errors.append((url, f"unexpected_result_format: {result}"))
 
-        logger.info(f"Processed: Normal images: {len(sizes)}, images with errors: {len(errors)}")
+        logger.info(f"Batch processed: {len(sizes)} valid images, {len(errors)} errors")
         
         return {
             "sizes": sizes,   # dictionary {url: (width, height)}
             "errors": errors  # list [(url, "error")]
         }
     else:
-        result = await get_image_size(urls[0], httpx_client)
+        # Single URL processing
+        url = urls[0]
+        result = await get_image_size(url, httpx_client)
         errors = []
-        sizes = result[1]
+        sizes = {}
         
-        if result[1][0] < settings.min_image_width or result[1][1] < settings.min_image_height:
-            errors.append((urls[0], "small"))
+        # result is (url, (w,h) or Exception)
+        if isinstance(result, tuple) and len(result) == 2:
+            actual_url, size_or_error = result
+            if isinstance(size_or_error, Exception):
+                errors.append((actual_url, size_or_error))
+            elif isinstance(size_or_error, (tuple, list)) and len(size_or_error) >= 2:
+                w, h = size_or_error[0], size_or_error[1]
+                if w < settings.min_image_width or h < settings.min_image_height:
+                    errors.append((actual_url, f"too_small_{w}x{h}"))
+                else:
+                    sizes[actual_url] = (w, h)
+            else:
+                errors.append((actual_url, f"invalid_size_format: {size_or_error}"))
+        else:
+            errors.append((url, f"unexpected_result_format: {result}"))
         
         return {
-            "sizes": sizes,   # tuple (w,h) 
+            "sizes": sizes,   # dictionary {url: (width, height)}
             "errors": errors  # list [(url, "error")]
         }
     
@@ -695,7 +989,7 @@ async def resize_image_and_upload(
         raise Exception(f"While downloading image: {url}, error: {err}")
 
     # 4. Resize
-    resized_bytes, ext_or_arr = await asyncio.to_thread(resize_image_bytes, img_bytes)
+    resized_bytes, ext_or_arr = resize_image_bytes(img_bytes)
     if resized_bytes is None:
         logger.error(f"Resize error: {ext_or_arr}")
         raise Exception(f"While resizing image: {url}, error: {ext_or_arr}")

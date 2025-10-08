@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     
     enable_image_resize_lutz: bool = True
     
+    # Image validation settings
+    strict_image_validation: bool = True  # Если True, продукты с битыми изображениями будут отклонены
+    reject_on_resize_failure: bool = True  # Если True, продукты с неудачным ресайзом будут отклонены
+    
     # Security
     secret_key: str
     algorithm: str

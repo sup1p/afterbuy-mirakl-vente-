@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     and properly closes them on shutdown.
     """
     # --- startup ---
-    resources.client = httpx.AsyncClient()
+    resources.client = httpx.AsyncClient(timeout=30.0)
     resources.llm_semaphore = asyncio.Semaphore(8)
     resources.ftp_semaphore = asyncio.Semaphore(8)
     logger.info("Startup: ftp and llm semaphore initialized")

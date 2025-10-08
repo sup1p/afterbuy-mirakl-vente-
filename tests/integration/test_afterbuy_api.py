@@ -6,7 +6,7 @@ pytest_plugins = "pytest_asyncio"
 
 @pytest.mark.asyncio
 async def test_get_access_token():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         token = await get_access_token(client)
         assert token is not None
         assert isinstance(token, str)
@@ -20,7 +20,7 @@ async def test_get_product_data_integration():
     Требует корректных логина, пароля и доступного сервиса.
     """
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         ean = 4069424997217
         product = await get_product_data(ean=ean, httpx_client=client)
 
@@ -40,7 +40,7 @@ async def test_get_products_by_fabric_integration():
     Требует реальных рабочих credentials и доступного сервиса Afterbuy.
     """
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         # Реальный fabric_id для теста
         afterbuy_fabric_id = 500490
 

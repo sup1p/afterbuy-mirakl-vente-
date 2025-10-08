@@ -16,6 +16,7 @@ from urllib.parse import unquote, urlparse, quote
 from typing import Optional, Tuple
 
 from src.core.settings import settings
+from src import resources
 
 import httpx
 import aioftp
@@ -50,67 +51,68 @@ async def _process_images_for_product(mapped: dict, raw_item: dict) -> dict:
         return mapped
 
     try:
-        async with aioftp.Client.context(
-            host=settings.ftp_host,
-            port=settings.ftp_port,
-            user=settings.ftp_user,
-            password=settings.ftp_password,
-            socket_timeout=20
-        ) as ftp_client, httpx.AsyncClient() as http_client:
+        async with resources.ftp_semaphore:
+            async with aioftp.Client.context(
+                host=settings.ftp_host,
+                port=settings.ftp_port,
+                user=settings.ftp_user,
+                password=settings.ftp_password,
+                socket_timeout=20
+            ) as ftp_client, httpx.AsyncClient(timeout=30.0) as http_client:
 
-            # Сначала скачиваем все картинки параллельно
-            urls = []
-            if main_url:
-                urls.append(("main", main_url))
-            urls.extend([("sec", u) for u in secondary_urls])
+                # Сначала скачиваем все картинки параллельно
+                urls = []
+                if main_url:
+                    urls.append(("main", main_url))
+                urls.extend([("sec", u) for u in secondary_urls])
 
-            download_tasks = [download_image_bytes(url, http_client) for _, url in urls]
-            downloaded = await asyncio.gather(*download_tasks, return_exceptions=True)
+                download_tasks = [download_image_bytes(url, http_client) for _, url in urls]
+                downloaded = await asyncio.gather(*download_tasks, return_exceptions=True)
 
-            results = []
-            for (typ, orig), res in zip(urls, downloaded):
-                if isinstance(res, Exception):
-                    logger.error("Ошибка скачивания %s: %s", orig, res)
-                    results.append((typ, orig))  # оставляем оригинал
-                    continue
+                results = []
+                for (typ, orig), res in zip(urls, downloaded):
+                    if isinstance(res, Exception):
+                        logger.error("Ошибка скачивания %s: %s", orig, res)
+                        results.append((typ, orig))  # оставляем оригинал
+                        continue
 
-                img_bytes, err = res
-                if not img_bytes:
-                    logger.error("Не удалось скачать %s: %s", orig, err)
-                    results.append((typ, orig))
-                    continue
+                    img_bytes, err = res
+                    if not img_bytes:
+                        logger.error("Не удалось скачать %s: %s", orig, err)
+                        results.append((typ, orig))
+                        continue
 
-                # ресайз (если нужно)nnnn
-                img_bytes, ext, was_resized = await asyncio.to_thread(check_and_resize, img_bytes)
+                    # ресайз (если нужно)nnnn
+                    img_bytes, ext, was_resized = check_and_resize(img_bytes)
 
-                # если картинка нормальная и resize выключен, оставляем оригинал
-                if not was_resized:
-                    results.append((typ, orig))
-                    continue
+                    # если картинка нормальная и resize выключен, оставляем оригинал
+                    if not was_resized:
+                        results.append((typ, orig))
+                        continue
 
-                # FTP upload (⚠️ строго последовательно!)
-                path = urlparse(orig).path
-                orig_file_name = normalize_basename(os.path.basename(path))
-                if not orig_file_name.endswith(f".{ext}"):
-                    orig_file_name = f"{orig_file_name}.{ext}"
+                    # FTP upload (⚠️ строго последовательно!)
+                    path = urlparse(orig).path
+                    orig_file_name = normalize_basename(os.path.basename(path))
+                    if not orig_file_name.endswith(f".{ext}"):
+                        orig_file_name = f"{orig_file_name}.{ext}"
 
-                try:
-                    new_url = await upload_to_ftp(img_bytes, orig_file_name, ean, ftp_client)
-                    results.append((typ, new_url))
-                except Exception as e:
-                    logger.error("Ошибка загрузки %s → %s", orig, e)
-                    results.append((typ, orig))
+                    try:
+                        new_url = await upload_to_ftp(img_bytes, orig_file_name, ean, ftp_client)
+                        results.append((typ, new_url))
+                    except Exception as e:
+                        logger.error("Ошибка загрузки %s → %s", orig, e)
+                        results.append((typ, orig))
 
-            # собираем обратно в mapped
-            sec_results = []
-            for typ, url in results:
-                if typ == "main":
-                    mapped["images.main_image"] = url
-                    mapped["main_picture"] = url
-                else:
-                    sec_results.append(url)
+                # собираем обратно в mapped
+                sec_results = []
+                for typ, url in results:
+                    if typ == "main":
+                        mapped["images.main_image"] = url
+                        mapped["main_picture"] = url
+                    else:
+                        sec_results.append(url)
 
-            mapped["images.secondary_image"] = " ".join(sec_results) if sec_results else ""
+                mapped["images.secondary_image"] = " ".join(sec_results) if sec_results else ""
 
     except Exception as e:
         logger.exception("FTP/HTTP ошибка при обработке картинок (product ean=%s): %s", ean, e)
@@ -143,31 +145,66 @@ async def download_image_bytes(url: str, httpx_client: httpx.AsyncClient) -> Tup
 
 
 def check_and_resize(img_bytes: bytes) -> Tuple[bytes, str, bool]:
-    """Проверка размеров картинки. Если меньше минимальных — ресайзим."""
+    """
+    Проверка размеров картинки. Если меньше минимальных — ресайзим.
+    Добавлена защита от слишком больших изображений и улучшенная обработка ошибок.
+    """
     try:
+        # Быстрая проверка - это вообще изображение?
+        if len(img_bytes) < 100:  # слишком маленькие данные
+            return img_bytes, "jpg", False
+            
         with Image.open(io.BytesIO(img_bytes)) as im:
             w, h = im.size
+            
+            # Проверка максимальных размеров для безопасности (10k x 10k пикселей)
+            max_dimension = 10000
+            if w > max_dimension or h > max_dimension:
+                logger.warning(f"Изображение слишком большое: {w}x{h} пикселей (макс {max_dimension})")
+                return img_bytes, "jpg", False
+            
+            # Если размер уже достаточный - возвращаем как есть
             if w >= settings.min_image_width and h >= settings.min_image_height:
-                return img_bytes, im.format.lower(), False
+                return img_bytes, im.format.lower() if im.format else "jpg", False
 
-            # ресайз
-            scale = max(settings.min_image_width / w, settings.min_image_height  / h)
+            # Вычисляем новые размеры для ресайза
+            scale = max(settings.min_image_width / w, settings.min_image_height / h)
             new_w, new_h = int(round(w * scale)), int(round(h * scale))
+            
+            # Проверяем, что новые размеры разумные
+            if new_w > max_dimension or new_h > max_dimension:
+                logger.warning(f"Результат ресайза слишком большой: {new_w}x{new_h}")
+                return img_bytes, "jpg", False
+            
+            # Выполняем ресайз
             im = im.resize((new_w, new_h), Image.LANCZOS)
 
+            # Определяем формат вывода
             if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
                 out_format, ext = "PNG", "png"
             else:
                 im = im.convert("RGB")
                 out_format, ext = "JPEG", "jpg"
 
+            # Сохраняем в байты
             out = io.BytesIO()
             im.save(out, format=out_format, quality=85 if out_format == "JPEG" else None)
-            return out.getvalue(), ext, True
+            result_bytes = out.getvalue()
+            
+                
+            return result_bytes, ext, True
+            
     except UnidentifiedImageError:
+        logger.debug("Неизвестный формат изображения")
+        return img_bytes, "jpg", False
+    except (OSError, IOError) as e:
+        logger.warning(f"Ошибка чтения изображения (возможно поврежден): {e}")
+        return img_bytes, "jpg", False
+    except MemoryError:
+        logger.error("Недостаточно памяти для обработки изображения")
         return img_bytes, "jpg", False
     except Exception as e:
-        logger.error(f"Ошибка обработки изображения: {e}")
+        logger.error(f"Неожиданная ошибка обработки изображения: {e}")
         return img_bytes, "jpg", False
 
 
@@ -238,7 +275,7 @@ async def process_single_image(
         logger.error(f"Не удалось скачать {url}: {err}")
         return url
 
-    img_bytes, ext, was_resized = await asyncio.to_thread(check_and_resize, img_bytes)
+    img_bytes, ext, was_resized = check_and_resize(img_bytes)
 
     if not was_resized:
         return url

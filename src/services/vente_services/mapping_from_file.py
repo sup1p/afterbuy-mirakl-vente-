@@ -11,7 +11,6 @@ from src.const.constants_vente.constants import (
     mapping_attr_with_no_map_to_def_value,
     mapping_categories_current,
     mapping_extra_attrs,
-    default_html_description
 )
 from src.const.prompts import build_description_prompt_vente
 from src.utils.vente_utils.substitute_formatter import substitute_attr
@@ -23,7 +22,6 @@ from src.utils.vente_utils.image_worker import check_image_existence, process_im
 from logs.config_logs import setup_logging
 from src.utils.vente_utils.format_html import extract_product_properties_from_html
 
-import json
 import logging
 import httpx
 import aioftp
@@ -119,9 +117,7 @@ async def _prepare_images(
     main_image = normalize_url(main_image)
     pure_main_image = main_image  # сохраняем оригинал для сравнения с extra images
     
-    if settings.use_image_bg_remover:
-        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('EAN'), ftp_client=ftp_client, httpx_client=httpx_client)
-
+    
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
         logger.error(
             f"Main image not found or inaccessible for ean: {data.get('EAN')}"
@@ -129,6 +125,21 @@ async def _prepare_images(
         raise Exception(
             f"Main image not found or inaccessible for ean: {data.get('EAN')}"
         )
+        
+    if settings.use_image_bg_remover:
+        try:
+            # Глобальный таймаут на FTP операцию удаления фона (максимум 3 минуты)
+            async with asyncio.timeout(180):
+                async with resources.ftp_semaphore:
+                    async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password,socket_timeout=30) as ftp_client:
+                        main_image = await remove_image_bg_and_upload(url=main_image, ean=data.get('EAN'), ftp_client=ftp_client, httpx_client=httpx_client)
+        except asyncio.TimeoutError:
+            logger.error(f"FTP operation timeout for background removal: {main_image}")
+            # Продолжаем с оригинальной картинкой
+        except Exception as e:
+            logger.error(f"FTP operation failed for background removal: {e}")
+            # Продолжаем с оригинальной картинкой
+
 
     amount_of_resized_images = 0
     process_images_result = await process_images([main_image], httpx_client)
@@ -137,8 +148,19 @@ async def _prepare_images(
 
     if errors:
         logger.debug(f"Main image has ERRORS, {main_image}")
-        main_image = await resize_image_and_upload(url=main_image,ean=data.get("EAN"),ftp_client=ftp_client,httpx_client=httpx_client)
-        amount_of_resized_images = amount_of_resized_images + 1
+        try:
+            # Глобальный таймаут на FTP операцию (максимум 2 минуты)
+            async with asyncio.timeout(120):
+                async with resources.ftp_semaphore:
+                    async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password,socket_timeout=30) as ftp_client:
+                        main_image = await resize_image_and_upload(url=main_image,ean=data.get("EAN"),ftp_client=ftp_client,httpx_client=httpx_client)
+                amount_of_resized_images = amount_of_resized_images + 1
+        except asyncio.TimeoutError:
+            logger.error(f"FTP operation timeout for main image resize: {main_image}")
+            raise Exception(f"Image resize failed due to timeout: {main_image}")
+        except Exception as e:
+            logger.error(f"FTP operation failed for main image resize: {e}")
+            raise Exception(f"Image resize failed: {str(e)}")
 
     # --- extra images ---
     

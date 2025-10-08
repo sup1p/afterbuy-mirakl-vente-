@@ -161,8 +161,6 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
             logger.info(f"[{prod_idx}/{len(data_for_csv)}] Saved EAN {prod.get('ean')} to database.")
     
 
-    
-
     return {
         # "mirakl_answer": mirakl_answer,
         "not_added_eans": not_added_eans,
@@ -170,6 +168,5 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
         "delivery days": delivery_days,
         "total_eans_in_fabric": len(all_eans),
         "afterbuty_fabric_name": afterbuy_fabric_name,
-        "database_status": database_created,
-        "data_for_csv_by_fabric": data_for_csv
+        "database_status": database_created    
     }

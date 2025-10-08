@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from src.core.dependencies import get_httpx_client, get_current_user
 from src.core.settings import settings
 from src.services.vente_services.afterbuy_api_calls import get_product_data, get_products_by_fabric
+from src import resources
 from src.services.vente_services.mapping import map_attributes
 from src.utils.vente_utils.image_worker import resize_image_and_upload
 from src.utils.vente_utils.format_little import is_valid_ean
@@ -178,8 +179,9 @@ async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClien
         HTTPException: 422 if image processing or FTP upload fails.
     """
     try:
-        async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password) as ftp_client:
-            result = await resize_image_and_upload(url=data.url, ean=data.ean, httpx_client=httpx_client, ftp_client=ftp_client, test=True)
+        async with resources.ftp_semaphore:
+            async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password,socket_timeout=30) as ftp_client:
+                result = await resize_image_and_upload(url=data.url, ean=data.ean, httpx_client=httpx_client, ftp_client=ftp_client, test=True)
     except Exception as e:
         raise HTTPException(
             status_code=422,

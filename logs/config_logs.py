@@ -6,7 +6,7 @@ os.makedirs("logs", exist_ok=True)
 
 def setup_logging():
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.DEBUG)
 
     if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
         handler = RotatingFileHandler(
