@@ -26,11 +26,11 @@ router = APIRouter()
 # Define the paths to the local data files
 DATA_DIR = "app/new data"
 DATA_DIR = "src/const/import_data"
-FABRICS_DIR = os.path.join(DATA_DIR, "FABRICS")
+FABRICS_DIR = os.path.join(DATA_DIR, "fabrics_jv")
 FABRIC_ID_FILE = os.path.join(DATA_DIR, "fabric_id.json")
 
 
-def adapt_local_item_for_mapping(local_item: dict) -> dict:
+def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
     """
     Адаптирует НОВУЮ ПЛОСКУЮ структуру локального элемента JSON к структуре,
     ожидаемой основной функцией сопоставления (map_product).
@@ -51,7 +51,7 @@ def adapt_local_item_for_mapping(local_item: dict) -> dict:
     # --- Получение описания из HTML ---
     html_description = ""
     if ean:
-        html_path = os.path.join(DATA_DIR, "HTML", f"{ean}.html")
+        html_path = os.path.join(DATA_DIR, f"HTML_{market}", f"{ean}.html")
         try:
             with open(html_path, "r", encoding="utf-8") as f:
                 html_description = f.read()

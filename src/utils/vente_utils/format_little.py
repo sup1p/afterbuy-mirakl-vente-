@@ -28,3 +28,7 @@ def get_delivery_days(fabric_name: str) -> int:
 
 def is_set(article: str) -> bool:
     return "set" in article.casefold()
+
+def split_images(urls: str) -> list[str]:
+    parts = [p for p in urls.split(";") if p]
+    return parts

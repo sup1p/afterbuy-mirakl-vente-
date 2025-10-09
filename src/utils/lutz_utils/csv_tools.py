@@ -19,7 +19,7 @@ def build_fieldnames(mapping: dict) -> list:
     # Список обязательных/желательных полей (включая Distributor и прочее)
     mandatory = [
         "ean", "product-id", "product-id-type", "gtin", "sku", "shop_sku", "title", "brand", "product_description",
-        "name [de]", "description [de]",
+        "name [de]", "description [de]", "leadtime-to-ship",
         "images.main_image", "images.secondary_image", "main_picture",
         "Color", "Material", "DimensionWidth", "DimensionDepthLength", "DimensionHeight",
         "specifications.color", "specifications.main_material",
