@@ -4,14 +4,14 @@ services:
     container_name: afterbuy-mirakl-db
     restart: unless-stopped
     env_file:
-      - .env
+      - backend/.env
     environment:
       # значения берутся из .env, здесь оставлены дефолты для ясности
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-app_db}
     ports:
-      - "${DB_PORT}:${DB_PORT}"
+      - "8303:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,19 +20,42 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+    networks:
+      - app-network
 
-  app:
-    build: .
-    container_name: afterbuy-mirakl
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: afterbuy-mirakl-backend
     env_file:
-      - .env
+      - backend/.env
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "8000:8301"
     command: ["/bin/sh", "/app/entrypoint.sh"]
     restart: unless-stopped
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./extrup-admin
+      dockerfile: Dockerfile
+    container_name: afterbuy-mirakl-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:8302"
+    restart: unless-stopped
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

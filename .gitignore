@@ -1,60 +1,146 @@
-# Python
-__pycache__/
-*.py[cod]
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-.eggs/
+# ==== DOCKER ====
+# Docker volumes and data
+docker-compose.override.yml
+
+# ==== BACKEND (Python/FastAPI) ====
+# Python bytecode and compiled files  
+backend/__pycache__/
+backend/**/__pycache__/
+**/*.py[cod]
+**/*.so
+**/*.egg
+**/*.egg-info/
 
 # Virtual environments
-.venv/
-venv/
+backend/.venv/
+backend/venv/
 
 # Environment variables
-.env
-.env
+backend/.env
+backend/.env.local
+backend/.env.production
 
-#const
-src/const/import_data/fabric_id.json
-src/const/import_data/HTML_xl/*
-src/const/import_data/HTML_jv/*
-src/const/import_data/fabrics_jv/*
-src/const/import_data/fabrics_xl/*
-src/const/import_data/FABRICS/*
-src/const/import_data/HTML/*
+# Python specific data files
+backend/src/const/import_data/fabric_id.json
+backend/src/const/import_data/HTML_xl/*
+backend/src/const/import_data/HTML_jv/*
+backend/src/const/import_data/fabrics_jv/*
+backend/src/const/import_data/fabrics_xl/*
+backend/src/const/import_data/FABRICS/*
+backend/src/const/import_data/HTML/*
+
+# Backend build and dist
+backend/dist/
+backend/build/
+backend/.eggs/
 
 # Logs
-logs.log
-*.log
-logs/logs/*
+backend/logs/logs/*
+**/*.log
 
-# IDEs
+# Testing
+backend/htmlcov/
+backend/.coverage
+backend/.tox/
+backend/nosetests.xml
+backend/coverage.xml
+backend/*.cover
+backend/*.py,cover
+
+# Temporary files
+backend/output.csv
+backend/only_ids.txt
+backend/product_samples.json
+backend/*.bak
+backend/*.tmp
+
+# Python version
+backend/.python-version
+
+# ==== FRONTEND (Next.js/React) ====
+# Dependencies
+extrup-admin/node_modules/
+extrup-admin/.pnp
+extrup-admin/.pnp.js
+
+# Next.js build outputs
+extrup-admin/.next/
+extrup-admin/out/
+extrup-admin/build/
+
+# Environment variables
+extrup-admin/.env
+extrup-admin/.env.local
+extrup-admin/.env.development.local
+extrup-admin/.env.test.local
+extrup-admin/.env.production.local
+
+# Debug logs
+extrup-admin/npm-debug.log*
+extrup-admin/yarn-debug.log*
+extrup-admin/yarn-error.log*
+extrup-admin/.pnpm-debug.log*
+
+# Testing
+extrup-admin/coverage/
+
+# TypeScript
+extrup-admin/*.tsbuildinfo
+extrup-admin/next-env.d.ts
+
+# Vercel
+extrup-admin/.vercel
+
+# Cache directories
+extrup-admin/.cache/
+extrup-admin/.parcel-cache/
+extrup-admin/.rpt2_cache/
+extrup-admin/.rts2_cache_cjs/
+extrup-admin/.rts2_cache_es/
+extrup-admin/.rts2_cache_umd/
+
+# Lock files (keep package-lock.json but ignore others)
+extrup-admin/yarn.lock
+extrup-admin/pnpm-lock.yaml
+
+# ==== IDEs and Editors ====
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# OS files
+# ==== OS Generated Files ====
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Python version
-.python-version
+# ==== Runtime Data ====
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Test output
-htmlcov/
-.coverage
-.tox/
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
+# ==== Miscellaneous ====
+*.pem
+*.tgz
+.npm
+.eslintcache
+.node_repl_history
+.yarn-integrity
 
-# Misc
-*.bak
-*.tmp
+# Temporary folders
+tmp/
+temp/
 
-output.csv
-only_ids.txt
-product_samples.json
+# Local Netlify folder
+.netlify
