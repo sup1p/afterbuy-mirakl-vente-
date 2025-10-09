@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.crud import user
-from src.crud.products import (change_ean_status, delete_fabric_by_afterbuy_id, get_all_uploaded_fabrics,
+from src.crud.products import (change_ean_status, delete_fabric_by_afterbuy_id_and_shop, get_all_uploaded_fabrics,
                                get_eans_by_afterbuy_fabric_id,
                                get_filtered_uploaded_eans,
                                get_filtered_uploaded_fabrics, get_uploaded_fabric_by_afterbuy_id_and_shop, get_uploaded_fabrics_by_shop,
@@ -80,9 +80,16 @@ async def update_ean_status(data: changeEanStatusRequest, session: AsyncSession 
         raise HTTPException(status_code=404, detail="ID not found")
     return ean_obj
 
-@router.delete("/uploaded-fabrics/delete-fabric", tags=["fabric management"])
-async def delete_fabric(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
-    result = await delete_fabric_by_afterbuy_id(session, afterbuy_fabric_id=afterbuy_fabric_id)
+@router.delete("/uploaded-fabrics/vente/delete-fabric", tags=["fabric management"])
+async def delete_fabric_vente(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    result = await delete_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="vente")
+    if not result:
+        raise HTTPException(status_code=404, detail="Fabric not found")
+    return {"detail": "Fabric deleted successfully"}
+
+@router.delete("/uploaded-fabrics/xxxlutz/delete-fabric", tags=["fabric management"])
+async def delete_fabric_xxxlutz(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    result = await delete_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="xxxlutz")
     if not result:
         raise HTTPException(status_code=404, detail="Fabric not found")
     return {"detail": "Fabric deleted successfully"}

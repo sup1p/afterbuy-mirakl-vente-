@@ -114,8 +114,10 @@ async def change_ean_status(session: AsyncSession, data: changeEanStatusRequest)
     await update_fabric_status_based_on_eans(session, ean_obj.uploaded_fabric_id)
     return ean_obj
 
-async def delete_fabric_by_afterbuy_id(session: AsyncSession, afterbuy_fabric_id: int) -> bool:
-    q = select(UploadedFabric).where(UploadedFabric.afterbuy_fabric_id == afterbuy_fabric_id)
+async def delete_fabric_by_afterbuy_id_and_shop(session: AsyncSession, afterbuy_fabric_id: int, shop: str) -> bool:
+    q = select(UploadedFabric).where(
+        (UploadedFabric.afterbuy_fabric_id == afterbuy_fabric_id) & (UploadedFabric.shop == shop)
+    )
     res = await session.execute(q)
     fabric = res.scalars().first()
     if not fabric:
