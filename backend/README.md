@@ -31,46 +31,36 @@ XXLmebel 1 API — это backend-приложение на базе FastAPI, п
 - `pyproject.toml`, `uv.lock` — зависимости и конфигурация сборки
 - `.env` — переменные окружения (ключи, пароли)
 
-## Установка и запуск
-### Требования
-- Python >= 3.11
-- Утилита [uv](https://github.com/astral-sh/uv) для управления зависимостями
+## Запуск
+### Шаги подготовки
+1. Обязательно создайте файл `.env` в папке `/backend/` на основе `.env.example` и укажите необходимые параметры для Afterbuy и Mirakl. Обязательно настройте ключи API, URL платформ, параметры аутентификации и другие переменные окружения, необходимые для интеграции.
 
-### Шаги установки
-1. Клонируйте репозиторий:
-   ```bash
-   git clone <repository_url>
-   cd xxlmebel_1_api
-   ```
-2. Создайте и активируйте виртуальное окружение:
-   ```bash
-   python3.11 -m venv venv
-   source venv/bin/activate
-   ```
-3. Установите зависимости:
-   ```bash
-   uv sync
-   ```
-   Или используя PEP 621/pyproject.toml:
-   ```bash
-   uv pip install .
-   ```
-4. Скопируйте файл `.env` и укажите необходимые параметры для Afterbuy и Mirakl. Обязательно настройте ключи API, URL платформ, параметры аутентификации и другие переменные окружения, необходимые для интеграции.
+2. Создайте файл `.env.local` в корне `/extrup-admin` и пропишите адрес backend API: `NEXT_PUBLIC_API_BASE_URL=http://localhost:8180`
 
-5. Добавьте файл fabric_id.json с соответствием ID фабрик.
+**Примечание:** Если вы хотите изменить имя пользователя и пароль администратора, измените значения в файле `.env` в полях `ADMIN_USERNAME` и `ADMIN_PASSWORD`.
 
-### Запуск сервера
-#### Локальный запуск
-```bash
-uv run uvicorn src.main:app
-```
-
-#### Запуск с Docker Compose
+### Запуск с Docker Compose
 Для запуска в контейнерах используйте Docker Compose. Это обеспечит изоляцию и упростит развертывание.
 ```bash
 docker compose up --build
 ```
 Команда `--build` пересоберет образы, если были изменения в коде или Dockerfile.
+
+После запуска загрузите необходимые файлы в папку `import_data/` через API endpoints:
+- `POST /api/upload-json-fabric-jv` — загрузка JSON файлов для fabrics JV
+- `POST /api/upload-json-fabric-xl` — загрузка JSON файлов для fabrics XL
+- `POST /api/upload-html-jv` — загрузка HTML файлов для JV
+- `POST /api/upload-html-xl` — загрузка HTML файлов для XL
+
+Для просмотра загруженных файлов используйте endpoints для получения списков:
+- `GET /api/list-json-fabric-jv?offset=0&limit=10` — список JSON файлов fabrics JV
+- `GET /api/list-json-fabric-xl?offset=0&limit=10` — список JSON файлов fabrics XL
+- `GET /api/list-html-jv?offset=0&limit=10` — список HTML файлов JV
+- `GET /api/list-html-xl?offset=0&limit=10` — список HTML файлов XL
+
+**Важно:** Файлы сохраняются в папку `/backend/src/const/import_data/` на хосте благодаря Docker volume, поэтому данные не теряются при пересборке контейнера.
+
+Только после выполнения всех этих шагов можно работать с приложением.
 
 ## Основные эндпоинты
 - `@router.post("/import-products-by-fabric-from-file/vente", tags=["product vente by fabric"])` — Импорт продуктов для vente по fabric_id из локальных файлов.

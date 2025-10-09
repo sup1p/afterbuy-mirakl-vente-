@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BarChart3, Users, Package, Upload, ImageIcon, Menu, LogOut, User, X } from "lucide-react"
+import { BarChart3, Users, Package, Upload, ImageIcon, Menu, LogOut, User, X, FileText } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -24,6 +24,7 @@ const navigation = [
   { name: "Users", href: "/users", icon: Users, adminOnly: true },
   { name: "Fabrics", href: "/fabrics", icon: Package },
   { name: "Import Products", href: "/import", icon: Upload },
+  { name: "File Manager", href: "/files", icon: FileText },
   { name: "Verify Images", href: "/verify", icon: ImageIcon },
 ]
 

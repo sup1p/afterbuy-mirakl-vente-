@@ -421,16 +421,16 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
         
         # Обработка статусов, отличных от 200
         if attempt == 2:  # Последняя попытка
-            logger.error(f"Не удалось получить ткань по afterbuy_fabric_id: {response.status_code} - {response.text}")
+            logger.error(f"Не удалось получить айди по afterbuy_fabric_id: {response.status_code} - {response.text}")
             raise Exception(f"Ошибка получения ткани у Afterbuy по afterbuy_fabric_id: {response.status_code} - {response.text}")
         await asyncio.sleep(0.5 * (attempt + 1)) 
         
     data = response.json()
     
     if not data:
-        logger.error(f"Ткань не найдена для afterbuy_fabric_id {afterbuy_fabric_id} в Afterbuy")
+        logger.error(f"Айди не найдена для afterbuy_fabric_id {afterbuy_fabric_id} в Afterbuy")
         raise Exception(
-            f"Ткань не найдена для afterbuy_fabric_id {afterbuy_fabric_id} в Afterbuy",
+            f"Айди не найдена для afterbuy_fabric_id {afterbuy_fabric_id} в Afterbuy",
         )
     
     logger.debug(f"Данные ответа содержат {len(data)} продукты для afterbuy_fabric_id {afterbuy_fabric_id}")
@@ -448,18 +448,18 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
         logger.debug(f"Успешно получен идентификатор ткани для afterbuy_fabric_id: {afterbuy_fabric_id}")
         
     else:
-        logger.warning(f"Ткань с afterbuy_fabric_id: {afterbuy_fabric_id}, не удалось получить идентификатор ткани")
+        logger.warning(f"Айди с afterbuy_fabric_id: {afterbuy_fabric_id}, не удалось получить идентификатор ткани")
     
     if not only_id:
         raise Exception(
-            f"Ткань с afterbuy_fabric_id {afterbuy_fabric_id} не имеет идентификатора ткани",
+            f"Айди с afterbuy_fabric_id {afterbuy_fabric_id} не имеет идентификатора ткани",
         )
     
     for ban_word in ban_keywords_for_fabrics:
         if ban_word in name.casefold().strip():
             raise HTTPException(
                 status_code=403,
-                detail=f"Это запрещенная ткань, вы не можете загрузить ее в Mirakl! Название ткани: {name}"
+                detail=f"Это запрещенная Айди, вы не можете загрузить ее в Mirakl! Название ткани: {name}"
             )
     
     return {
@@ -483,7 +483,7 @@ async def get_products_by_fabric_from_file(afterbuy_fabric_id: int, market: str)
     if afterbuy_fabric_name is None:
         afterbuy_fabric_name = fabric_data.get(str(afterbuy_fabric_id))
         if afterbuy_fabric_name is None:
-            raise Exception(f"Ткань с afterbuy_fabric_id {afterbuy_fabric_id} не найдена в fabric_id.json")
+            raise Exception(f"Айди с afterbuy_fabric_id {afterbuy_fabric_id} не найдена в fabric_id.json")
 
     with open(f"src/const/import_data/fabrics_{market}/{afterbuy_fabric_name}.json", "r", encoding="utf-8") as f:
         data = json.load(f)

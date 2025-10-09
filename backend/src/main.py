@@ -12,6 +12,7 @@ from src.routers.vente.product_vente_router import router as product_vente_route
 from src.routers.vente.mirakl_system_vente_router import router as mirakl_system_vente_router
 from src.routers.vente.dev_vente_router import router as dev_vente_router 
 from src.routers.vente.product_vente_from_file import router as product_vente_from_file_router
+from src.routers.import_data import router as import_data_router
 
 from src.routers.user_router import router as user_router
 from src.routers.fabric_management import router as fabric_management_router
@@ -121,6 +122,7 @@ api_router = APIRouter(prefix="/api")
 # mutual
 api_router.include_router(user_router)
 api_router.include_router(fabric_management_router)
+api_router.include_router(import_data_router)
 
 # vente
 api_router.include_router(product_vente_from_file_router)

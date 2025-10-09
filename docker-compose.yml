@@ -35,6 +35,8 @@ services:
         condition: service_healthy
     expose:
       - "8000"
+    volumes:
+      - ./backend/src/const/import_data:/app/backend/src/const/import_data
     command: ["/bin/sh", "/app/entrypoint.sh"]
     restart: unless-stopped
     networks:
