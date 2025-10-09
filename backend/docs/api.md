@@ -1,4 +1,9 @@
+
 # API Роутеры
+
+**Все эндпоинты начинаются с префикса `/api`.**
+
+Документация доступна по адресу [`/api/docs`](../api/docs) (Swagger UI) и [`/api/openapi.json`](../api/openapi.json). Интерфейс ReDoc не предоставляется.
 
 # Vente
 

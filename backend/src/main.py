@@ -3,7 +3,7 @@
 Обрабатывает жизненный цикл приложения, управление HTTP-клиентом и регистрацию маршрутов.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
@@ -86,7 +86,12 @@ async def lifespan(app: FastAPI):
         logger.info("Завершение: ресурсы очищены")
     
 # Создание приложения FastAPI с управлением жизненным циклом
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url=None,
+    openapi_url="/api/openapi.json"
+    )
 
 origins = ['*']
 
@@ -99,7 +104,7 @@ app.add_middleware(
 )
 
 
-@app.get("/", include_in_schema=False)
+@app.get("/api/", include_in_schema=False)
 def root():
     """
     Эндпоинт для проверки работоспособности приложения.
@@ -108,22 +113,28 @@ def root():
     logger.info("Доступ к корневому эндпоинту")
     return "We are live!"
 
+
+# Общий роутер для всех роутеров с префиксом /api
+api_router = APIRouter(prefix="/api")
+
 # Регистрация всех API-маршрутизаторов
 # mutual
-app.include_router(user_router)
-app.include_router(fabric_management_router)
+api_router.include_router(user_router)
+api_router.include_router(fabric_management_router)
 
 # vente
-app.include_router(product_vente_from_file_router)
-app.include_router(product_vente_router)
-# app.include_router(mirakl_system_vente_router)
-# app.include_router(dev_vente_router)
+api_router.include_router(product_vente_from_file_router)
+api_router.include_router(product_vente_router)
+# api_router.include_router(mirakl_system_vente_router)
+# api_router.include_router(dev_vente_router)
 
 # lutz
 
-# app.include_router(product_lutz_router)
-# app.include_router(offers_lutz_router)
+# api_router.include_router(product_lutz_router)
+# api_router.include_router(offers_lutz_router)
 # app.include_router(generate_csv_lutz_router)
-app.include_router(fabric_lutz_router)
-app.include_router(local_importer_router)
-app.include_router(local_offers_router)
+api_router.include_router(fabric_lutz_router)
+api_router.include_router(local_importer_router)
+api_router.include_router(local_offers_router)
+
+app.include_router(api_router)

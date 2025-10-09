@@ -23,11 +23,11 @@ RUN npm run build
 RUN npm prune --production
 
 # Expose the port that the Next.js app will run on
-EXPOSE 8302
+EXPOSE 3000
 
 # Set environment variable for production
 ENV NODE_ENV=production
-ENV PORT=8302
+ENV PORT=3000
 
 # Start the Next.js application
 CMD ["npm", "start"]

@@ -9,6 +9,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:8180'],
+    },
+  },
 }
 
 export default nextConfig

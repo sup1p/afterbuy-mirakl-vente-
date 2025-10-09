@@ -39,6 +39,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV APP_ENV=production
 
-EXPOSE 8301
+EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8301"]
+CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -76,7 +76,7 @@ docker compose up --build
 - `@router.post("/import-products-by-fabric-from-file/vente", tags=["product vente by fabric"])` — Импорт продуктов для vente по fabric_id из локальных файлов.
 - `@router.post("/import-products-by-fabric-from-file/xxxlutz", tags=["lutz"])` — Импорт офферов для xxxlutz по fabric_id из локальных данных.
 
-Для интерактивного тестирования API используйте Swagger UI по адресу `http://localhost:8000/docs`.
+Для интерактивного тестирования API используйте Swagger UI по адресу `http://localhost:8180/docs`.
 
 ## Дополнительные замечания
 - Все переменные окружения должны быть правильно указаны в файле `.env` перед запуском приложения.

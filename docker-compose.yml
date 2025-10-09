@@ -33,22 +33,36 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8301"
+    expose:
+      - "8000"
     command: ["/bin/sh", "/app/entrypoint.sh"]
     restart: unless-stopped
     networks:
       - app-network
 
-  frontend:
+  extrup-admin:
     build:
       context: ./extrup-admin
       dockerfile: Dockerfile
     container_name: afterbuy-mirakl-frontend
     depends_on:
       - backend
+    expose:
+      - "3000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: afterbuy-mirakl-nginx
     ports:
-      - "3000:8302"
+      - "8180:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - extrup-admin
     restart: unless-stopped
     networks:
       - app-network

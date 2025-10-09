@@ -17,10 +17,8 @@ from logs.config_logs import setup_logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
-import asyncio
 import logging
 import httpx
-import json
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -64,34 +62,25 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
 
     logger.info(f"Fetched {len(products)} products for fabric {afterbuy_fabric_id}")
     
-    tasks = []
-    for idx, prod in enumerate(products, start=1):
-        async def wrapper(p=prod, i=idx):
-            try:
-                # Добавляем дни доставки и сопоставляем атрибуты из файла
-                p["delivery_days"] = delivery_days
-                res = await map_attributes(p, httpx_client)
-                logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('EAN')}")
-                return res
-            except Exception as e:
-                logger.error(f"[{i}/{len(products)}] Error processing product EAN={p.get('EAN')}: {e}")
-                return e
-        tasks.append(wrapper())
-    # Выполняем все задачи параллельно
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
     data_for_csv = []
     processed_eans = set()
     
-    for res in results:
-        if isinstance(res, Exception):
-            logger.error(f"Error fetching data (not adding it to csv): {res}")
+    # Обрабатываем продукты последовательно
+    for idx, prod in enumerate(products, start=1):
+        try:
+            # Добавляем дни доставки и сопоставляем атрибуты из файла
+            prod["delivery_days"] = delivery_days
+            logger.info(f"[{idx}/{len(products)}] Started processing product with EAN={prod.get('EAN')}")
+            res = await map_attributes(prod, httpx_client)
+            logger.info(f"[{idx}/{len(products)}] Processed product with EAN={prod.get('EAN')}")
+            
+            data_for_mirakl = res.get("data_for_mirakl")
+            processed_eans.add(data_for_mirakl.get('ean'))
+            data_for_csv.append(data_for_mirakl)
+            
+        except Exception as e:
+            logger.error(f"[{idx}/{len(products)}] Error processing product EAN={prod.get('EAN')}: {e}")
             continue
-        
-        data_for_mirakl = res.get("data_for_mirakl")
-
-        processed_eans.add(data_for_mirakl.get('ean'))
-        data_for_csv.append(data_for_mirakl)
 
     not_added_eans.extend(list(all_eans - processed_eans))
     not_added_eans = list(set(not_added_eans))  # Убираем дубликаты

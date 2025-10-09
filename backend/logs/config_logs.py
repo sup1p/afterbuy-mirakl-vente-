@@ -12,7 +12,7 @@ def setup_logging():
     """
     # Получаем корневой логгер
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)  # Устанавливаем уровень логирования на DEBUG
+    root_logger.setLevel(logging.INFO)  # Устанавливаем уровень логирования на INFO
 
     # Проверяем, есть ли уже обработчик RotatingFileHandler
     if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
