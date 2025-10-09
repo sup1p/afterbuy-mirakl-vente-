@@ -118,6 +118,7 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
             afterbuy_fabric_id=afterbuy_fabric_id,
             user_id=current_user.id,
              market=market,
+             shop="xxxlutz"
         )
         
         fabric_obj = await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id)

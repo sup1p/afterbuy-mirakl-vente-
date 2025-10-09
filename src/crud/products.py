@@ -53,6 +53,7 @@ async def create_uploaded_fabric(session: AsyncSession, data: saveUploadedFabric
         afterbuy_fabric_id=data.afterbuy_fabric_id,
         user_id=data.user_id,
         market=data.market,
+        shop=data.shop,
     )
     session.add(new_fabric)
     await session.commit()

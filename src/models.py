@@ -1,3 +1,4 @@
+from email.policy import default
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
@@ -19,6 +20,7 @@ class UploadedFabric(Base):
     id = Column(Integer, primary_key=True, index=True)
     afterbuy_fabric_id = Column(Integer, nullable=False)
     market = Column(String, nullable=False)  # "xl" "jv"
+    shop = Column(String, default="vente", nullable=False)  # "vente" "xxxlutz"
     status = Column(String, default="pending")  # pending, processed, error
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     date_time = Column(DateTime, default=datetime.now(), nullable=False)

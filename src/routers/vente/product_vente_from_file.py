@@ -117,20 +117,21 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
             detail=f"Creating big csv failed for fabric: {afterbuy_fabric_id}",
         )
 
-    try:
-        mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
-    except Exception as e:
-        logger.error(f"Error importing products to Mirakl: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+    # try:
+    #     mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
+    # except Exception as e:
+    #     logger.error(f"Error importing products to Mirakl: {e}")
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=str(e),
+    #     )
 
     # DATABASE SAVING FABRIC
     database_fabric_data = saveUploadedFabric(
         afterbuy_fabric_id=afterbuy_fabric_id,
         user_id=current_user.id,
         market=market,
+        shop="vente",
     )
     fabric_obj = await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id)
     database_created = "already exists"
@@ -162,7 +163,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
     
 
     return {
-        "mirakl_answer": mirakl_answer,
+        # "mirakl_answer": mirakl_answer,
         "not_added_eans": not_added_eans,
         "total_not_added": len(not_added_eans),
         "delivery days": delivery_days,

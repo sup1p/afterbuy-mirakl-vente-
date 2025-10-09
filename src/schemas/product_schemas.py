@@ -93,6 +93,7 @@ class saveUploadedFabric(BaseModel):
     afterbuy_fabric_id: int
     status: Literal["pending", "processed", "error"] = "pending"
     market: Literal["xl", "jv"] 
+    shop: Literal["vente", "xxxlutz"]
     user_id: int
 
 class saveUploadedEan(BaseModel):
