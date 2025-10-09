@@ -108,9 +108,7 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
             offer_fieldnames.append("product_reference_price")
 
         csv_content = csv_tools.write_csv(offer_fieldnames, offers)
-        # result = await mirakl.upload_price_csv(csv_content)
-        
-        
+        result = await mirakl.upload_price_csv(csv_content)
         
         
         # DATABASE SAVING FABRIC
@@ -159,7 +157,7 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
             "fabric_id": afterbuy_fabric_id,
             "fabric_name": fabric_name,
             "processed_offers": len(offers),
-            # "mirakl_response": result,
+            "mirakl_response": result,
             "database_status": database_created,
             "csv_preview": offers  # Возвращаем первые 500 символов CSV для проверки
         }

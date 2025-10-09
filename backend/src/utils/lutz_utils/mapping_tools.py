@@ -254,7 +254,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                 value = value[:2997] + "..."
 
             article = data.get("article")
-            delivery_days = get_delivery_days(data.get("collection"))
+            delivery_days = delivery_days
             properties = extract_dimensions(data.get("properties", {}))
 
             if not value:
