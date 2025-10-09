@@ -9,8 +9,11 @@ async def get_all_uploaded_fabrics(session: AsyncSession, limit: int = 10, offse
     res = await session.execute(q)
     return res.scalars().all()
 
-async def get_uploaded_fabric_by_afterbuy_id(session: AsyncSession, afterbuy_fabric_id: int):
-    q = select(UploadedFabric).where(UploadedFabric.afterbuy_fabric_id == afterbuy_fabric_id)
+async def get_uploaded_fabric_by_afterbuy_id_and_shop(session: AsyncSession, afterbuy_fabric_id: int, shop: str):
+    q = select(UploadedFabric).where(
+        (UploadedFabric.afterbuy_fabric_id == afterbuy_fabric_id) &
+        (UploadedFabric.shop == shop)
+    )
     res = await session.execute(q)
     return res.scalars().first()
 
@@ -29,6 +32,12 @@ async def get_eans_by_afterbuy_fabric_id(session: AsyncSession, afterbuy_fabric_
 async def get_filtered_uploaded_fabrics(session: AsyncSession, data: fabricsByStatusRequest, limit: int = 10, offset: int = 0):
     q = select(UploadedFabric)
     q = q.where(UploadedFabric.status == data.status)
+    q = q.limit(limit).offset(offset)
+    res = await session.execute(q)
+    return res.scalars().all()
+
+async def get_uploaded_fabrics_by_shop(session: AsyncSession, shop: str, limit: int = 10, offset: int = 0):
+    q = select(UploadedFabric).where(UploadedFabric.shop == shop)
     q = q.limit(limit).offset(offset)
     res = await session.execute(q)
     return res.scalars().all()

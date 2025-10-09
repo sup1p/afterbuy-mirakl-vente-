@@ -5,7 +5,7 @@ from src.crud import user
 from src.crud.products import (change_ean_status, delete_fabric_by_afterbuy_id, get_all_uploaded_fabrics,
                                get_eans_by_afterbuy_fabric_id,
                                get_filtered_uploaded_eans,
-                               get_filtered_uploaded_fabrics, get_uploaded_fabric_by_afterbuy_id,
+                               get_filtered_uploaded_fabrics, get_uploaded_fabric_by_afterbuy_id_and_shop, get_uploaded_fabrics_by_shop,
                                get_users_uploaded_fabrics,
 )
 from src.schemas.product_schemas import changeEanStatusRequest, fabricsByStatusRequest, eansByStatusRequest
@@ -36,6 +36,16 @@ async def get_fabrics_by_status(status: str = Query("pending", pattern="^(pendin
                                 ):
     data = fabricsByStatusRequest(status=status)
     fabrics = await get_filtered_uploaded_fabrics(session=session, data=data, limit=limit, offset=offset)
+    return fabrics
+
+@router.get("/uploaded-fabrics/fabrics-by-shop", tags=["fabric management"])
+async def get_fabrics_by_shop(shop: str = Query(..., pattern="^(vente|xxxlutz)$"),
+                               session: AsyncSession = Depends(get_session),
+                               current_user = Depends(get_current_user),
+                               limit: int = Query(10, ge=1, le=100),
+                               offset: int = Query(0, ge=0)
+                               ):
+    fabrics = await get_uploaded_fabrics_by_shop(session=session, shop=shop, limit=limit, offset=offset)
     return fabrics
 
 @router.get("/uploaded-eans/eans-by-status", tags=["fabric management"])
@@ -78,9 +88,16 @@ async def delete_fabric(afterbuy_fabric_id: int, session: AsyncSession = Depends
     return {"detail": "Fabric deleted successfully"}
 
 
-@router.get("/uploaded-fabrics/{afterbuy_fabric_id}", tags=["fabric management"])
-async def get_uploaded_fabric(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
-    fabric = await get_uploaded_fabric_by_afterbuy_id(session, afterbuy_fabric_id=afterbuy_fabric_id)
+@router.get("/uploaded-fabrics/vente/{afterbuy_fabric_id}", tags=["fabric management"])
+async def get_uploaded_fabric_vente(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    fabric = await get_uploaded_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="vente")
+    if not fabric:
+        raise HTTPException(status_code=404, detail="Fabric not found")
+    return fabric
+
+@router.get("/uploaded-fabrics/xxxlutz/{afterbuy_fabric_id}", tags=["fabric management"])
+async def get_uploaded_fabric_xxxlutz(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    fabric = await get_uploaded_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="xxxlutz")
     if not fabric:
         raise HTTPException(status_code=404, detail="Fabric not found")
     return fabric

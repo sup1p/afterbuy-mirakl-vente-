@@ -12,7 +12,7 @@ from src.schemas.product_schemas import EansWithDeliveryRequest, MiraklImportRes
 from src.services.vente_services.csv_converter import make_csv, make_big_csv
 from src.services.vente_services.mapping import map_attributes
 from src.core.dependencies import get_httpx_client, get_current_user, get_session
-from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id
+from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id_and_shop
 from logs.config_logs import setup_logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -310,7 +310,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
     )
     database_created = "already exists"
     
-    if not await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id):
+    if not await get_uploaded_fabric_by_afterbuy_id_and_shop(session=session, afterbuy_fabric_id=afterbuy_fabric_id, shop="vente"):
         database_created = "created"
         await create_uploaded_fabric(session=session, data=database_fabric_data)
 

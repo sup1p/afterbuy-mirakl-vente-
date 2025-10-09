@@ -5,7 +5,7 @@ from fastapi import HTTPException, APIRouter, Depends
 from pydantic import BaseModel
 import os
 
-from src.crud.products import create_uploaded_ean, create_uploaded_fabric, get_uploaded_ean_by_ean_and_fabric, get_uploaded_fabric_by_afterbuy_id, update_uploaded_ean
+from src.crud.products import create_uploaded_ean, create_uploaded_fabric, get_uploaded_ean_by_ean_and_fabric, get_uploaded_fabric_by_afterbuy_id_and_shop, update_uploaded_ean
 from src.services.lutz_services import mirakl  # We only need mirakl, not afterbuy
 from src.utils.lutz_utils.image_processing import _process_images_for_product
 from src.utils.lutz_utils import mapping_tools, csv_tools
@@ -120,8 +120,8 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
              market=market,
              shop="xxxlutz"
         )
-        
-        fabric_obj = await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id)
+
+        fabric_obj = await get_uploaded_fabric_by_afterbuy_id_and_shop(session=session, afterbuy_fabric_id=afterbuy_fabric_id, shop="xxxlutz")
         database_created = "already exists"
         
         if not fabric_obj:

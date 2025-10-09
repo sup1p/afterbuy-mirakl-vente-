@@ -5,7 +5,7 @@ Provides endpoints for importing products from Afterbuy to Mirakl system.
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id, create_uploaded_ean, get_uploaded_ean_by_ean_and_fabric, update_uploaded_ean
+from src.crud.products import create_uploaded_fabric, get_uploaded_fabric_by_afterbuy_id_and_shop, create_uploaded_ean, get_uploaded_ean_by_ean_and_fabric, update_uploaded_ean
 from src.schemas.product_schemas import saveUploadedFabric, FabricWithDeliveryAndMarketRequest, saveUploadedEan
 from src.services.vente_services.mirakl_api_calls import import_product as import_product_mirakl
 from src.services.vente_services.afterbuy_api_calls import get_products_by_fabric_from_file
@@ -133,7 +133,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
         market=market,
         shop="vente",
     )
-    fabric_obj = await get_uploaded_fabric_by_afterbuy_id(session=session, afterbuy_fabric_id=afterbuy_fabric_id)
+    fabric_obj = await get_uploaded_fabric_by_afterbuy_id_and_shop(session=session, afterbuy_fabric_id=afterbuy_fabric_id, shop="vente")
     database_created = "already exists"
     
     if not fabric_obj:
