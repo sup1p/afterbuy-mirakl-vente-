@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 
-@router.post("/import-local-offers-by-fabric", tags=["lutz"])
+@router.post("/import-products-by-fabric-from-file/xxxlutz", tags=["lutz"])
 async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequest, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     """Импорт офферов по fabric_id из локальных данных."""
     

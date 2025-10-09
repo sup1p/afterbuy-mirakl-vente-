@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.crud import user
 from src.crud.products import (change_ean_status, delete_fabric_by_afterbuy_id_and_shop, get_all_uploaded_fabrics,
-                               get_eans_by_afterbuy_fabric_id,
+                               get_eans_by_afterbuy_fabric_id_and_shop,
                                get_filtered_uploaded_eans,
                                get_filtered_uploaded_fabrics, get_uploaded_fabric_by_afterbuy_id_and_shop, get_uploaded_fabrics_by_shop,
                                get_users_uploaded_fabrics,
@@ -109,15 +109,33 @@ async def get_uploaded_fabric_xxxlutz(afterbuy_fabric_id: int, session: AsyncSes
         raise HTTPException(status_code=404, detail="Fabric not found")
     return fabric
 
-@router.get("/uploaded-fabrics/{afterbuy_fabric_id}/eans", tags=["fabric management"])
-async def get_uploaded_fabric_eans(afterbuy_fabric_id: int,
+@router.get("/uploaded-fabrics/vente/{afterbuy_fabric_id}/eans", tags=["fabric management"])
+async def get_uploaded_fabric_eans_vente(afterbuy_fabric_id: int,
                                    session: AsyncSession = Depends(get_session),
                                    current_user = Depends(get_current_user),
                                    limit: int = Query(10, ge=1, le=100),
                                    offset: int = Query(0, ge=0)
                                    ):
-    eans = await get_eans_by_afterbuy_fabric_id(session=session,
+    eans = await get_eans_by_afterbuy_fabric_id_and_shop(session=session,
                                                   afterbuy_fabric_id=afterbuy_fabric_id,
+                                                  shop="vente",
+                                                  limit=limit,
+                                                  offset=offset
+    )
+    if eans == "Not Found":
+        raise HTTPException(status_code=404, detail="EANs not found")
+    return eans
+
+@router.get("/uploaded-fabrics/xxxlutz/{afterbuy_fabric_id}/eans", tags=["fabric management"])
+async def get_uploaded_fabric_eans_xxxlutz(afterbuy_fabric_id: int,
+                                   session: AsyncSession = Depends(get_session),
+                                   current_user = Depends(get_current_user),
+                                   limit: int = Query(10, ge=1, le=100),
+                                   offset: int = Query(0, ge=0)
+                                   ):
+    eans = await get_eans_by_afterbuy_fabric_id_and_shop(session=session,
+                                                  afterbuy_fabric_id=afterbuy_fabric_id,
+                                                  shop="xxxlutz",
                                                   limit=limit,
                                                   offset=offset
     )

@@ -17,9 +17,12 @@ async def get_uploaded_fabric_by_afterbuy_id_and_shop(session: AsyncSession, aft
     res = await session.execute(q)
     return res.scalars().first()
 
-async def get_eans_by_afterbuy_fabric_id(session: AsyncSession, afterbuy_fabric_id: int, limit: int = 10, offset: int = 0):
+async def get_eans_by_afterbuy_fabric_id_and_shop(session: AsyncSession, afterbuy_fabric_id: int, shop: str, limit: int = 10, offset: int = 0):
     fabric_exists = await session.execute(
-        select(UploadedFabric.id).where(UploadedFabric.afterbuy_fabric_id == afterbuy_fabric_id)
+        select(UploadedFabric.id).where(
+            (UploadedFabric.afterbuy_fabric_id == afterbuy_fabric_id) &
+            (UploadedFabric.shop == shop)
+        )
     )
     if fabric_exists.scalar() is None:
         return "Not Found"
