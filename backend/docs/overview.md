@@ -1,88 +1,86 @@
+# XXLmebel API — Обзор Проекта
 
+## Цель
 
-# XXLmebel API — Project Overview
+XXLmebel API — это асинхронный бэкенд-сервис на базе FastAPI для автоматизации миграции и синхронизации больших объемов данных о продуктах между платформой Afterbuy и маркетплейсом Mirakl (vente-unique, Lutz). Сервис предоставляет интеграцию, трансформацию данных, генерацию CSV, обработку ошибок, управление пользователями и централизованное логирование.
 
-## Purpose
+## Архитектура и Основные Компоненты
 
-XXLmebel API is an asynchronous FastAPI backend service for automating the migration and synchronization of large volumes of product data between the Afterbuy platform and the Mirakl marketplace (vente-unique, Lutz). The service provides integration, transformation, CSV generation, error handling, user management, and centralized logging.
+- **FastAPI** — основной веб-фреймворк.
+- **src/** — исходный код приложения:
+  - **main.py** — точка входа, регистрация роутеров, инициализация ресурсов.
+  - **models.py** — ORM-модели (например, User).
+  - **resources.py** — глобальные объекты (HTTP-клиент, LLM-агент).
+  - **core/** — настройки, зависимости, безопасность.
+  - **const/** — константы, атрибуты, YAML/JSON/сопоставления для трансформации данных.
+  - **routers/** — API роутеры:
+    - **vente/** — импорт продуктов, ошибки, настройки Mirakl.
+    - **lutz/** — отдельные роутеры для интеграции Lutz.
+    - **user_router.py** — аутентификация и управление пользователями.
+  - **services/** — бизнес-логика:
+    - **vente_services/** — интеграция Afterbuy/Mirakl, сопоставление, генерация CSV.
+    - **lutz_services/** — аналогично для Lutz.
+  - **schemas/** — Pydantic-схемы для валидации и сериализации данных.
+  - **utils/** — утилиты для обработки изображений, атрибутов, HTML, CSV.
+- **alembic/** — миграции базы данных.
+- **logs/** — конфигурация логирования и файлы логов.
 
-## Architecture & Main Components
+## Основные Процессы
 
-- **FastAPI** — main web framework.
-- **src/** — application source code:
-  - **main.py** — entry point, router registration, resource initialization.
-  - **models.py** — ORM models (e.g., User).
-  - **resources.py** — global objects (HTTP client, LLM agent).
-  - **core/** — settings, dependencies, security.
-  - **const/** — constants, attributes, YAML/JSON/mappings for data transformation.
-  - **routers/** — API routers:
-   - **vente/** — product import, errors, Mirakl settings.
-   - **lutz/** — separate routers for Lutz integration.
-   - **user_router.py** — authentication and user management.
-  - **services/** — business logic:
-   - **vente_services/** — Afterbuy/Mirakl integration, mapping, CSV generation.
-   - **lutz_services/** — similar for Lutz.
-  - **schemas/** — Pydantic schemas for data validation and serialization.
-  - **utils/** — utilities for image processing, attributes, HTML, CSV.
-- **alembic/** — database migrations.
-- **logs/** — logging configuration and log files.
+1. **Аутентификация и Управление Пользователями**
+  - OAuth2, JWT, роли (администратор/пользователь).
+  - Роуты: `/auth/create-user`, `/auth/login`.
 
-## Main Processes
+2. **Импорт Продуктов**
+  - Получение данных из Afterbuy (по EAN, по fabric_id).
+  - Сопоставление атрибутов и нормализация для Mirakl/Lutz.
+  - Генерация CSV для импорта.
+  - Загрузка изображений на FTP, обработка и изменение размеров.
+  - Импорт продуктов в Mirakl/Lutz через API.
 
-1. **Authentication & User Management**
-  - OAuth2, JWT, roles (admin/user).
-  - Routes: `/auth/create-user`, `/auth/login`.
+3. **Обработка Ошибок и Отчетность**
+  - Получение статуса импорта, ошибок, неинтегрированных продуктов.
+  - Эндпоинты для отчетов и статуса платформы.
 
-2. **Product Import**
-  - Fetching data from Afterbuy (by EAN, by fabric_id).
-  - Attribute mapping and normalization for Mirakl/Lutz.
-  - CSV generation for import.
-  - Image upload to FTP, processing and resizing.
-  - Product import to Mirakl/Lutz via API.
+4. **Обработка Атрибутов и Констант**
+  - Сопоставление, валидация, перевод значений, поддержка нескольких языков.
+  - YAML/JSON/py файлы для соответствия атрибутов.
 
-3. **Error Handling & Reporting**
-  - Getting import status, errors, non-integrated products.
-  - Endpoints for reports and platform status.
+5. **Логирование**
+  - Все операции логируются в `logs/logs.log` с ротацией.
 
-4. **Attributes & Constants Handling**
-  - Mapping, validation, value translation, multilingual support.
-  - YAML/JSON/py files for attribute correspondence.
+## Конфигурация
 
-5. **Logging**
-  - All operations are logged in `logs/logs.log` with rotation.
+- Все параметры (ключи, пароли, URL) задаются через `.env` и используются в `core/settings.py`.
+- Alembic — для миграций и управления схемой БД.
 
-## Configuration
+## Расширяемость
 
-- All parameters (keys, passwords, URLs) are set via `.env` and used through `core/settings.py`.
-- Alembic — for migrations and DB schema management.
+- Модульная структура: легко добавлять новые роутеры, сервисы, утилиты.
+- Константы и сопоставления разделены в отдельные файлы для удобства обслуживания.
+- Поддержка нескольких маркетплейсов (vente-unique, Lutz).
 
-## Extensibility
+## Использование
 
-- Modular structure: easy to add new routers, services, utilities.
-- Constants and mappings are separated into dedicated files for easy maintenance.
-- Support for multiple marketplaces (vente-unique, Lutz).
+- REST API для всех операций (импорт, ошибки, управление).
+- Swagger UI (`/docs`) для интерактивного тестирования.
+- Примеры запросов — см. `README.md`.
 
-## Usage
+## Тесты
 
-- REST API for all operations (import, errors, management).
-- Swagger UI (`/docs`) for interactive testing.
-- Request examples — see `README.md`.
+- Тесты находятся в `tests/unit/` и `tests/integration/`.
 
-## Tests
+## Быстрый Рабочий Процесс
 
-- Tests are located in `tests/unit/` and `tests/integration/`.
+1. Пользователь аутентифицируется.
+2. Импортирует продукты (по EAN, списку, по fabric_id).
+3. Сервис получает данные из Afterbuy, преобразует, генерирует CSV, обрабатывает изображения.
+4. Импортирует продукты в Mirakl/Lutz, возвращает статус и ошибки.
+5. Все действия логируются.
 
-## Quick Workflow
+## Развертывание
+- Требуется Python 3.11+
+- Настройка окружения через `.env` и `uv`
+- Запуск с помощью `uv run uvicorn src.main:app`
 
-1. User authenticates.
-2. Imports products (by EAN, list, by fabric_id).
-3. Service fetches data from Afterbuy, transforms, generates CSV, processes images.
-4. Imports products to Mirakl/Lutz, returns status and errors.
-5. All actions are logged.
-
-## Deployment
-- Requires Python 3.11+
-- Environment setup via `.env` and `uv`
-- Can be run with `uv run uvicorn src.main:app`
-
-For details on endpoint usage and setup, see the main README.md and API documentation.
+Для деталей по использованию эндпоинтов и настройке см. основной README.md и документацию API.

@@ -1,90 +1,92 @@
-# src/const Module
+# Модуль src/const
 
-This module contains constant data and attribute mappings essential for product data normalization and transformation between Afterbuy and Mirakl platforms. Each file supports attribute translation, value validation, and multilingual support.
+Этот модуль содержит константные данные и сопоставления атрибутов, необходимые для нормализации и преобразования данных продуктов между платформами Afterbuy и Mirakl. Каждый файл поддерживает перевод атрибутов, проверку значений и многоязычную поддержку.
 
 # constantas_vente:
 
 ## - constants.py
-Defines dictionaries and mappings for attribute correspondence between Mirakl and Afterbuy.
-- **mapping_attr:** Main dictionary mapping Mirakl attribute codes (e.g., `ATTR_175`) to Afterbuy attribute names or lists of possible names.
-- **NO MAPPING:** Indicates missing or unsupported attributes.
-- **Usage:** Used in mapping logic to translate and validate product attributes during import/export.
+Определяет словари и сопоставления для соответствия атрибутов между Mirakl и Afterbuy.
+- **mapping_attr:** Основной словарь, сопоставляющий коды атрибутов Mirakl (например, `ATTR_175`) с именами атрибутов Afterbuy или списками возможных имен.
+- **NO MAPPING:** Указывает на отсутствующие или неподдерживаемые атрибуты.
+- **Использование:** Используется в логике сопоставления для перевода и проверки атрибутов продуктов во время импорта/экспорта.
+- **Путь:** `src/const/constants_vente/constants.py`
 
 ## - attrs/
-Contains individual files for Mirakl attributes (e.g., `ATTR_106.py`, `ATTR_175.py`).
-- **Format:** Each file defines a list of allowed values for the attribute, including:
-  - `code`: Mirakl attribute code
-  - `label`: Main label (usually in French)
-  - `values`: List of possible values, each with its own code, label, and translations (German, English, etc.)
-- **Usage:**
-  - Validates and normalizes incoming product data
-  - Provides translation and value mapping for multilingual support
-  - Ensures only allowed values are used for Mirakl imports
+Содержит отдельные файлы для атрибутов Mirakl (например, `ATTR_106.py`, `ATTR_175.py`).
+- **Формат:** Каждый файл определяет список допустимых значений для атрибута, включая:
+  - `code`: Код атрибута Mirakl
+  - `label`: Основная метка (обычно на французском)
+  - `values`: Список возможных значений, каждое из которых имеет свой код, метку и переводы (немецкий, английский и т.д.)
+- **Использование:**
+  - Проверяет и нормализует входящие данные продуктов
+  - Предоставляет перевод и сопоставление значений для многоязычной поддержки
+  - Обеспечивает использование только допустимых значений для импорта в Mirakl
+- **Путь:** `src/const/attrs/`
 
-## - Adding new:
-If you have found mistakes just replace keywords or codes, or if you want to add extra keys just change default `str` to `list` and just keep increasing it.
+## - Добавление новых:
+Если вы нашли ошибки, просто замените ключевые слова или коды, или если хотите добавить дополнительные ключи, измените тип данных с `str` на `list` и добавляйте новые значения.
 
 # constantas_lutz:
 
-## - yaml files
+## - YAML файлы
 
-This YAML fileы define field mappings between Afterbuy product data and the target marketplace (Mirakl) schema.
-The mapping ensures that product attributes are correctly transferred and normalized during data synchronization.
+Эти YAML файлы определяют сопоставления полей между данными продуктов Afterbuy и схемой целевого маркетплейса (Mirakl).
+Сопоставление гарантирует, что атрибуты продуктов корректно передаются и нормализуются во время синхронизации данных.
 
-**Structure:**
+**Структура:**
 
-- Top-level fields: represent product attributes (e.g., category, ean, article, pic_main, pics).
+- Верхнеуровневые поля: представляют атрибуты продуктов (например, категория, ean, article, pic_main, pics).
 
-- Nested properties.* fields: represent product specifications or characteristics.
+- Вложенные свойства.* поля: представляют спецификации или характеристики продуктов.
 
-**Each entry specifies either:**
+**Каждая запись указывает либо:**
 
-- A string → direct mapping to a single field in the target schema.
+- Строку → прямое сопоставление с одним полем в целевой схеме.
 
-- A list of strings → multiple possible fields; the first non-empty value will be used.
+- Список строк → несколько возможных полей; будет использовано первое непустое значение.
 
 # prompts.py
-This module defines prompt builder functions used to generate structured requests for an AI model (e.g., OpenAI, via Pydantic-AI based schemas).
-The purpose is to create clean, marketplace-ready product descriptions in multiple languages, based on raw product data and offer details.
+Этот модуль определяет функции построения промптов, используемые для генерации структурированных запросов к AI-модели (например, OpenAI, через схемы на основе Pydantic-AI).
+Цель — создание чистых, готовых для маркетплейса описаний продуктов на нескольких языках на основе сырых данных о продуктах и предложениях.
 
-**Functions**
+**Функции**
 
 - `build_description_prompt_vente`:
 
-- - Generates a prompt instructing the AI to return two product descriptions:
+  - Генерирует промпт, инструктирующий AI вернуть два описания продуктов:
 
-- - - `description_de`: German, focused on the product itself (design, dimensions, materials, usage, style).
+    - `description_de`: Немецкий, ориентирован на сам продукт (дизайн, размеры, материалы, использование, стиль).
 
-- - - `description_fr`: French, focused on the commercial offer (price, delivery time, warranty, advantages for the buyer).
+    - `description_fr`: Французский, ориентирован на коммерческое предложение (цена, время доставки, гарантия, преимущества для покупателя).
 
-- - Ensures compliance with marketplace requirements: min/max characters, no HTML tags, no technical clutter.
+  - Обеспечивает соответствие требованиям маркетплейса: мин/макс количество символов, отсутствие HTML-тегов, отсутствие технического мусора.
 
-- - Input data: raw text, product properties, article title, price, and delivery days.
+  - Входные данные: сырой текст, свойства продукта, название статьи, цена и дни доставки.
 
 - `build_description_prompt_lutz`
 
-- - Similar structure, but outputs:
+  - Аналогичная структура, но выводит:
 
-- - - `description_de`: German, product-focused.
+    - `description_de`: Немецкий, ориентирован на продукт.
 
-- - - `description_en`: English, offer-focused.
+    - `description_en`: Английский, ориентирован на предложение.
 
-- - Otherwise follows the same rules and formatting logic.
+  - В остальном следует тем же правилам и логике форматирования.
 
-**Common Rules for Both**
+**Общие Правила для Обоих**
 
-- Output must respect a fixed schema (description_de, description_fr or description_en).
+- Вывод должен соответствовать фиксированной схеме (description_de, description_fr или description_en).
 
-- Maximum length per description: 2250 characters (configured via settings.max_description_chars).
+- Максимальная длина для каждого описания: 2250 символов (настраивается через settings.max_description_chars).
 
-- Cleaning rules: remove HTML, special characters, editor artifacts.
+- Правила очистки: удаление HTML, специальных символов, артефактов редактора.
 
-- Writing style: fluent, natural, customer-friendly, without redundant technical jargon.
+- Стиль написания: плавный, естественный, ориентированный на клиента, без избыточного технического жаргона.
 
-*Usage in the System*
+*Использование в Системе*
 
-- These functions are called before sending a request to the AI.
+- Эти функции вызываются перед отправкой запроса к AI.
 
-- They return a well-structured prompt string, ready to be passed to the model.
+- Они возвращают хорошо структурированную строку промпта, готовую для передачи модели.
 
-- The resulting AI output can then be validated/parsed with Pydantic models (ensuring schema compliance).
+- Полученный от AI результат затем может быть проверен/проанализирован с помощью моделей Pydantic (обеспечивая соответствие схеме).

@@ -1,6 +1,6 @@
 """
-Product attribute formatting utilities module.
-Contains functions for formatting various product attributes according to Mirakl specifications.
+Модуль для форматирования атрибутов продуктов.
+Содержит функции для преобразования различных атрибутов продуктов в соответствии со спецификациями Mirakl.
 """
 
 import logging
@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class FormatterError(Exception):
-    """Custom exception for formatting errors"""
+    """
+    Кастомное исключение для ошибок форматирования.
+    """
     pass
 
 
@@ -42,7 +44,11 @@ def safe_execute(func_name: str, _input_value: Any):
 
 
 def get_first_value(input_value: Union[List, Any]) -> Any:
-    """Safely extracts first value from list or returns the value itself"""
+    """
+    Безопасно извлекает первое значение из списка или возвращает само значение.
+    Если входное значение - список, возвращает первый элемент.
+    Если входное значение - не список, возвращает его как есть.
+    """
     if isinstance(input_value, list) and input_value:
         return input_value[0]
     return input_value
@@ -50,8 +56,11 @@ def get_first_value(input_value: Union[List, Any]) -> Any:
 
 @safe_execute("format_2", "input_value")
 def format_2(input_value:  Union[List[str], str], locale: str = "de") -> Optional[str]:
-    """Formatting for attribute 2 with localization"""
-    
+    """
+    Форматирование для атрибута 2 с учетом локализации.
+    Использует маппинг цветов для преобразования входных данных в соответствующий код.
+    """
+    # Основной маппинг цветов
     color_map = {
         "Türkis": "13089",
         "Beige-Golb": "7",
@@ -213,6 +222,7 @@ def format_2(input_value:  Union[List[str], str], locale: str = "de") -> Optiona
         "Coral": "118529"
     }
     
+    # Вторичный маппинг цветов
     second_mapping = {
         "copper": "89",
         "Grau": "21",
@@ -247,6 +257,7 @@ def format_2(input_value:  Union[List[str], str], locale: str = "de") -> Optiona
         "Yellow": "23"
     }
     
+    # Третичный маппинг цветов
     third_mapping = {
         "Marmoriert": "21",          # сероватый/мраморный -> Gris
         "Zebramuster": "33",         # черно-белый -> Noir
@@ -307,14 +318,15 @@ def format_2(input_value:  Union[List[str], str], locale: str = "de") -> Optiona
         "Orange / Black": "35",      # Orange → "35"
         "Black,Brown": "33",         
     }
+    # Проверка наличия цвета в маппингах
     if color_map.get(get_first_value(input_value)) is None:
-        logger.info(f"Color '{get_first_value(input_value)}' not found in primary mapping, returning secondary mapping")
+        logger.info(f"Цвет '{get_first_value(input_value)}' не найден в основном маппинге, проверяем вторичный маппинг")
         
         if second_mapping.get(get_first_value(input_value)) is None:
-            logger.info(f"Color '{get_first_value(input_value)}' not found in second mapping, returning third mapping")
+            logger.info(f"Цвет '{get_first_value(input_value)}' не найден во вторичном маппинге, проверяем третичный маппинг")
             
             if third_mapping.get(get_first_value(input_value)) is None:
-                logger.info(f"Color '{get_first_value(input_value)}' not found in third mapping, returning '9'")
+                logger.info(f"Цвет '{get_first_value(input_value)}' не найден в третичном маппинге, возвращаем '9'")
                 return "9"
             return third_mapping.get(get_first_value(input_value))
         
@@ -326,11 +338,15 @@ def format_2(input_value:  Union[List[str], str], locale: str = "de") -> Optiona
 
 @safe_execute("format_3", "input_value")
 def format_3(input_value: Union[List[str], str]) -> Optional[str]:
-    """Material formatting"""
+    """
+    Форматирование материала.
+    Использует маппинг материалов для преобразования входных данных в соответствующий код.
+    """
         
     if isinstance(input_value, list):
         input_value = get_first_value(input_value).strip()    
         
+    # Основной маппинг материалов
     material_mapping = {
         "Textile": "107",
         "Acrylic": "121", 
@@ -341,6 +357,7 @@ def format_3(input_value: Union[List[str], str]) -> Optional[str]:
         "Wood-based material": "12835",
     }
     
+    # Дополнительный маппинг материалов
     material_mapping_extra = {
         "Polsterung": "107",        # Fabric and velvet
         "Leder": "105",             # Leather
@@ -362,10 +379,11 @@ def format_3(input_value: Union[List[str], str]) -> Optional[str]:
     }
     
     logger.debug(f"Available materials: {list(material_mapping.keys())}")
+    # Проверка наличия материала в маппингах
     if material_mapping.get(input_value) is None:
-        logger.debug(f"Material '{input_value}' not found in primary mapping, returning extra mapping")
+        logger.debug(f"Материал '{input_value}' не найден в основном маппинге, проверяем дополнительный маппинг")
         if material_mapping_extra.get(input_value) is None:
-            logger.warning(f"Material '{input_value}' not found in extra mapping, returning default '107'")
+            logger.warning(f"Материал '{input_value}' не найден в дополнительном маппинге, возвращаем значение по умолчанию '107'")
             return "107"
         return material_mapping_extra.get(input_value)
     return material_mapping.get(input_value)
@@ -676,6 +694,7 @@ def format_17(input_value: Union[List[str], str]) -> Optional[str]:
         "Egg": "125601",
     }
     
+    # Проверка наличия формы в маппинге
     if form_mapping.get(get_first_value(input_value)) is None:
         logger.warning(f"Shape '{get_first_value(input_value)}' not found in mapping, returning default '375'")
         return "375"
@@ -777,6 +796,7 @@ def format_19(input_value: Union[List[str], str]) -> Optional[str]:
     }
     
     value = get_first_value(input_value)
+    # Проверка наличия стиля в маппинге
     if style_mapping.get(value) is None:
         logger.warning(f"Style '{value}' not found in mapping, returning default '393'")
         return "393"
@@ -1216,6 +1236,7 @@ def format_183(input_value: Union[List[str], str]) -> Optional[str]:
 
         
     value = get_first_value(input_value)
+    # Проверка наличия типа в маппинге
     if dest_mapping.get(value) is None:
         logger.warning(f"Type '{value}' not found in mapping, returning default '11189'")
         return "11189"
@@ -1241,6 +1262,7 @@ def format_259(input_value: Union[List[str], str]):
     
     value = get_first_value(input_value)
     
+    # Проверка наличия цвета в маппинге
     if mapping.get(value) is None:
         logger.warning(f"Attr_259 '{value}' not found in mapping, returning default '24107'")
         return "24107"
@@ -1262,6 +1284,7 @@ def format_267(input_value: Union[List[str], str]) -> Optional[int]:
     
     value = get_first_value(input_value)
     
+    # Проверка наличия стиля в маппинге
     if style_mapping.get(value) is None:
         logger.warning(f"Furniture style '{value}' not found in mapping, returning default '24135'")
         return "24135"
@@ -1306,6 +1329,7 @@ def format_287(input_value: Union[List[str], str]) -> Optional[int]:
     
     value = get_first_value(input_value)
     
+    # Проверка наличия особенности в маппинге
     if feature_mapping.get(value) is None:
         logger.warning(f"Furniture feature '{value}' not found in mapping, returning default '24249'")
         return "24249"
@@ -1400,6 +1424,7 @@ def format_693(input_value: Union[List[str], str]) -> Optional[str]:
 
         
     value = get_first_value(input_value)
+    # Проверка наличия типа в маппинге
     if mapping.get(value) is None:
         logger.info(f"Type mebel(ATTR_693) '{value}' not found in mapping, returning '73335'")
         return "73335"
@@ -1421,6 +1446,7 @@ def format_717(input_value: Union[List[str], str]) -> Optional[str]:
     
     motif_mapping = mapping_format_717
     
+    # Проверка наличия паттерна в маппингах
     if pattern_mapping.get(get_first_value(input_value)) is None:
         logger.info(f"Pattern '{get_first_value(input_value)}' not found in primary mapping, returning motif mapping")
         
@@ -1554,6 +1580,7 @@ def format_745(input_value: Union[List[str], str]):
     
     value = get_first_value(input_value)
     
+    # Проверка наличия материала в маппингах
     if not mapping.get(value):
         logger.warning(f"ATTR_745 '{get_first_value(input_value)}' not found in primary mapping, returning default mapping")
         return "89827"
@@ -1601,6 +1628,7 @@ def format_747(input_value: Union[List[str], str]) -> Optional[int]:
     
     value = get_first_value(input_value)
     
+    # Проверка наличия материала в маппингах
     if material_mapping.get(value) is None:
         logger.debug(f"ATTR_747 - Material '{value}' not found in primary mapping, returning extra mapping")
         material_mapping_extra = {
@@ -1637,7 +1665,7 @@ def format_747(input_value: Union[List[str], str]) -> Optional[int]:
             "Metall mit Textil": "89969",
             "Marble": "89867",
             "Polyester": "89861",
-            "MDF/Spanplatte - Holzoptik": "89971",
+            "MDF/Spanplatte - Holzоптик": "89971",
             "Kiefern": "89967",
             "Stainless": "89907",
             "Holz / Glas": "89967",
@@ -1649,7 +1677,7 @@ def format_747(input_value: Union[List[str], str]) -> Optional[int]:
             "Echt Kristall": "89857",
             "Holz mit Glas": "89967",
             "Metall mit Holz": "89969",
-            "Holz und Marmor": "89967",
+            "Holz и Мarmor": "89967",
             "Holz / Edelstahl": "89967",
             "Holz \\ Edelstahl": "89967",
             "Zinn": "89969",
@@ -1671,12 +1699,12 @@ def format_747(input_value: Union[List[str], str]) -> Optional[int]:
             "Kiefer": "89967",
             "Porzellan-Tischplatte":"89869",
             "Porzellan":"89869",
-            "Glas / Marmorimitation":"89947",
+            "Glas / Marmorимитация":"89947",
             "Metall": "89969",
             "Keramik": "89859",
-            "Holz mit Marmor": "89967",
+            "Holz с Мarmor": "89967",
             "Leder": "89959",
-            "Holz & Glas": "89967",
+            "Holз & Glas": "89967",
             "MDF/Spanplatte": "89971",
             "Spanplatte": "89971",
             "Holz, Textil": "89967",
@@ -1722,6 +1750,7 @@ def format_769(input_value: Union[List[str], str]) -> Optional[int]:
     }
     
     value = get_first_value(input_value)
+    # Проверка наличия типа в маппинге
     if figure_mapping.get(value) is None:
         logger.warning(f"Figure type '{value}' not found in mapping, returning default '98729'")
         return "98729"

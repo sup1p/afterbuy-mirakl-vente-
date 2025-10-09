@@ -1,6 +1,6 @@
 """
-Mirakl system router module.
-Provides endpoints for checking Mirakl platform status, import errors, and system configuration.
+Модуль роутера системы Mirakl.
+Предоставляет эндпоинты для проверки статуса платформы Mirakl, ошибок импорта и конфигурации системы.
 """
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -20,16 +20,11 @@ router = APIRouter()
 @router.get("/import-product-error/{import_parameter}", tags=["mirakl_platform_vente"])
 async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Returns error of product import parameter - if exists
-
-    Args:
-        import_parameter (str): import parameter that mirakl platform gave when product was imported.
-
-    Returns:
-        dict: {message: mirakl answer}.
+    Возвращает ошибку импорта продукта по параметру импорта - если существует.
     """
     
     try:
+        # Проверяем ошибку импорта продукта
         result = await check_import_error(import_parameter=import_parameter, httpx_client=httpx_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -44,16 +39,11 @@ async def get_product_error(import_parameter: str, httpx_client: httpx.AsyncClie
 )
 async def get_product_non_integrated(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Returns non integrated products of product import parameter - if exists
-
-    Args:
-        import_parameter (str): import parameter that mirakl platform gave when product was imported.
-
-    Returns:
-        dict: {message: mirakl answer}.
+    Возвращает неинтегрированные продукты по параметру импорта - если существуют.
     """
     
     try:
+        # Проверяем неинтегрированные продукты
         result = await check_non_integrated_products(import_parameter, httpx_client=httpx_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -65,16 +55,11 @@ async def get_product_non_integrated(import_parameter: str, httpx_client: httpx.
 @router.get("/mirakl-offer-import-error/{import_parameter}", tags=["mirakl_platform_vente"])
 async def get_offer_import_error(import_parameter: str, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Returns offer error of import parameter - if exists
-
-    Args:
-        import_parameter (str): import parameter that mirakl platform gave when product offer was imported.
-
-    Returns:
-        dict: {message: mirakl answer}.
+    Возвращает ошибку импорта предложения по параметру импорта - если существует.
     """
     
     try:
+        # Проверяем ошибку импорта предложения
         result = await check_offer_import_error(import_parameter=import_parameter, httpx_client=httpx_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

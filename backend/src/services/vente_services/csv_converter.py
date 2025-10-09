@@ -13,38 +13,39 @@ logger = logging.getLogger(__name__)
 
 def make_csv(data: dict):
     """
-    Converts a JSON object or list of JSON objects into a CSV string.
+    Преобразует JSON-объект или список JSON-объектов в строку CSV.
 
-    The function accepts either a single dictionary or a list of dictionaries,
-    determines the field names dynamically (to support heterogeneous structures),
-    and writes the data into an in-memory CSV string.
+    Функция принимает либо один словарь, либо список словарей,
+    динамически определяет имена полей (для поддержки гетерогенных структур)
+    и записывает данные в строку CSV в памяти.
 
-    Args:
-        data (dict | list[dict]): Input JSON data.
+    Аргументы:
+        data (dict | list[dict]): Входные JSON-данные.
 
-    Returns:
-        str: CSV representation of the data as a string. Returns an empty string if input is invalid.
+    Возвращает:
+        str: CSV-представление данных в виде строки. Возвращает пустую строку, если входные данные недействительны.
 
-    Raises:
-        None explicitly, but logs an error if non-dict objects are encountered.
+    Исключения:
+        Не выбрасывает исключений явно, но логирует ошибку, если встречаются объекты, не являющиеся словарями.
     """
     
-    if not data:  # empty value
-        logger.warning("make_csv received empty data")
+    # Проверяем, что данные не пустые
+    if not data:
+        logger.warning("make_csv получил пустые данные")
         return ""
 
     output = io.StringIO()
 
-    # Determine list of dictionaries
+    # Определяем, является ли входной объект списком словарей
     rows = data if isinstance(data, list) else [data]
 
-    # Collect all keys (in case of heterogeneous dictionaries)
+    # Собираем все ключи (для поддержки гетерогенных словарей)
     fieldnames = set()
     for row in rows:
         if isinstance(row, dict):
             fieldnames.update(row.keys())
         else:
-            logger.error(f"Expected dict, but got: {type(row)} → {row}")
+            logger.error(f"Ожидался словарь, но получен: {type(row)} → {row}")
             return ""
 
     fieldnames = list(fieldnames)
@@ -55,10 +56,10 @@ def make_csv(data: dict):
     for row in rows:
         writer.writerow(row)
 
-    # Get id/ean from first row (if available)
+    # Получаем id/ean из первой строки (если доступно)
     first = rows[0]
     logger.info(
-        f"Converted to CSV with product-id: {first.get('product-id')}, ean: {first.get('ean')}"
+        f"Преобразовано в CSV с product-id: {first.get('product-id')}, ean: {first.get('ean')}"
     )
 
     return output.getvalue()
@@ -66,35 +67,35 @@ def make_csv(data: dict):
 
 def make_big_csv(data):
     """
-    Converts a list of JSON objects into a CSV string.
+    Преобразует список JSON-объектов в строку CSV.
 
-    Unlike `make_csv`, this function only accepts a list of dictionaries.
-    It collects all keys across the list to support heterogeneous data structures
-    and writes the data into an in-memory CSV string.
+    В отличие от `make_csv`, эта функция принимает только список словарей.
+    Она собирает все ключи из списка для поддержки гетерогенных структур данных
+    и записывает данные в строку CSV в памяти.
 
-    Args:
-        data (list[dict]): List of JSON objects.
+    Аргументы:
+        data (list[dict]): Список JSON-объектов.
 
-    Returns:
-        str: CSV representation of the data as a string. Returns an empty string if input is invalid.
+    Возвращает:
+        str: CSV-представление данных в виде строки. Возвращает пустую строку, если входные данные недействительны.
 
-    Raises:
-        None explicitly, but logs an error if non-dict objects are encountered.
+    Исключения:
+        Не выбрасывает исключений явно, но логирует ошибку, если встречаются объекты, не являющиеся словарями.
     """
-    
+    # Проверяем, что данные не пустые и являются списком
     if not data or not isinstance(data, list):
-        logger.error("make_big_csv received empty or invalid data")
+        logger.error("make_big_csv получил пустые или недействительные данные")
         return ""
 
     output = io.StringIO()
 
-    # Collect all keys (in case of heterogeneous dictionaries)
+    # Собираем все ключи (для поддержки гетерогенных словарей)
     fieldnames = set()
     for row in data:
         if isinstance(row, dict):
             fieldnames.update(row.keys())
         else:
-            logger.error(f"Expected dict, but got: {type(row)} → {row}")
+            logger.error(f"Ожидался словарь, но получен: {type(row)} → {row}")
             return ""
 
     fieldnames = list(fieldnames)
@@ -104,11 +105,11 @@ def make_big_csv(data):
 
     for row in data:
         writer.writerow(row)
-        
-    
+
+    # Логируем список EAN из данных
     eans = [row.get("ean") for row in data if row.get("ean")]
     logger.info(
-        f"Converted big CSV with eans: {eans}"
+        f"Преобразован большой CSV с eans: {eans}"
     )
 
     return output.getvalue()

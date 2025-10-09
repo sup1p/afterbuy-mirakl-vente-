@@ -1,6 +1,6 @@
 """
-Test router module.
-Provides testing endpoints for development and debugging purposes.
+Тестовый роутер модуль.
+Предоставляет тестовые эндпоинты для разработки и отладки.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile
@@ -30,18 +30,8 @@ router = APIRouter()
 @router.post("/test-import-product/vente/{ean}/{delivery_days}", tags=["test"], response_model=MappedProduct)
 async def dev_import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Test endpoint for importing a single product by EAN (returns mapped data without importing to Mirakl).
-    If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
-
-    Args:
-        ean (str): EAN code of the product.
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Mapped product data for Mirakl.
-
-    Raises:
-        HTTPException: 400 if EAN is invalid, 500 if data fetch or mapping fails.
+    Тестовый эндпоинт для импорта одного продукта по EAN (возвращает сопоставленные данные без импорта в Mirakl).
+    Если указан afterbuy_fabric_id, также фильтрует продукт по EAN и FABRIC_ID.
     """
     if not is_valid_ean(ean):
         raise HTTPException(
@@ -50,6 +40,7 @@ async def dev_import_product(ean: str, delivery_days: int, afterbuy_fabric_id: i
         )
         
     try:
+        # Получаем данные продукта из Afterbuy
         data = await get_product_data(ean=int(ean), afterbuy_fabric_id=afterbuy_fabric_id,httpx_client=httpx_client)
         data["delivery_days"] = delivery_days
     except Exception as e:
@@ -59,6 +50,7 @@ async def dev_import_product(ean: str, delivery_days: int, afterbuy_fabric_id: i
             detail=str(e),
         )
     try:
+        # Сопоставляем атрибуты для Mirakl
         mapped_data_result = await map_attributes(data=data, httpx_client=httpx_client)
         mapped_data = mapped_data_result.get('data_for_mirakl')
     except Exception as e:
@@ -72,23 +64,14 @@ async def dev_import_product(ean: str, delivery_days: int, afterbuy_fabric_id: i
 @router.post("/test-import-products-by-fabric/vente", tags=["test"], response_model=FabricMappedProducts)
 async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, without importing to Mirakl).
-
-    Args:
-        afterbuy_fabric_id (int): Afterbuy fabric ID.
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Contains not added EANs, total not added, total EANs in fabric, and mapped data for CSV.
-
-    Raises:
-        HTTPException: 500 if data fetch fails, 404 if no products found or CSV creation fails.
+    Тестовый эндпоинт для импорта продуктов по ID фабрики Afterbuy (возвращает сопоставленные данные для всех продуктов в фабрике, без импорта в Mirakl).
     """
     afterbuy_fabric_id = input_body.afterbuy_fabric_id
     delivery_days = input_body.delivery_days
     
     
     try:
+        # Получаем данные продуктов для фабрики
         data = await get_products_by_fabric(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)        
     except Exception as e:
         logger.error(f"Error fetching data for fabric {afterbuy_fabric_id}: {e}")
@@ -114,6 +97,7 @@ async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, h
     for idx, prod in enumerate(products, start=1):
         async def wrapper(p=prod, i=idx):
             try:
+                # Добавляем дни доставки и сопоставляем атрибуты
                 p["delivery_days"] = delivery_days
                 res = await map_attributes(p, httpx_client)
                 logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('ean')}")
@@ -123,6 +107,7 @@ async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, h
                 return e
         tasks.append(wrapper())
 
+    # Выполняем все задачи параллельно
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
     data_for_csv = []
@@ -144,6 +129,7 @@ async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, h
         f"not_added_eans: {not_added_eans},\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
     )
     
+    # Создаем большой CSV из данных
     csv_content = make_big_csv(data_for_csv)
     
     if not csv_content:
@@ -166,19 +152,10 @@ async def dev_import_products_by_fabric(input_body: FabricWithDeliveryRequest, h
 @router.post("/test-resize-image", tags=["test"], response_model=str)
 async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Test endpoint for image resizing and FTP upload functionality.
-
-    Args:
-        data (TestImageResize): Image resize request data (url, ean).
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Result of image resize and upload operation.
-
-    Raises:
-        HTTPException: 422 if image processing or FTP upload fails.
+    Тестовый эндпоинт для изменения размера изображения и загрузки на FTP.
     """
     try:
+        # Используем семафор для ограничения одновременных FTP-соединений
         async with resources.ftp_semaphore:
             async with aioftp.Client.context(host=settings.ftp_host,port=settings.ftp_port,user=settings.ftp_user,password=settings.ftp_password,socket_timeout=30) as ftp_client:
                 result = await resize_image_and_upload(url=data.url, ean=data.ean, httpx_client=httpx_client, ftp_client=ftp_client, test=True)
@@ -191,16 +168,20 @@ async def dev_resize_image(data: TestImageResize, httpx_client: httpx.AsyncClien
 
 @router.post("/test-remove-bg-image", tags=["test"])
 async def remove_bg(image: UploadFile, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
+    """
+    Тестовый эндпоинт для удаления фона изображения с помощью внешнего сервиса.
+    """
     url = settings.remove_bg_url
     headers = {"x-api-key": settings.remove_bg_api_key}
     files = {"image_file": (image.filename, await image.read(), image.content_type)}
 
+    # Отправляем запрос на удаление фона
     response = await httpx_client.post(url, headers=headers, files=files, timeout=40.0)
 
     if response.status_code != 200:
         return {"error": response.text}
 
-    # Возвращаем обработанное изображение прямо в браузер
+    # Возвращаем обработанное изображение напрямую в браузер
     return StreamingResponse(
         iter([response.content]),
         media_type="image/png"

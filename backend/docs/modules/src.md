@@ -1,13 +1,13 @@
-# src Module (Root)
+# Модуль src (Корень)
 
-This directory contains the main application entry point, shared resources, and data schemas. Each file is essential for application startup, resource management, and data validation.
+Эта директория содержит точку входа основного приложения, общие ресурсы и схемы данных. Каждый файл важен для запуска приложения, управления ресурсами и валидации данных.
 
 ## main.py
-FastAPI application entry point.
-- **Application Lifecycle:** Manages startup and shutdown events, including HTTP client initialization.
-- **Router Registration:** Includes all API routers for product, Mirakl system, and test endpoints.
-- **Health Check:** Implements a root endpoint (`/`) for service status verification.
-- **Example:**
+Точка входа приложения FastAPI.
+- **Жизненный цикл приложения:** Управляет событиями запуска и завершения, включая инициализацию HTTP-клиента.
+- **Регистрация маршрутов:** Включает все маршруты API для продуктов, системы Mirakl и тестовых эндпоинтов.
+- **Проверка состояния:** Реализует корневой эндпоинт (`/`) для проверки статуса сервиса.
+- **Пример:**
   ```python
   @app.get("/")
   def root():
@@ -16,17 +16,32 @@ FastAPI application entry point.
 
 ## resources.py
 
-Module for managing global shared resources used across the application.  
-Provides centralized initialization and access to HTTP clients and LLM-related objects.
+Модуль для управления глобальными общими ресурсами, используемыми в приложении.  
+Обеспечивает централизованную инициализацию и доступ к HTTP-клиентам и объектам, связанным с LLM.
 
-- **Global Resource Management:**  
-  Central place to create and reuse shared objects instead of instantiating them per request.  
+- **Управление глобальными ресурсами:**  
+  Центральное место для создания и повторного использования общих объектов вместо их создания для каждого запроса.  
 
-- **Shared Resources:**  
-  - `client`: Global `httpx.AsyncClient` for making external API calls (reused to avoid overhead).  
-  - `openai_client`: Global `AsyncOpenAI` instance, initialized on application startup.  
-  - `llm_agent`: `pydantic_ai.Agent` for handling LLM requests.  
-  - `llm_semaphore`: `asyncio.Semaphore` to control concurrency of simultaneous LLM calls.  
+- **Общие ресурсы:**  
+  - `client`: Глобальный `httpx.AsyncClient` для выполнения внешних API-запросов (повторно используется для избежания накладных расходов).  
+  - `openai_client`: Глобальный экземпляр `AsyncOpenAI`, инициализируется при запуске приложения.  
+  - `llm_agent`: `pydantic_ai.Agent` для обработки запросов к LLM.  
+  - `llm_semaphore`: `asyncio.Semaphore` для управления параллельностью одновременных вызовов к LLM.  
 
-- **Usage:**  
-  Import resources where needed and ensure proper initialization/cleanup during application startup/shutdown.
+- **Использование:**  
+  Импортируйте ресурсы там, где это необходимо, и обеспечьте их правильную инициализацию/очистку во время запуска/завершения приложения.
+
+## models.py
+
+Содержит SQLAlchemy модели для базы данных.
+
+- **User:**
+  - Хранит данные о пользователях, включая имя, хэшированный пароль и статус администратора.
+  - Связь с загруженными тканями и EAN-кодами.
+
+- **UploadedFabric:**
+  - Хранит данные о загруженных тканях, включая идентификатор, статус и связь с пользователем.
+  - Поля: `afterbuy_fabric_id`, `market`, `shop`, `status`, `user_id`, `date_time`.
+
+- **UploadedEan:**
+  - Хранит данные о загруженных EAN-кодах, включая идентификатор, связь с тканью и пользователем.

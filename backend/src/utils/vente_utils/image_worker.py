@@ -1,6 +1,6 @@
 """
-Image processing utilities module.
-Handles image validation, resizing, and FTP upload operations.
+Модуль для обработки изображений.
+Обрабатывает валидацию изображений, изменение их размера и загрузку на FTP.
 """
 
 from logs.config_logs import setup_logging
@@ -47,36 +47,42 @@ _CIRCUIT_BREAKER_TIMEOUT = 300  # 5 минут блокировки
 
 
 def _is_url_circuit_broken(url: str) -> bool:
-    """Проверить, заблокирован ли URL из-за частых ошибок."""
+    """
+    Проверяет, заблокирован ли URL из-за частых ошибок.
+    Если URL часто вызывает ошибки, он временно блокируется (circuit breaker).
+    """
     import time
-    
+
     if url not in _failed_urls:
         return False
-    
+
     failure_info = _failed_urls[url]
-    
-    # Если прошло достаточно времени, сбрасываем счетчик
+
+    # Если прошло достаточно времени, сбрасываем счетчик ошибок
     if time.time() - failure_info["last_failure"] > _CIRCUIT_BREAKER_TIMEOUT:
         del _failed_urls[url]
         return False
-    
-    # Проверяем превышен ли лимит ошибок
+
+    # Проверяем, превышен ли лимит ошибок
     return failure_info["count"] >= _CIRCUIT_BREAKER_THRESHOLD
 
 
 def _record_url_failure(url: str):
-    """Записать ошибку для URL."""
+    """
+    Записывает ошибку для указанного URL.
+    Если количество ошибок превышает порог, активируется circuit breaker.
+    """
     import time
-    
+
     current_time = time.time()
     if url in _failed_urls:
         _failed_urls[url]["count"] += 1
         _failed_urls[url]["last_failure"] = current_time
     else:
         _failed_urls[url] = {"count": 1, "last_failure": current_time}
-    
+
     if _failed_urls[url]["count"] >= _CIRCUIT_BREAKER_THRESHOLD:
-        logger.warning(f"Circuit breaker activated for URL (too many failures): {url}")
+        logger.warning(f"Circuit breaker активирован для URL (слишком много ошибок): {url}")
 
 
 def _record_url_success(url: str):
@@ -96,60 +102,59 @@ MIME_MAP = {
 
 async def check_image_existence(image_url: str, httpx_client: httpx.AsyncClient, retries: int = 2, timeout: int = 5) -> bool:
     """
-    Verify whether an image is accessible at the given URL.
+    Проверяет доступность изображения по указанному URL.
 
-    Improved version with:
-    - Global timeout protection (max 20 seconds total)
-    - Reduced retries for faster failure
-    - Fast-fail on certain error types
-    - Circuit breaker for frequently failing URLs
-    - Better logging for troubleshooting
+    Улучшенная версия с:
+    - Глобальной защитой по таймауту (максимум 20 секунд на всю операцию)
+    - Уменьшенным количеством повторов для ускорения отказа
+    - Circuit breaker для часто ломающихся URL
+    - Улучшенным логированием для отладки
 
-    Args:
-        image_url (str): The URL of the image.
-        httpx_client (httpx.AsyncClient): Asynchronous HTTP client instance.
-        retries (int, optional): Number of retry attempts. Defaults to 2.
-        timeout (int, optional): Timeout per request in seconds. Defaults to 5.
+    Аргументы:
+        image_url (str): URL изображения.
+        httpx_client (httpx.AsyncClient): Асинхронный HTTP-клиент.
+        retries (int, optional): Количество попыток. По умолчанию 2.
+        timeout (int, optional): Таймаут на запрос в секундах. По умолчанию 5.
 
-    Returns:
-        bool: True if the image is accessible (HTTP 200), False otherwise.
+    Возвращает:
+        bool: True, если изображение доступно (HTTP 200), иначе False.
     """
     if not image_url or not isinstance(image_url, str):
         return False
-    
-    # Check circuit breaker
+
+    # Проверяем circuit breaker
     if _is_url_circuit_broken(image_url):
-        logger.debug(f"Circuit breaker: skipping frequently failing URL: {image_url}")
-        return False
-    
-    # Quick URL validation
-    if not image_url.lower().startswith(('http://', 'https://')) or len(image_url) > 2000:
-        logger.debug(f"Invalid URL format: {image_url[:100]}...")
+        logger.debug(f"Circuit breaker: пропускаем часто ломающийся URL: {image_url}")
         return False
 
-    # Global timeout for entire operation
+    # Быстрая проверка формата URL
+    if not image_url.lower().startswith(('http://', 'https://')) or len(image_url) > 2000:
+        logger.debug(f"Неверный формат URL: {image_url[:100]}...")
+        return False
+
+    # Глобальный таймаут для всей операции
     total_timeout = min(20.0, timeout * retries * 2)
-    
+
     try:
         result = await asyncio.wait_for(
             _check_image_existence_internal(image_url, httpx_client, retries, timeout),
             timeout=total_timeout
         )
-        
-        # Record success/failure for circuit breaker
+
+        # Записываем успех или ошибку для circuit breaker
         if result:
             _record_url_success(image_url)
         else:
             _record_url_failure(image_url)
-            
+
         return result
-        
+
     except asyncio.TimeoutError:
-        logger.warning(f"Total timeout ({total_timeout}s) exceeded for image existence check: {image_url}")
+        logger.warning(f"Общий таймаут ({total_timeout}s) превышен для проверки доступности изображения: {image_url}")
         _record_url_failure(image_url)
         return False
     except Exception as e:
-        logger.warning(f"Unexpected error checking image existence: {e}")
+        logger.warning(f"Неожиданная ошибка при проверке доступности изображения: {e}")
         _record_url_failure(image_url)
         return False
 

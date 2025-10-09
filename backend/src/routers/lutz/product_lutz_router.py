@@ -23,23 +23,29 @@ router = APIRouter()
 
 @router.post("/import-product-lutz", tags=["lutz"])
 async def import_product(request: ProductRequest, current_user = Depends(get_current_user)):
+    """Импорт одного продукта по product_id"""
     try:
+        # Получаем сырые данные продукта из Afterbuy
         raw_item = await afterbuy.fetch_product(request.product_id)
 
+        # Обрабатываем поле properties, если оно строковое
         if "properties" in raw_item and isinstance(raw_item["properties"], str):
             try:
                 raw_item["properties"] = json.loads(raw_item["properties"])
             except json.JSONDecodeError:
                 raw_item["properties"] = {}
 
+        # Применяем маппинг для преобразования данных продукта
         mapped = await mapping_tools.map_product(
             raw_item, mapping, fieldnames,
             real_mapping_v12, color_mapping,
             material_mapping, {}, brand_mapping
         )
 
+        # Обрабатываем изображения для продукта
         mapped = await _process_images_for_product(mapped, raw_item)
 
+        # Создаем CSV для одного продукта и загружаем в Mirakl
         csv_content = csv_tools.write_csv(fieldnames, [mapped])
         result = await mirakl.upload_csv(csv_content)
 

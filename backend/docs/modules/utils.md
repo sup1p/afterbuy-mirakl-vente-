@@ -1,36 +1,36 @@
-# src/utils Module
+# src/utils Модуль
 
-This module provides utility functions for data formatting, image processing, and attribute manipulation. Each file supports a specific aspect of product data normalization and integration.
+Этот модуль предоставляет утилиты для форматирования данных, обработки изображений и манипуляции атрибутами. Каждый файл поддерживает определенный аспект нормализации данных о продуктах и интеграции.
 
 # vente_utils:
 
 ## - format_attr.py
-Functions for checking and formatting product quantity and other attributes.
-- **Example:** `product_quantity_check(value)` validates and normalizes quantity values.
+Функции для проверки и форматирования количества продуктов и других атрибутов.
+- **Пример:** `product_quantity_check(value)` проверяет и нормализует значения количества.
 
 ## - format_little.py
-EAN validation and getting delivery days of chosen fabric.
-- **Example:** `is_valid_ean(ean)` checks if an EAN is valid for product import.
+Валидация EAN-кодов и получение сроков доставки выбранной ткани.
+- **Пример:** `is_valid_ean(ean)` проверяет, является ли EAN-код корректным для импорта продукта.
 
 ## - format_html.py
-HTML parsing and extraction utilities for product descriptions and properties.
-- **Example:** `extract_product_properties_from_html(html)` extracts structured data from HTML descriptions.
+Утилиты для парсинга HTML и извлечения описаний и свойств продуктов.
+- **Пример:** `extract_product_properties_from_html(html)` извлекает структурированные данные из HTML-описаний.
 
 ## - image_worker.py
-Image processing functions, including resizing, validation, and FTP upload support.
-- **Example:** `resize_image_and_upload(url, ean, httpx_client, ftp_client, test)` resizes images and uploads them to FTP.
+Функции обработки изображений, включая изменение размера, валидацию и поддержку загрузки на FTP.
+- **Пример:** `resize_image_and_upload(url, ean, httpx_client, ftp_client, test)` изменяет размер изображений и загружает их на FTP.
 
 ## - substitute_formatter.py
-Attribute substitution and string formatting helpers for dynamic mapping and normalization.
-- **Example:** `substitute_attr(template, values)` replaces placeholders in attribute templates with actual values.
+Утилиты для подстановки атрибутов и форматирования строк для динамического сопоставления и нормализации.
+- **Пример:** `substitute_attr(template, values)` заменяет плейсхолдеры в шаблонах атрибутов на фактические значения.
 
 
 # lutz_utils:
 ## - csv_tools.py
-Creates CSV by given mapping for uploading it to mirakl.
-- **Example:** `write_csv(fieldnames: list, rows: list)` creates csv file in python memory.
+Создает CSV-файлы по заданному маппингу для загрузки в Mirakl.
+- **Пример:** `write_csv(fieldnames: list, rows: list)` создает CSV-файл в памяти Python.
 ## - image_processing.py
-Edits incorrect images and sends it to the FTP server - also removes background of the image.
-- **Example:** `process_single_image(url: str, ean: str, ftp_client: aioftp.Client, httpx_client: httpx.AsyncClient)` contains all other functions and fully processes image - downloads/resizes/uploads to ftp.
+Редактирует некорректные изображения и отправляет их на FTP-сервер, а также удаляет фон изображения.
+- **Пример:** `process_single_image(url: str, ean: str, ftp_client: aioftp.Client, httpx_client: httpx.AsyncClient)` включает все функции и полностью обрабатывает изображение: загружает, изменяет размер и отправляет на FTP.
 ## - mapping_tools.py
-Maps all the attributes fetched from afterbuy to mirakl attributes.
+Сопоставляет все атрибуты, полученные из Afterbuy, с атрибутами Mirakl.

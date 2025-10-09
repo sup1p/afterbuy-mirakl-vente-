@@ -1,20 +1,20 @@
-# src/core Module
+# Модуль src/core
 
-This module provides core configuration and dependency management for the application. Each file is responsible for a specific aspect of application setup and resource management.
+Этот модуль предоставляет основные настройки и управление зависимостями для приложения. Каждый файл отвечает за определенный аспект настройки приложения и управления ресурсами.
 
 ## settings.py
-Defines application-wide settings and configuration logic.
-- **Environment Loading:** Loads credentials, API keys, and runtime parameters from environment variables or `.env` files.
-- **Centralized Configuration:** Makes settings available throughout the application for consistent access.
-- **Example usage:**
-  - `settings.afterbuy_url`: Access Afterbuy API URL from settings.
+Определяет настройки приложения и логику конфигурации.
+- **Загрузка окружения:** Загружает учетные данные, API-ключи и параметры выполнения из переменных окружения или `.env` файлов.
+- **Централизованная конфигурация:** Делает настройки доступными во всем приложении для обеспечения согласованного доступа.
+- **Пример использования:**
+  - `settings.afterbuy_url`: Доступ к URL API Afterbuy из настроек.
 
 ## dependencies.py
-Implements dependency injection for FastAPI endpoints.
-- **HTTP Client Management:** Provides shared HTTP client instances for API calls.
-- **Database Session:** Provides a managed database connection for each request.
-- **Checking user authentication:** Verifies that the user is logged in.
-- **Checking user auth level:** Checks user’s access rights.
-- **Initilizing LLM agent:** Prepares the AI agent for handling requests.
-- **Example function:**
-  - `async def get_httpx_client()`: Returns a global HTTP client instance for use in endpoints.
+Реализует внедрение зависимостей для эндпоинтов FastAPI.
+- **Управление HTTP-клиентом:** Предоставляет общие экземпляры HTTP-клиента для API-запросов.
+- **Сессия базы данных:** Предоставляет управляемое подключение к базе данных для каждого запроса.
+- **Проверка аутентификации пользователя:** Проверяет, что пользователь вошел в систему.
+- **Проверка уровня доступа пользователя:** Проверяет права доступа пользователя.
+- **Инициализация LLM-агента:** Подготавливает AI-агента для обработки запросов.
+- **Пример функции:**
+  - `async def get_httpx_client()`: Возвращает глобальный экземпляр HTTP-клиента для использования в эндпоинтах.

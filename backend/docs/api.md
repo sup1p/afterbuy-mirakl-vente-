@@ -1,28 +1,27 @@
-# Router API
+# API Роутеры
 
 # Vente
 
-## Endpoints mirakl 
+## Эндпоинты Mirakl
 
-
-### 1. Get Product Import Error
+### 1. Получить ошибку импорта продукта
 **`GET /import-product-error/{import_parameter}`**
 
-Checks if there are errors for a given product import parameter.
+Проверяет, есть ли ошибки для заданного параметра импорта продукта.
 
-#### Parameters
-- `import_parameter` *(string, path)* — The import parameter provided by Mirakl when the product was imported.
+#### Параметры
+- `import_parameter` *(строка, путь)* — Параметр импорта, предоставленный Mirakl при импорте продукта.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X GET "http://<host>/import-product-error/12345"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  "message": { ... } // Mirakl response
+  "message": { ... } // Ответ от Mirakl
 }
 ```
 - **404 Not Found**
@@ -31,29 +30,28 @@ curl -X GET "http://<host>/import-product-error/12345"
   "detail": "Not found"
 }
 ```
-- **500 Internal Server Error** — Processing error.
-
+- **500 Internal Server Error** — Ошибка обработки.
 
 ---
 
-### 2. Get Non-Integrated Products
+### 2. Получить неинтегрированные продукты
 **`GET /mirakl-product-non-integrated/{import_parameter}`**
 
-Fetches products that were not integrated in Mirakl for the given import parameter.
+Возвращает продукты, которые не были интегрированы в Mirakl для заданного параметра импорта.
 
-#### Parameters
-- `import_parameter` *(string, path)* — The import parameter provided by Mirakl when the product was imported.
+#### Параметры
+- `import_parameter` *(строка, путь)* — Параметр импорта, предоставленный Mirakl при импорте продукта.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X GET "http://<host>/mirakl-product-non-integrated/12345"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  "message": { ... } // List of non-integrated products
+  "message": { ... } // Список неинтегрированных продуктов
 }
 ```
 - **404 Not Found**
@@ -62,28 +60,28 @@ curl -X GET "http://<host>/mirakl-product-non-integrated/12345"
   "detail": "Not found"
 }
 ```
-- **500 Internal Server Error** — Processing error.
+- **500 Internal Server Error** — Ошибка обработки.
 
 ---
 
-### 3. Get Offer Import Error
+### 3. Получить ошибку импорта предложения
 **`GET /mirakl-offer-import-error/{import_parameter}`**
 
-Checks if there are errors for a given offer import parameter.
+Проверяет, есть ли ошибки для заданного параметра импорта предложения.
 
-#### Parameters
-- `import_parameter` *(string, path)* — The import parameter provided by Mirakl when the offer was imported.
+#### Параметры
+- `import_parameter` *(строка, путь)* — Параметр импорта, предоставленный Mirakl при импорте предложения.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X GET "http://<host>/mirakl-offer-import-error/12345"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  "message": { ... } // Mirakl response
+  "message": { ... } // Ответ от Mirakl
 }
 ```
 - **404 Not Found**
@@ -92,31 +90,31 @@ curl -X GET "http://<host>/mirakl-offer-import-error/12345"
   "detail": "Not found"
 }
 ```
-- **500 Internal Server Error** — Processing error.
+- **500 Internal Server Error** — Ошибка обработки.
 
 ---
 
-## Endpoints product
+## Эндпоинты продуктов
 
-### 1. Import Product by EAN to vente
+### 1. Импорт продукта по EAN в Vente
 **`POST /import-product/vente/{ean}`**
 
-Imports a single product from Afterbuy to Mirakl using EAN and optional fabric ID.
+Импортирует один продукт из Afterbuy в Mirakl, используя EAN и опциональный ID ткани.
 
-#### Parameters
-- `ean` *(string, path)* — EAN code of the product to import.
-- `afterbuy_fabric_id` *(integer, query, optional)* — Afterbuy fabric ID for more precise product selection.
+#### Параметры
+- `ean` *(строка, путь)* — EAN код продукта для импорта.
+- `afterbuy_fabric_id` *(целое число, запрос, опционально)* — ID ткани в Afterbuy для более точного выбора продукта.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X POST "http://<host>/import-product/1234567890123?afterbuy_fabric_id=1001"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  // Mirakl API response for the imported product
+  // Ответ API Mirakl для импортированного продукта
 }
 ```
 - **400 Bad Request**
@@ -140,22 +138,22 @@ curl -X POST "http://<host>/import-product/1234567890123?afterbuy_fabric_id=1001
 
 ---
 
-### 2. Import Multiple Products by EAN List to Vente
+### 2. Импорт нескольких продуктов по списку EAN в Vente
 **`POST /import-products/vente`**
 
-Imports multiple products from Afterbuy to Mirakl using a list of EANs.
+Импортирует несколько продуктов из Afterbuy в Mirakl, используя список EAN.
 
-#### Request Body
-- `ean_list` *(array of strings, required)* — List of EAN codes to import.
+#### Тело запроса
+- `ean_list` *(массив строк, обязательно)* — Список EAN кодов для импорта.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X POST "http://<host>/import-products" \
   -H "Content-Type: application/json" \
   -d '{"ean_list": ["1234567890123", "9876543210987"]}'
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
@@ -185,21 +183,21 @@ curl -X POST "http://<host>/import-products" \
 
 ---
 
-### 3. Import Products by Afterbuy Fabric ID to Vente
+### 3. Импорт продуктов по ID ткани Afterbuy в Vente
 **`POST /import-products-by-fabric/vente`**
 
-Imports all products from Afterbuy to Mirakl for a given fabric ID.
+Импортирует все продукты из Afterbuy в Mirakl для заданного ID ткани.
 
-#### Parameters
-- `afterbuy_fabric_id` *(integer, body)* - Afterbuy fabric ID to import products from.
-- `delivery_days` *(integer, body)* - How long fabric will deliver products to customers
+#### Параметры
+- `afterbuy_fabric_id` *(целое число, тело)* - ID ткани в Afterbuy для импорта продуктов.
+- `delivery_days` *(целое число, тело)* - Срок доставки продуктов клиентам.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X POST "http://<host>/import-products-by-fabric/vente"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
@@ -231,28 +229,84 @@ curl -X POST "http://<host>/import-products-by-fabric/vente"
 
 ---
 
-## Test Endpoints
+### 4. Импорт продуктов по ID ткани из файла в Vente
+**`POST /import-products-by-fabric-from-file/vente`**
 
-### 1. Test Import Product by EAN
+Импортирует продукты из Afterbuy в Mirakl по ID ткани, используя данные из файла.
+
+#### Тело запроса
+- `afterbuy_fabric_id` *(целое число, обязательно)* — ID ткани в Afterbuy для импорта продуктов.
+- `delivery_days` *(целое число, обязательно)* — Срок доставки продуктов клиентам.
+- `market` *(строка, обязательно)* — Рынок, для которого выполняется импорт.
+
+#### Пример запроса
+```bash
+curl -X POST "http://<host>/import-products-by-fabric-from-file/vente" \
+  -H "Content-Type: application/json" \
+  -d '{"afterbuy_fabric_id": 1001, "delivery_days": 5, "market": "EU"}'
+```
+
+#### Ответы
+- **200 OK**
+```json
+{
+  "mirakl_answer": { ... },
+  "not_added_eans": ["1234567890123"],
+  "total_not_added": 1,
+  "delivery days": 5,
+  "total_eans_in_fabric": 10,
+  "afterbuty_fabric_name": "Fabric Name",
+  "database_status": "created"
+}
+```
+- **403 Forbidden**
+```json
+{
+  "detail": "Error message"
+}
+```
+- **404 Not Found**
+```json
+{
+  "detail": "No products found for fabric 1001"
+}
+```
+- **404 Not Found**
+```json
+{
+  "detail": "Creating big csv failed for fabric: 1001"
+}
+```
+- **500 Internal Server Error**
+```json
+{
+  "detail": "Error importing products to Mirakl"
+}
+```
+
+---
+
+## Тестовые эндпоинты
+
+### 1. Тестовый импорт продукта по EAN
 **`POST /test-import-product/vente/{ean}/`**
 
-Test endpoint for importing a single product by EAN (returns mapped data for Mirakl, does not import).
+Тестовый эндпоинт для импорта одного продукта по EAN (возвращает сопоставленные данные для Mirakl, не импортирует).
 
-#### Parameters
-- `ean` *(string, path)* — EAN code of the product to test import.
-- `afterbuy_fabric_id` *(integer, query, optional)* — Afterbuy fabric ID for more precise product selection.
+#### Параметры
+- `ean` *(строка, путь)* — EAN код продукта для тестового импорта.
+- `afterbuy_fabric_id` *(целое число, запрос, опционально)* — ID ткани в Afterbuy для более точного выбора продукта.
 
-
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X POST "http://<host>/test-import-product/1234567890123?afterbuy_fabric_id=1001"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  // Mapped product data for Mirakl
+  // Сопоставленные данные продукта для Mirakl
 }
 ```
 - **400 Bad Request**
@@ -270,21 +324,21 @@ curl -X POST "http://<host>/test-import-product/1234567890123?afterbuy_fabric_id
 
 ---
 
-### 2. Test Import Products by Afterbuy Fabric ID
+### 2. Тестовый импорт продуктов по ID ткани Afterbuy
 **`POST /test-import-products-by-fabric/vente`**
 
-Test endpoint for importing products by Afterbuy fabric ID (returns mapped data for all products in the fabric, does not import).
+Тестовый эндпоинт для импорта продуктов по ID ткани Afterbuy (возвращает сопоставленные данные для всех продуктов в ткани, не импортирует).
 
-#### Parameters
-- `afterbuy_fabric_id` *(integer, path)* — Afterbuy fabric ID to test import products from.
-- `delivery_days` *(integer, body)* - How long fabric will deliver products to customers
+#### Параметры
+- `afterbuy_fabric_id` *(целое число, путь)* — ID ткани в Afterbuy для тестового импорта продуктов.
+- `delivery_days` *(целое число, тело)* - Срок доставки продуктов клиентам.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X POST "http://<host>/test-import-products-by-fabric"
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
@@ -315,27 +369,27 @@ curl -X POST "http://<host>/test-import-products-by-fabric"
 
 ---
 
-### 3. Test Resize Image
+### 3. Тестирование изменения размера изображения
 **`POST /test-resize-image`**
 
-Test endpoint for image resizing and FTP upload functionality.
+Тестовый эндпоинт для изменения размера изображения и функциональности загрузки по FTP.
 
-#### Request Body
-- `url` *(string, required)* — Image URL to resize and upload.
-- `ean` *(string, required)* — EAN code for the image.
+#### Тело запроса
+- `url` *(строка, обязательно)* — URL изображения для изменения размера и загрузки.
+- `ean` *(строка, обязательно)* — EAN код для изображения.
 
-#### Example Request
+#### Пример запроса
 ```bash
 curl -X POST "http://<host>/test-resize-image" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com/image.jpg", "ean": "1234567890123"}'
 ```
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  // Result of image resize and upload operation
+  // Результат операции изменения размера изображения и загрузки
 }
 ```
 - **422 Unprocessable Entity**
@@ -346,19 +400,19 @@ curl -X POST "http://<host>/test-resize-image" \
 ```
 
 ---
-### 4. Test remove background image
+### 4. Тестирование удаления фона изображения
 **`POST /test-remove-bg-image`**
 
-Test endpoint for image resizing and FTP upload functionality.
+Тестовый эндпоинт для удаления фона изображения и функциональности загрузки по FTP.
 
-#### Request Body
-- `image` - multipart-form/data, just uploading image
+#### Тело запроса
+- `image` - multipart-form/data, просто загрузка изображения
 
-#### Responses
+#### Ответы
 - **200 OK**
 ```json
 {
-  // Result of image resize and upload operation
+  // Результат операции удаления фона изображения и загрузки
 }
 ```
 - **422 Unprocessable Entity**

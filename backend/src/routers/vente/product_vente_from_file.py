@@ -1,6 +1,6 @@
 """
-Product management router module.
-Provides endpoints for importing products from Afterbuy to Mirakl system.
+Модуль роутера управления продуктами.
+Предоставляет эндпоинты для импорта продуктов из Afterbuy в систему Mirakl.
 """
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -31,18 +31,7 @@ router = APIRouter()
 @router.post("/import-products-by-fabric-from-file/vente", tags=["product vente by fabric"])
 async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     """
-    Import products by Afterbuy fabric ID from Afterbuy to Mirakl.
-
-    Args:
-        afterbuy_fabric_id (int): Afterbuy fabric ID to import products from.
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Mirakl API response, not added EANs, total not added, total EANs in fabric, and mapped data for CSV.
-
-    Raises:
-        HTTPException: 500 if data fetch or import to Mirakl fails.
-        HTTPException: 404 if no products found or CSV creation fails.
+    Импорт продуктов по ID фабрики Afterbuy из Afterbuy в Mirakl.
     """
 
     afterbuy_fabric_id = input_body.afterbuy_fabric_id
@@ -50,6 +39,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
     market = input_body.market
     
     try:
+        # Получаем данные продуктов для фабрики из файла
         data = await get_products_by_fabric_from_file(afterbuy_fabric_id=afterbuy_fabric_id, market=market)
     except Exception as e:
         logger.error(f"Error fetching data for fabric {afterbuy_fabric_id}: {e}")
@@ -78,6 +68,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
     for idx, prod in enumerate(products, start=1):
         async def wrapper(p=prod, i=idx):
             try:
+                # Добавляем дни доставки и сопоставляем атрибуты из файла
                 p["delivery_days"] = delivery_days
                 res = await map_attributes(p, httpx_client)
                 logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('EAN')}")
@@ -86,6 +77,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
                 logger.error(f"[{i}/{len(products)}] Error processing product EAN={p.get('EAN')}: {e}")
                 return e
         tasks.append(wrapper())
+    # Выполняем все задачи параллельно
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     data_for_csv = []
@@ -108,6 +100,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
         f"not_added_eans: {not_added_eans},\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
     )
     
+    # Создаем большой CSV из данных
     csv_content = make_big_csv(data_for_csv)
     
     if not csv_content:
@@ -118,6 +111,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
         )
 
     try:
+        # Импортируем продукты в Mirakl
         mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error importing products to Mirakl: {e}")
@@ -126,7 +120,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
             detail=str(e),
         )
 
-    # DATABASE SAVING FABRIC
+    # Сохраняем данные фабрики в базу
     database_fabric_data = saveUploadedFabric(
         afterbuy_fabric_id=afterbuy_fabric_id,
         user_id=current_user.id,
@@ -141,7 +135,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryAndMarketReque
         database_created = "created"
         logger.info(f"Created new Uploaded Fabric entry for Afterbuy fabric ID {afterbuy_fabric_id}")
         
-    # DATABASE SAVING EANS
+    # Сохраняем данные EAN в базу
     for prod_idx, prod in enumerate(data_for_csv, start=1):
         database_ean_data = saveUploadedEan(
             ean=prod.get("ean"),

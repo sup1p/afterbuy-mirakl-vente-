@@ -18,18 +18,20 @@ _token_cache: dict = {
 
 
 async def get_token() -> str:
-    """Возвращает валидный access_token из кэша или обновляет его."""
+    """
+    Возвращает валидный access_token из кэша или обновляет его.
+    """
     global _token_cache
     now = time.time()
 
-    # 1. Если токен есть и он ещё живой → отдать из кэша
+    # Проверяем, есть ли токен в кэше и не истек ли он
     if _token_cache["access_token"] and now < _token_cache["expires_at"]:
         logger.debug("Используем access_token из кэша, жив до %s", _token_cache["expires_at"])
         return _token_cache["access_token"]
 
     logger.info("Кэшированный access_token отсутствует или истёк. Запрашиваем новый...")
 
-    # 2. Запрашиваем новый токен у Afterbuy
+    # Подготавливаем данные для запроса токена
     payload = {
         "login": settings.afterbuy_login,
         "password": settings.afterbuy_password,
@@ -46,7 +48,7 @@ async def get_token() -> str:
         logger.error("Токен не найден в ответе: %s", data)
         raise ValueError("Afterbuy не вернул access_token")
 
-    # если Afterbuy возвращает expires_in (в секундах) — используем
+    # Устанавливаем время истечения токена (по умолчанию 1 час)
     expires_in = 3600  # по умолчанию 1 час
     _token_cache["access_token"] = token
     _token_cache["expires_at"] = now + int(expires_in) - 30  # -30 сек запас
@@ -56,7 +58,10 @@ async def get_token() -> str:
 
 
 async def fetch_product(product_id: str) -> dict:
-    """Асинхронно тянем JSON продукта по ID из Afterbuy с автоматическим получением токена."""
+    """
+    Асинхронно тянем JSON продукта по ID из Afterbuy с автоматическим получением токена.
+    """
+    # Получаем токен для авторизации
     token = await get_token()
     headers = {"access-token": token}
     url = f"{settings.afterbuy_url}/v1/products/{product_id}"
@@ -73,7 +78,10 @@ async def fetch_product(product_id: str) -> dict:
 
 
 async def fetch_products_by_fabric(fabric_id: int) -> list[str]:
-    """Запрашиваем товары по fabric_id через Afterbuy Filter API и возвращаем список product_ids."""
+    """
+    Запрашиваем товары по fabric_id через Afterbuy Filter API и возвращаем список product_ids.
+    """
+    # Получаем токен для авторизации
     token = await get_token()
     headers = {"access-token": token}
     payload = {"fabric_id": fabric_id}
@@ -87,7 +95,7 @@ async def fetch_products_by_fabric(fabric_id: int) -> list[str]:
             response.raise_for_status()
         data = response.json()
 
-    # обработка ответа
+    # Обрабатываем ответ и извлекаем product_ids
     if isinstance(data, list):
         product_ids = [str(item["id"]) for item in data if isinstance(item, dict) and "id" in item]
     elif isinstance(data, dict):

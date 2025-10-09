@@ -1,95 +1,87 @@
 # XXLmebel 1 API
 
-## Project Description
-XXLmebel 1 API is a FastAPI-based backend application designed for automated transfer of large volumes of product data from the Afterbuy platform to the Mirakl (vente-unique) marketplace. The service provides integration, transformation, CSV export, error handling, and logging.
+## Описание проекта
+XXLmebel 1 API — это backend-приложение на базе FastAPI, предназначенное для автоматизированного переноса больших объемов данных о продуктах с платформы Afterbuy на маркетплейс Mirakl (vente-unique). Сервис обеспечивает интеграцию, трансформацию, экспорт CSV, обработку ошибок и логирование.
 
-## Purpose
-- Automate product transfer between Afterbuy and Mirakl
-- Generate and export CSV files for import
-- Check integration errors and display status
-- Centralized operation logging
+## Цель
+- Автоматизировать перенос продуктов между Afterbuy и Mirakl
+- Генерировать и экспортировать CSV-файлы для импорта
+- Проверять ошибки интеграции и отображать статус
+- Централизованное логирование операций
 
-## Project Structure
-- `src/` — application source code
-  - `main.py` — FastAPI entry point
-  - `routers/` — API route definitions
-  - `services/` — business logic and integrations
-  - `core/` — application settings
-  - `const/` — constants and attributes
-  - `utils/` — utility functions
-- `logs/` — logging configuration and log files
-- `.env` — environment variables (keys, passwords)
-- `pyproject.toml`, `uv.lock` — dependencies and build configuration
-- `product_samples.json` — sample product data
+## Структура проекта
+- `src/` — исходный код приложения
+  - `main.py` — точка входа FastAPI
+  - `models.py` — модели данных
+  - `resources.py` — ресурсы приложения
+  - `routers/` — определения маршрутов API
+  - `services/` — бизнес-логика и интеграции
+  - `core/` — настройки приложения
+  - `const/` — константы и атрибуты
+  - `crud/` — операции CRUD
+  - `schemas/` — схемы данных
+  - `utils/` — вспомогательные функции
+- `alembic/` — миграции базы данных
+- `docs/` — документация API и данных
+- `logs/` — конфигурация логирования и файлы логов
+- `tests/` — тесты (интеграционные и unit)
+- `alembic.ini` — конфигурация Alembic
+- `Dockerfile` — файл для сборки Docker-образа
+- `entrypoint.sh` — скрипт входа для контейнера
+- `pyproject.toml`, `uv.lock` — зависимости и конфигурация сборки
+- `.env` — переменные окружения (ключи, пароли)
 
-## Installation and Launch
-### Requirements
+## Установка и запуск
+### Требования
 - Python >= 3.11
-- [uv](https://github.com/astral-sh/uv) utility for dependency management
+- Утилита [uv](https://github.com/astral-sh/uv) для управления зависимостями
 
-### Installation Steps
-1. Clone the repository:
+### Шаги установки
+1. Клонируйте репозиторий:
    ```bash
    git clone <repository_url>
    cd xxlmebel_1_api
    ```
-2. Create and activate a virtual environment:
+2. Создайте и активируйте виртуальное окружение:
    ```bash
    python3.11 -m venv venv
    source venv/bin/activate
    ```
-3. Install dependencies:
+3. Установите зависимости:
    ```bash
    uv sync
    ```
-   Or using PEP 621/pyproject.toml:
+   Или используя PEP 621/pyproject.toml:
    ```bash
    uv pip install .
    ```
-4. Copy the `.env` file and specify the required parameters for Afterbuy and Mirakl.
+4. Скопируйте файл `.env` и укажите необходимые параметры для Afterbuy и Mirakl. Обязательно настройте ключи API, URL платформ, параметры аутентификации и другие переменные окружения, необходимые для интеграции.
 
-5. Add the fabric_id.json
+5. Добавьте файл fabric_id.json с соответствием ID фабрик.
 
-### Server Launch
+### Запуск сервера
+#### Локальный запуск
 ```bash
 uv run uvicorn src.main:app
 ```
 
-## Usage Examples
-### 1. Check server status
+#### Запуск с Docker Compose
+Для запуска в контейнерах используйте Docker Compose. Это обеспечит изоляцию и упростит развертывание.
 ```bash
-curl http://localhost:8000/
+docker compose up --build
 ```
-Response:
-```json
-{"status": "ok"}
-```
+Команда `--build` пересоберет образы, если были изменения в коде или Dockerfile.
 
-### 2. Import large CSV based on fabric id
-```bash
-curl -X POST http://localhost:8000/import-products-by-fabric/{fabric_id}
-```
+## Основные эндпоинты
+- `@router.post("/import-products-by-fabric-from-file/vente", tags=["product vente by fabric"])` — Импорт продуктов для vente по fabric_id из локальных файлов.
+- `@router.post("/import-products-by-fabric-from-file/xxxlutz", tags=["lutz"])` — Импорт офферов для xxxlutz по fabric_id из локальных данных.
 
-### 3. Get import errors
-```bash
-curl http://localhost:8000/import-product-error/{import_parameter}
-```
+Для интерактивного тестирования API используйте Swagger UI по адресу `http://localhost:8000/docs`.
 
-### 4. Get Mirakl platform settings
-```bash
-curl http://localhost:8000/mirakl-platform-settings
-```
+## Дополнительные замечания
+- Все переменные окружения должны быть правильно указаны в файле `.env` перед запуском приложения.
+- Для production-развертываний рекомендуется настроить безопасность и контроль доступа.
+- Логи операций сохраняются в `logs/logs.log` с включенной ротацией.
 
-### 5. Swagger UI
-For interactive API testing, open in your browser:
-```
-http://localhost:8000/docs
-```
-
-## Additional Notes
-- All environment variables must be correctly specified in `.env` before starting the application.
-- For production deployments, it is recommended to configure security and access control.
-- Operation logs are saved in `logs/logs.log` with rotation enabled.
-
-## Contacts
-For technical questions and support, contact the project developer.
+## Контакты
+По техническим вопросам и поддержке обращайтесь к разработчику проекта.

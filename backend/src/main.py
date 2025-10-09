@@ -1,6 +1,6 @@
 """
-Main FastAPI application module.
-Handles application lifecycle, HTTP client management, and router registration.
+Основной модуль приложения FastAPI.
+Обрабатывает жизненный цикл приложения, управление HTTP-клиентом и регистрацию маршрутов.
 """
 
 from fastapi import FastAPI
@@ -31,7 +31,7 @@ from logs.config_logs import setup_logging
 import httpx
 import asyncio
 
-# Initialize logging configuration
+# Инициализация конфигурации логирования
 setup_logging()
 
 logger = logging.getLogger(__name__)
@@ -40,53 +40,52 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Application lifespan manager.
-    Initializes HTTP client and LLM agent on startup,
-    and properly closes them on shutdown.
+    Менеджер жизненного цикла приложения.
+    Инициализирует HTTP-клиент и агента LLM при запуске,
+    а также корректно закрывает их при завершении работы.
     """
-    # --- startup ---
-    resources.client = httpx.AsyncClient(timeout=30.0)
-    resources.llm_semaphore = asyncio.Semaphore(8)
-    resources.ftp_semaphore = asyncio.Semaphore(8)
-    logger.info("Startup: ftp and llm semaphore initialized")
-    
+    # --- запуск ---
+    resources.client = httpx.AsyncClient(timeout=30.0)  # Инициализация HTTP-клиента
+    resources.llm_semaphore = asyncio.Semaphore(8)  # Ограничение на количество одновременных запросов к LLM
+    resources.ftp_semaphore = asyncio.Semaphore(8)  # Ограничение на количество FTP-запросов
+    logger.info("Запуск: инициализированы семафоры для FTP и LLM")
+
     try:
-        # инициализируем глобальный агент (он сохранится в resources.llm_agent)
+        # Инициализируем глобальный агент (сохраняется в resources.llm_agent)
         await create_agent_with_httpx(
             resources.client
         )
 
-        logger.info("Startup: httpx client, OpenAI client and LLM agent initialized")
-        
+        logger.info("Запуск: инициализированы HTTP-клиент, OpenAI-клиент и агент LLM")
 
         yield
 
     finally:
-        # --- shutdown ---
+        # --- завершение ---
         try:
             if resources.openai_client:
                 await resources.openai_client.close()
-                logger.info("Shutdown: OpenAI client closed")
+                logger.info("Завершение: OpenAI-клиент закрыт")
         except Exception:
-            logger.exception("Shutdown: closing OpenAI client failed")
+            logger.exception("Завершение: ошибка при закрытии OpenAI-клиента")
 
         try:
             if resources.client:
                 await resources.client.aclose()
-                logger.info("Shutdown: HTTP client closed")
+                logger.info("Завершение: HTTP-клиент закрыт")
         except Exception:
-            logger.exception("Shutdown: closing HTTP client failed")
+            logger.exception("Завершение: ошибка при закрытии HTTP-клиента")
 
-        # cleanup globals
+        # Очистка глобальных переменных
         resources.client = None
         resources.openai_client = None
         resources.llm_agent = None
         resources.llm_semaphore = None
         resources.ftp_semaphore = None
 
-        logger.info("Shutdown: resources cleaned up")
+        logger.info("Завершение: ресурсы очищены")
     
-# Create FastAPI application with lifespan management
+# Создание приложения FastAPI с управлением жизненным циклом
 app = FastAPI(lifespan=lifespan)
 
 origins = ['*']
@@ -102,11 +101,14 @@ app.add_middleware(
 
 @app.get("/", include_in_schema=False)
 def root():
-    """Health check endpoint to verify application is running."""
-    logger.info("Root endpoint accessed")
+    """
+    Эндпоинт для проверки работоспособности приложения.
+    Возвращает сообщение, подтверждающее, что приложение запущено.
+    """
+    logger.info("Доступ к корневому эндпоинту")
     return "We are live!"
 
-# Register all API routers
+# Регистрация всех API-маршрутизаторов
 # mutual
 app.include_router(user_router)
 app.include_router(fabric_management_router)

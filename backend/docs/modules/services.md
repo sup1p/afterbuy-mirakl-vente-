@@ -1,52 +1,59 @@
-# src/services Module
+# Модуль src/services
 
-This module contains the business logic and integration services for Afterbuy and Mirakl platforms, as well as data mapping and CSV conversion utilities. Each file is responsible for a specific aspect of the integration pipeline.
+Этот модуль содержит бизнес-логику и сервисы интеграции для платформ Afterbuy и Mirakl, а также утилиты для сопоставления данных и преобразования в формат CSV. Каждый файл отвечает за определенный аспект интеграционного процесса.
 
 # vente_services/
 
 ## - afterbuy_api_calls.py
-Handles all interactions with the Afterbuy API, including:
-- **Authentication:** Obtains and manages access tokens for API requests.
-- **Product Data Retrieval:** Fetches product details, brand, and fabric information from Afterbuy.
-- **Retry Logic:** Implements robust error handling and retry mechanisms for network/API failures.
-- **Example functions:**
-  - `async def get_access_token(httpx_client)`: Authenticates and returns an access token.
-  - `async def get_product_data(ean, httpx_client)`: Retrieves product data by EAN.
-  - `async def get_products_by_fabric(afterbuy_fabric_id, httpx_client)`: Gets products by fabric ID.
+Обрабатывает все взаимодействия с API Afterbuy, включая:
+- **Аутентификация:** Получение и управление токенами доступа для запросов к API.
+- **Получение данных о продуктах:** Извлечение информации о продуктах, брендах и тканях из Afterbuy.
+- **Логика повторных попыток:** Реализует обработку ошибок и повторные попытки при сбоях сети/API.
+- **Пример функций:**
+  - `async def get_access_token(httpx_client)`: Аутентифицируется и возвращает токен доступа.
+  - `async def get_product_data(ean, httpx_client)`: Извлекает данные о продукте по EAN.
+  - `async def get_products_by_fabric(afterbuy_fabric_id, httpx_client)`: Получает продукты по ID ткани.
 
 ## - agents.py
-Manages AI agent and configures him:
-- **Create/Initialize agent:** Creates and configures AI agent.
-- **Gets and returns agent** Returns agent so different modules can reuse initialized agent.
-- **Example functions:**
-  - `def get_agent()`: Returning created agent.
-  - `async def create_agent_with_httpx(httpx_client)` Creating and configuring AI agent.
+Управляет AI-агентом и его настройкой:
+- **Создание/инициализация агента:** Создает и настраивает AI-агента.
+- **Получение агента:** Возвращает агента для повторного использования в разных модулях.
+- **Пример функций:**
+  - `def get_agent()`: Возвращает созданного агента.
+  - `async def create_agent_with_httpx(httpx_client)`: Создает и настраивает AI-агента с использованием HTTP-клиента.
 
 ## - mirakl_api_calls.py
-Manages all communication with the Mirakl API, including:
-- **Product Import:** Uploads product data (CSV) to Mirakl for import.
-- **Error Checking:** Retrieves error reports and import statuses.
-- **Platform Configuration:** Fetches Mirakl platform settings and integration health.
-- **Example functions:**
-  - `async def import_product(csv_content, httpx_client)`: Imports products to Mirakl.
-  - `async def check_offer_import_error(import_parameter, httpx_client)`: Gets error report for a specific import.
-  - `async def check_platform_settings(httpx_client)`: Returns platform settings.
+Обрабатывает все взаимодействия с API Mirakl, включая:
+- **Импорт продуктов:** Загружает данные продуктов (CSV) в Mirakl для импорта.
+- **Проверка ошибок:** Извлекает отчеты об ошибках и статусы импорта.
+- **Конфигурация платформы:** Получает настройки платформы Mirakl и состояние интеграции.
+- **Пример функций:**
+  - `async def import_product(csv_content, httpx_client)`: Импортирует продукты в Mirakl.
+  - `async def check_offer_import_error(import_parameter, httpx_client)`: Получает отчет об ошибках для конкретного импорта.
+  - `async def check_platform_settings(httpx_client)`: Возвращает настройки платформы.
 
 ## - mapping.py
-Transforms and normalizes product data from Afterbuy to Mirakl format:
-- **Attribute Mapping:** Maps Afterbuy attributes to Mirakl attributes using constants.
-- **Image Processing:** Handles product image validation, resizing, and FTP upload.
-- **Category Normalization:** Ensures product categories are correctly mapped.
-- **Example functions:**
-  - `async def map_attributes(data, httpx_client)`: Maps and normalizes product data for Mirakl.
-  - Helper functions for image and attribute processing.
+Преобразует и нормализует данные продуктов из Afterbuy в формат, совместимый с Mirakl:
+- **Сопоставление атрибутов:** Сопоставляет атрибуты Afterbuy с атрибутами Mirakl, используя константы.
+- **Обработка изображений:** Проверяет изображения продуктов, изменяет их размер и загружает на FTP.
+- **Нормализация категорий:** Обеспечивает корректное сопоставление категорий продуктов.
+- **Пример функций:**
+  - `async def map_attributes(data, httpx_client)`: Сопоставляет и нормализует данные продуктов для Mirakl.
+  - Вспомогательные функции для обработки изображений и атрибутов.
+
+## - mapping_from_file.py
+Преобразует данные продуктов из Afterbuy в формат, совместимый с Mirakl, с использованием данных из файлов:
+- **Сопоставление атрибутов:** Сопоставляет атрибуты Afterbuy с атрибутами Mirakl, используя константы.
+- **Обработка изображений:** Проверяет изображения продуктов, изменяет их размер и загружает на FTP.
+- **Нормализация категорий:** Обеспечивает корректное сопоставление категорий продуктов.
+- **Пример функций:**
+  - `async def map_attributes(data, httpx_client)`: Сопоставляет и нормализует данные продуктов для Mirakl.
+  - Вспомогательные функции для обработки изображений и атрибутов.
 
 ## - csv_converter.py
-Converts product data structures to CSV format for Mirakl import:
-- **CSV Generation:** Serializes mapped product data to CSV, ensuring correct encoding and formatting.
-- **Batch Support:** Handles both single and bulk product exports.
-- **Example functions:**
-  - `def make_csv(data)`: Converts a single product to CSV.
-  - `def make_big_csv(data)`: Converts multiple products to a single CSV file.
-
-# lutz_services
+Преобразует структуры данных продуктов в формат CSV для импорта в Mirakl:
+- **Генерация CSV:** Сериализует сопоставленные данные продуктов в CSV, обеспечивая корректное кодирование и форматирование.
+- **Поддержка пакетов:** Обрабатывает как одиночные, так и массовые экспорты продуктов.
+- **Пример функций:**
+  - `def make_csv(data)`: Преобразует один продукт в CSV.
+  - `def make_big_csv(data)`: Преобразует несколько продуктов в один CSV-файл.

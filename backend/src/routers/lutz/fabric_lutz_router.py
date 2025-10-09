@@ -26,25 +26,30 @@ router = APIRouter()
 async def import_fabric(request: FabricRequest, current_user = Depends(get_current_user)):
     """Импорт всех продуктов по fabric_id"""
     try:
+        # Получаем список ID продуктов для данной фабрики
         product_ids = await afterbuy.fetch_products_by_fabric(request.fabric_id)
         all_mapped = []
 
         for pid in product_ids:
             try:
+                # Получаем сырые данные продукта
                 raw_item = await afterbuy.fetch_product(pid)
 
+                # Обрабатываем поле properties, если оно строковое
                 if "properties" in raw_item and isinstance(raw_item["properties"], str):
                     try:
                         raw_item["properties"] = json.loads(raw_item["properties"])
                     except json.JSONDecodeError:
                         raw_item["properties"] = {}
 
+                # Применяем маппинг продукта
                 mapped = await mapping_tools.map_product(
                     raw_item, mapping, fieldnames,
                     real_mapping_v12, color_mapping,
                     material_mapping, {}, brand_mapping
                 )
 
+                # Обрабатываем изображения для продукта
                 mapped = await _process_images_for_product(mapped, raw_item)
                 all_mapped.append(mapped)
 
@@ -54,6 +59,7 @@ async def import_fabric(request: FabricRequest, current_user = Depends(get_curre
         if not all_mapped:
             raise HTTPException(status_code=400, detail="Нет продуктов для импорта")
 
+        # Создаем CSV и загружаем в Mirakl
         csv_content = csv_tools.write_csv(fieldnames, all_mapped)
         result = await mirakl.upload_csv(csv_content)
 

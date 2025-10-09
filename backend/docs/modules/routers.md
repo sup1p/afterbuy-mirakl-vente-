@@ -1,59 +1,73 @@
-# src/routers Module
+# Модуль src/routers
 
-This module defines all API route handlers for the XXLmebel 1 API service. Each router is responsible for a specific set of endpoints and business logic.
+Этот модуль определяет обработчики маршрутов API для сервиса XXLmebel 1. Каждый роутер отвечает за определенный набор эндпоинтов и бизнес-логику.
 
 # vente
 
 ## - mirakl_system_vente_router.py
-Handles Mirakl platform status, error reporting, and system configuration endpoints.
-- **Endpoints:**
-  - `/import-product-error/{import_parameter}`: Returns error reports for product imports to Mirakl.
-  - `/mirakl-platform-settings`: Returns current Mirakl platform settings.
-  - `/mirakl-product-non-integrated/{import_parameter}`: Checks for products not integrated into Mirakl.
-- **Example function:**
+Обрабатывает статус платформы Mirakl, отчеты об ошибках и эндпоинты конфигурации системы.
+- **Эндпоинты:**
+  - `/import-product-error/{import_parameter}`: Возвращает отчеты об ошибках импорта продуктов в Mirakl.
+  - `/mirakl-platform-settings`: Возвращает текущие настройки платформы Mirakl.
+  - `/mirakl-product-non-integrated/{import_parameter}`: Проверяет продукты, не интегрированные в Mirakl.
+- **Пример функции:**
   ```python
   @router.get("/mirakl-platform-settings")
   async def get_mirakl_settings(...):
-      # Returns Mirakl platform settings as a dict
+      # Возвращает настройки платформы Mirakl в виде словаря
   ```
-- **Responsibilities:**
-  - Aggregates error and status information from Mirakl.
-  - Provides system configuration for integration health checks.
+- **Ответственности:**
+  - Агрегирует информацию об ошибках и статусе из Mirakl.
+  - Предоставляет конфигурацию системы для проверки состояния интеграции.
 
 ## - product_vente_router.py
-Manages product import endpoints from Afterbuy to Mirakl.
-- **Endpoints:**
-  - `/import-product/vente/{ean}`: Imports a single product by EAN.
-  - `/import-products/vente`: Imports multiple products by a list of EANs.
-  - `/import-products-by-fabric/{afterbuy_fabric_id}`: Imports products by Afterbuy fabric ID and delivery days - must have options.
-- **Example function:**
+Управляет эндпоинтами импорта продуктов из Afterbuy в Mirakl.
+- **Эндпоинты:**
+  - `/import-product/vente/{ean}`: Импортирует один продукт по EAN.
+  - `/import-products/vente`: Импортирует несколько продуктов по списку EAN.
+  - `/import-products-by-fabric/{afterbuy_fabric_id}`: Импортирует продукты по ID ткани Afterbuy и дням доставки (с опциями).
+- **Пример функции:**
   ```python
   @router.post("/import-product/vente/{ean}")
   async def import_product(ean: int, ...):
-      # Fetches product from Afterbuy, maps attributes, generates CSV, imports to Mirakl
+      # Получает продукт из Afterbuy, сопоставляет атрибуты, генерирует CSV, импортирует в Mirakl
   ```
-- **Responsibilities:**
-  - Fetches product data from Afterbuy.
-  - Maps and normalizes product attributes for Mirakl.
-  - Generates CSV and triggers import to Mirakl.
-  - Handles batch imports and error reporting.
+- **Ответственности:**
+  - Получает данные о продуктах из Afterbuy.
+  - Сопоставляет и нормализует атрибуты продуктов для Mirakl.
+  - Генерирует CSV и инициирует импорт в Mirakl.
+  - Обрабатывает пакетный импорт и отчеты об ошибках.
+
+## - product_vente_from_file.py
+Обрабатывает импорт продуктов из Afterbuy в Mirakl с использованием данных из файлов.
+- **Эндпоинты:**
+  - `/import-products-by-fabric-from-file/vente`: Импортирует продукты по ID ткани из файла.
+- **Пример функции:**
+  ```python
+  @router.post("/import-products-by-fabric-from-file/vente")
+  async def import_products_by_fabric(...):
+      # Импортирует продукты по ID ткани Afterbuy из файла в Mirakl
+  ```
+- **Ответственности:**
+  - Загружает данные продуктов из файла.
+  - Сопоставляет атрибуты и нормализует данные.
+  - Генерирует CSV и инициирует импорт в Mirakl.
 
 ## - dev_vente_router.py
-Provides development and debugging endpoints for product mapping and image processing.
-- **Endpoints:**
-  - `/test-import-product/vente/{ean}`: Returns mapped data for a single product (no import).
-  - `/test-import-products-by-fabric/vente/{afterbuy_fabric_id}`: Returns mapped data for all products in a fabric (no import).
-  - `/test-resize-image`: Tests image resizing and FTP upload.
-  - `/test-remove-bg-image`: Tests image removing background of the image and returns clean image.
-- **Example function:**
+Предоставляет эндпоинты для разработки и отладки сопоставления продуктов и обработки изображений.
+- **Эндпоинты:**
+  - `/test-import-product/vente/{ean}`: Возвращает сопоставленные данные для одного продукта (без импорта).
+  - `/test-import-products-by-fabric/vente/{afterbuy_fabric_id}`: Возвращает сопоставленные данные для всех продуктов в ткани (без импорта).
+  - `/test-resize-image`: Тестирует изменение размера изображения и загрузку на FTP.
+  - `/test-remove-bg-image`: Тестирует удаление фона изображения и возвращает очищенное изображение.
+- **Пример функции:**
   ```python
   @router.post("/test-resize-image")
   async def test_resize_image(data: TestImageResize, ...):
-      # Resizes image and uploads to FTP for testing
+      # Изменяет размер изображения и загружает на FTP для тестирования
   ```
-- **Responsibilities:**
-  - Allows developers to validate mapping logic and image processing.
-  - Useful for troubleshooting integration issues before production import.
-
+- **Ответственности:**
+  - Позволяет разработчикам проверять логику сопоставления и обработки изображений.
+  - Полезен для устранения проблем интеграции перед импортом в продакшн.
 
 # lutz

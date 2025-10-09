@@ -34,46 +34,45 @@ logger = logging.getLogger(__name__)
 
 def safe_get(images, idx):
     """
-    Safely retrieves an image from a list by index.
+    Безопасно получает изображение из списка по индексу.
 
-    Args:
-        images (list): List of image URLs.
-        idx (int): Index of the image to retrieve.
+    Аргументы:
+        images (list): Список URL изображений.
+        idx (int): Индекс изображения для получения.
 
-    Returns:
-        str: Image URL if available, otherwise an empty string.
+    Возвращает:
+        str: URL изображения, если доступно, иначе пустую строку.
     """
-    
+    # Проверяем, находится ли индекс в пределах списка
     return images[idx] if idx < len(images) else ""
 
 def normalize_url(url):
     """
-    Normalizes product image URLs:
-    - Fixes malformed protocol (https:: → https:).
-    - Splits concatenated URLs.
-    - Cleans duplicated extensions.
+    Нормализует URL изображений продуктов:
+    - Исправляет некорректный протокол (https:: → https:).
+    - Разделяет склеенные URL.
+    - Убирает дублирующиеся расширения.
 
-    Args:
-        url (str): Original URL string.
+    Аргументы:
+        url (str): Исходная строка URL.
 
-    Returns:
-        str: Normalized URL.
+    Возвращает:
+        str: Нормализованный URL.
     """
-    
     # Исправляем https:: на https:
     url = re.sub(r'https?::?//', 'https://', url)
-    
+
     # Разделяем склеенные URL по паттерну https://
     # Ищем места где https:// встречается не в начале строки
     parts = re.split(r'(?<!^)(?=https://)', url)
-    
+
     # Берем первую часть и очищаем её
     first_url = parts[0].strip()
-    
+
     # Убираем возможные артефакты в конце (например, повторяющиеся расширения)
     # Ищем корректное окончание URL
     first_url = re.sub(r'\.webp.*$', '.webp', first_url)
-    
+
     return first_url
 
 async def _prepare_images(
@@ -82,31 +81,32 @@ async def _prepare_images(
     ftp_client = aioftp.Client,
 ):
     """
-    Validates and processes product images.
+    Проверяет и обрабатывает изображения продуктов.
 
-    Workflow:
-    - Ensures the main image exists and resizes if needed.
-    - Extracts extra images from raw string.
-    - Validates and resizes small images.
-    - Uploads resized images via FTP.
+    Рабочий процесс:
+    - Убеждается, что основное изображение существует и изменяет его размер, если нужно.
+    - Извлекает дополнительные изображения из сырой строки.
+    - Проверяет и изменяет размер маленьких изображений.
+    - Загружает изменённые изображения через FTP.
 
-    Args:
-        data (dict): Product data dictionary.
-        httpx_client (httpx.AsyncClient): HTTP client for image validation.
-        ftp_client (aioftp.Client): FTP client for uploading images.
+    Аргументы:
+        data (dict): Словарь данных о продукте.
+        httpx_client (httpx.AsyncClient): HTTP-клиент для проверки изображений.
+        ftp_client (aioftp.Client): FTP-клиент для загрузки изображений.
 
-    Returns:
+    Возвращает:
         tuple[str, list[str], int]:
             - main_image_url (str)
             - extra_images_urls (list of str)
             - amount_of_resized_images (int)
 
-    Raises:
-        Exception: If the main image is missing or inaccessible.
+    Исключения:
+        Exception: Если основное изображение отсутствует или недоступно.
     """
-    # --- main image ---
+    # --- Основное изображение ---
     main_image = data.get("GalleryURL", "")
     if not main_image:
+        # Логируем ошибку, если основное изображение отсутствует
         logger.error(
             f"Main image not found(probably None or empty) ean: {data.get('EAN')}"
         )
@@ -115,10 +115,11 @@ async def _prepare_images(
         )
 
     main_image = normalize_url(main_image)
-    pure_main_image = main_image  # сохраняем оригинал для сравнения с extra images
+    pure_main_image = main_image  # сохраняем оригинал для сравнения с дополнительными изображениями
     
     
     if not await check_image_existence(image_url=main_image, httpx_client=httpx_client):
+        # Логируем ошибку, если изображение недоступно
         logger.error(
             f"Main image not found or inaccessible for ean: {data.get('EAN')}"
         )
@@ -127,6 +128,7 @@ async def _prepare_images(
         )
         
     if settings.use_image_bg_remover:
+        # Удаляем фон изображения, если это включено в настройках
         try:
             # Глобальный таймаут на FTP операцию удаления фона (максимум 3 минуты)
             async with asyncio.timeout(180):
@@ -147,6 +149,7 @@ async def _prepare_images(
 
 
     if errors:
+        # Логируем ошибки обработки изображений
         logger.debug(f"Main image has ERRORS, {main_image}")
         try:
             # Глобальный таймаут на FTP операцию (максимум 2 минуты)
@@ -162,8 +165,7 @@ async def _prepare_images(
             logger.error(f"FTP operation failed for main image resize: {e}")
             raise Exception(f"Image resize failed: {str(e)}")
 
-    # --- extra images ---
-    
+    # --- Дополнительные изображения ---
     # Получаем строку с картинками
     extra_images_not_checked_for_size = data.get("pictureurls") or ""
     pics_list = []
@@ -217,17 +219,17 @@ async def _prepare_images(
 
 async def _build_html_description(data: dict):
     """
-    Extracts and adjusts HTML product description.
+    Извлекает и корректирует HTML-описание продукта.
 
-    Rules:
-    - Discards too short descriptions (< 51 chars).
-    - Duplicates text if length is between 51–100 chars.
+    Правила:
+    - Отбрасывает слишком короткие описания (< 51 символов).
+    - Дублирует текст, если длина от 51 до 100 символов.
 
-    Args:
-        data (dict): Product data containing 'html_description'.
+    Аргументы:
+        data (dict): Данные о продукте, содержащие 'html_description'.
 
-    Returns:
-        str | None: Processed HTML description or None if invalid.
+    Возвращает:
+        str | None: Обработанное HTML-описание или None, если недействительно.
     """
     
     article = data.get("Artikelbeschreibung")
@@ -282,16 +284,16 @@ def _build_base_fields(
     html_desc_fr: str | None,
 ) -> dict:
     """
-    Builds base Mirakl product fields.
+    Формирует базовые поля продукта Mirakl.
 
-    Args:
-        data (dict): Product data dictionary.
-        main_image (str): Main image URL.
-        extra_images (list[str]): List of extra image URLs.
-        html_desc (str | None): Processed HTML description.
+    Аргументы:
+        data (dict): Словарь данных о продукте.
+        main_image (str): URL основного изображения.
+        extra_images (list[str]): Список URL дополнительных изображений.
+        html_desc (str | None): Обработанное HTML-описание.
 
-    Returns:
-        dict: Dictionary with base product fields for Mirakl.
+    Возвращает:
+        dict: Словарь с базовыми полями продукта для Mirakl.
     """        
     
     return {
@@ -326,19 +328,19 @@ def _build_base_fields(
 
 def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
     """
-    Fills category-specific attributes for a product.
+    Заполняет атрибуты, специфичные для категории, для продукта.
 
-    Workflow:
-    - Maps attributes using predefined mapping dictionaries.
-    - Applies fallbacks or default values if mapping is missing.
-    - Handles extra attributes if defined.
+    Рабочий процесс:
+    - Сопоставляет атрибуты с помощью предопределённых словарей сопоставления.
+    - Применяет запасные или значения по умолчанию, если сопоставление отсутствует.
+    - Обрабатывает дополнительные атрибуты, если они определены.
 
-    Args:
-        filtered_properties (dict): Parsed product properties.
-        category (str): Target Mirakl category ID.
+    Аргументы:
+        filtered_properties (dict): Распакованные свойства продукта.
+        category (str): Целевая категория Mirakl ID.
 
-    Returns:
-        dict: Dictionary of filled category attributes.
+    Возвращает:
+        dict: Словарь заполненных атрибутов категории.
     """
     
     filled_attrs: dict = {}
@@ -425,20 +427,20 @@ def _fill_category_attributes(filtered_properties: dict, category: str) -> dict:
 
 async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
     """
-    Maps Afterbuy product data into Mirakl-compatible format.
+    Сопоставляет данные о продукте Afterbuy в формат, совместимый с Mirakl.
 
-    Workflow:
-    - Processes product images (main + extras).
-    - Parses and maps product properties.
-    - Builds base fields and category attributes.
-    - Logs processing stages.
+    Рабочий процесс:
+    - Обрабатывает изображения продукта (основное + дополнительные).
+    - Парсит и сопоставляет свойства продукта.
+    - Формирует базовые поля и атрибуты категории.
+    - Логирует этапы обработки.
 
-    Args:
-        data (dict): Raw product data from Afterbuy.
-        httpx_client (httpx.AsyncClient): HTTP client for image validation.
+    Аргументы:
+        data (dict): Сырые данные о продукте из Afterbuy.
+        httpx_client (httpx.AsyncClient): HTTP-клиент для проверки изображений.
 
-    Returns:
-        dict: Dictionary with structure:
+    Возвращает:
+        dict: Словарь со структурой:
               {
                   "ean": str,
                   "data_for_mirakl": dict
@@ -488,13 +490,13 @@ async def map_attributes(data: dict, httpx_client: httpx.AsyncClient) -> dict:
 
 def map_categories(afterbuy_category_num: int) -> str | list[str]:
     """
-    Maps Afterbuy category number to Mirakl category.
+    Сопоставляет номер категории Afterbuy с Mirakl категории.
 
-    Args:
-        afterbuy_category_num (int): Afterbuy category number.
+    Аргументы:
+        afterbuy_category_num (int): Номер категории Afterbuy.
 
-    Returns:
-        str | list[str]: Corresponding Mirakl category ID(s), or "No mapping" if not found.
+    Возвращает:
+        str | list[str]: Соответствующий Mirakl ID категории(ий), или "No mapping", если не найдено.
     """
     
     key = str(afterbuy_category_num)

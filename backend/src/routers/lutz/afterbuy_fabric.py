@@ -51,18 +51,21 @@ async def import_by_afterbuy_id(request: AfterbuyIdRequest):
             try:
                 raw_item = await afterbuy.fetch_product(pid)
 
+                # Обрабатываем поле properties, если оно строковое
                 if "properties" in raw_item and isinstance(raw_item["properties"], str):
                     try:
                         raw_item["properties"] = json.loads(raw_item["properties"])
                     except json.JSONDecodeError:
                         raw_item["properties"] = {}
 
+                # Применяем маппинг продукта
                 mapped = await mapping_tools.map_product(
                     raw_item, mapping, fieldnames,
                     real_mapping_v12, color_mapping,
                     material_mapping, {}, brand_mapping
                 )
 
+                # Обрабатываем изображения для продукта
                 mapped = await _process_images_for_product(mapped, raw_item)
                 all_mapped.append(mapped)
 
@@ -72,6 +75,7 @@ async def import_by_afterbuy_id(request: AfterbuyIdRequest):
         if not all_mapped:
             raise HTTPException(status_code=400, detail="Нет продуктов для импорта")
 
+        # Создаем CSV и загружаем в Mirakl
         csv_content = csv_tools.write_csv(fieldnames, all_mapped)
         result = await mirakl.upload_csv(csv_content)
 

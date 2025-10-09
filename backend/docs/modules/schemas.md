@@ -1,116 +1,125 @@
-# Schemas Documentation
+# Документация по Схемам
 
-This folder defines **Pydantic schemas** used across the application for validation, serialization, and API documentation.  
-Schemas are grouped by domain (`ai_schemas.py`, `product_schemas.py`, `user_schemas.py`).
+Эта папка определяет **Pydantic-схемы**, используемые в приложении для валидации, сериализации и документации API.  
+Схемы сгруппированы по доменам (`ai_schemas.py`, `product_schemas.py`, `user_schemas.py`).
 
 ---
 
 ## ai_schemas.py
 
-Schemas for AI-generated product descriptions.
+Схемы для AI-генерации описаний продуктов.
 
 - **ProductDescriptionAIVente**
-  - `description_de` *(str)* – Clean product description in **German**, length: 100 – `settings.max_description_chars`.  
-  - `description_fr` *(str)* – Clean product description in **French**, length: 100 – `settings.max_description_chars`.  
+  - `description_de` *(str)* – Чистое описание продукта на **немецком**, длина: 100 – `settings.max_description_chars`.  
+  - `description_fr` *(str)* – Чистое описание продукта на **французском**, длина: 100 – `settings.max_description_chars`.  
 
 - **ProductDescriptionAILutz**
-  - `description_de` *(str)* – Clean product description in **German**, length: 100 – `settings.max_description_chars`.  
-  - `description_en` *(str)* – Clean product description in **English**, length: 100 – `settings.max_description_chars`.  
+  - `description_de` *(str)* – Чистое описание продукта на **немецком**, длина: 100 – `settings.max_description_chars`.  
+  - `description_en` *(str)* – Чистое описание продукта на **английском**, длина: 100 – `settings.max_description_chars`.  
 
 ---
 
 ## product_schemas.py
 
-Schemas for handling product-related requests, mappings, and import results.
+Схемы для обработки запросов, сопоставлений и результатов импорта продуктов.
 
-### Request Schemas
+### Схемы Запросов
 - **ProductRequest**
-  - `product_id` *(str)* – Product identifier (Lutz).  
+  - `product_id` *(str)* – Идентификатор продукта (Lutz).  
 
 - **FabricRequest**
-  - `fabric_id` *(int)* – Fabric identifier (Lutz).  
+  - `fabric_id` *(int)* – Идентификатор ткани (Lutz).  
 
-- **ProductEan**
-  - `ean_list` *(List[str])* – List of product EANs.  
+- **EansWithDeliveryRequest**
+  - `ean_list` *(List[str])* – Список EAN кодов продуктов.  
+  - `delivery_days` *(int)* – Время доставки в днях.  
 
 - **FabricWithDeliveryRequest**
-  - `afterbuy_fabric_id` *(int)* – Fabric ID in Afterbuy system.  
-  - `delivery_days` *(int)* – Delivery time in days.  
+  - `afterbuy_fabric_id` *(int)* – ID ткани в системе Afterbuy.  
+  - `delivery_days` *(int)* – Время доставки в днях.  
 
 - **TestImageResize**
-  - `url` *(str)* – URL of the image to resize.  
-  - `ean` *(str)* – Product EAN for reference.  
+  - `url` *(str)* – URL изображения для изменения размера.  
+  - `ean` *(str)* – EAN продукта для ссылки.  
 
-### Product Mapping Schemas
+### Схемы Сопоставления Продуктов
 - **MappedProduct**
-  Represents a mapped product ready for export/import.  
-  - `sku` *(int | str)* – Stock keeping unit.  
-  - `product_id` *(str | int, alias: "product-id")* – External product identifier.  
-  - `product_id_type` *(str, alias: "product-id-type")* – Identifier type.  
-  - `price` *(float)* – Product price.  
-  - `state` *(int)* – Product state code.  
-  - `quantity` *(int)* – Available quantity.  
-  - `brand` *(Optional[str])* – Brand name (default: "").  
-  - `internal_description` *(Optional[str], alias: "internal-description")* – Internal description.  
-  - `title_de` *(str)* – Product title in German.  
-  - `image_1` … `image_10` *(str, optional)* – Product images (main and additional).  
-  - `category` *(str | int)* – Product category.  
-  - `ean` *(str | int)* – Product EAN.  
-  - `description` *(str)* – Product description.  
-  - `description_de` *(str)* – Product description in German.  
+  Представляет сопоставленный продукт, готовый для экспорта/импорта.  
+  - `sku` *(int | str)* – SKU продукта.  
+  - `product_id` *(str | int, alias: "product-id")* – Внешний идентификатор продукта.  
+  - `product_id_type` *(str, alias: "product-id-type")* – Тип идентификатора.  
+  - `price` *(float)* – Цена продукта.  
+  - `state` *(int)* – Код состояния продукта.  
+  - `quantity` *(int)* – Доступное количество.  
+  - `brand` *(Optional[str])* – Название бренда (по умолчанию: "").  
+  - `internal_description` *(Optional[str], alias: "internal-description")* – Внутреннее описание.  
+  - `title_de` *(str)* – Название продукта на немецком.  
+  - `image_1` … `image_10` *(str, optional)* – Изображения продукта (основное и дополнительные).  
+  - `category` *(str | int)* – Категория продукта.  
+  - `ean` *(str | int)* – EAN продукта.  
+  - `description` *(str)* – Описание продукта.  
+  - `description_de` *(str)* – Описание продукта на немецком.  
 
 - **FabricMappedProducts**
-  Aggregated response for mapped fabric products.  
-  - `not_added_eans` *(List[str])* – EANs that were not added.  
-  - `total_not_added` *(int)* – Number of not added products.  
-  - `fabric_name` *(str)* – Fabric name.  
-  - `delivery_days` *(int)* – Delivery days.  
-  - `total_eans_in_fabric` *(int)* – Total EANs in this fabric.  
-  - `data_for_csv_by_fabric` *(List[MappedProduct])* – Data prepared for CSV export.  
+  Сводный ответ для сопоставленных продуктов ткани.  
+  - `not_added_eans` *(List[str])* – EAN, которые не были добавлены.  
+  - `total_not_added` *(int)* – Количество не добавленных продуктов.  
+  - `fabric_name` *(str)* – Название ткани.  
+  - `delivery_days` *(int)* – Дни доставки.  
+  - `total_eans_in_fabric` *(int)* – Общее количество EAN в этой ткани.  
+  - `data_for_csv_by_fabric` *(List[MappedProduct])* – Данные, подготовленные для экспорта в CSV.  
 
-### Import Response Schemas
+### Схемы Ответов на Импорт
 - **ProductResult**
-  - `import_id` *(int)* – Import identifier.  
-  - `product_import_id` *(int)* – Imported product identifier.  
+  - `import_id` *(int)* – Идентификатор импорта.  
+  - `product_import_id` *(int)* – Идентификатор импортированного продукта.  
 
 - **MiraklImportResponse**
-  - `status` *(str)* – Import status.  
-  - `results` *(List[Dict[str, ProductResult]])* – Import results grouped by product.  
+  - `status` *(str)* – Статус импорта.  
+  - `results` *(List[Dict[str, ProductResult]])* – Результаты импорта, сгруппированные по продуктам.  
 
 - **ImportManyEanResponse**
-  - `mirakl_response` *(MiraklImportResponse)* – Response from Mirakl.  
-  - `not_added_eans` *(List[str])* – EANs that were not added.  
-  - `total_not_added` *(int)* – Number of not added products.  
+  - `mirakl_response` *(MiraklImportResponse)* – Ответ от Mirakl.  
+  - `not_added_eans` *(List[str])* – EAN, которые не были добавлены.  
+  - `total_not_added` *(int)* – Количество не добавленных продуктов.  
 
 - **ImportFabricProductsResponse**
-  - `mirakl_response` *(MiraklImportResponse)* – Response from Mirakl.  
-  - `not_added_eans` *(List[str])* – EANs not added.  
-  - `total_not_added` *(int)* – Number of not added products.  
-  - `total_eans_in_fabric` *(int)* – Total EANs in fabric.  
+  - `mirakl_response` *(MiraklImportResponse)* – Ответ от Mirakl.  
+  - `not_added_eans` *(List[str])* – EAN, которые не были добавлены.  
+  - `total_not_added` *(int)* – Количество не добавленных продуктов.  
+  - `total_eans_in_fabric` *(int)* – Общее количество EAN в ткани.  
 
 ---
 
 ## user_schemas.py
 
-Schemas for user management and authentication.
+Схемы для управления пользователями и аутентификации.
 
 - **UserCreate**
-  - `username` *(str)* – New user’s login.  
-  - `password` *(str)* – New user’s password.  
+  - `username` *(str)* – Логин нового пользователя.  
+  - `password` *(str)* – Пароль нового пользователя.  
+
+- **UserUpdate**
+  - `username` *(Optional[str])* – Новое имя пользователя.  
+  - `password` *(Optional[str])* – Новый пароль.  
 
 - **UserOut**
-  - `id` *(int)* – User ID.  
-  - `username` *(str)* – Username.  
-  - `is_admin` *(bool)* – Whether the user has admin rights.  
-  - Config: `from_attributes = True` → Allows creation from ORM objects.  
+  - `id` *(int)* – ID пользователя.  
+  - `username` *(str)* – Имя пользователя.  
+  - `is_admin` *(bool)* – Является ли пользователь администратором.  
+  - Config: `from_attributes = True` → Позволяет создание из ORM объектов.  
 
 - **Token**
-  - `access_token` *(str)* – JWT access token.  
-  - `token_type` *(str, default="bearer")* – Token type.  
+  - `access_token` *(str)* – JWT токен доступа.  
+  - `refresh_token` *(str)* – Токен обновления.  
+  - `token_type` *(str, default="bearer")* – Тип токена.  
+
+- **RefreshTokenRequest**
+  - `refresh_token` *(str)* – Токен обновления.  
 
 ---
 
-## Notes
-- All schemas inherit from **Pydantic BaseModel**.  
-- Used for **validation**, **serialization**, and **OpenAPI documentation**.  
-- Aliases (e.g., `"product-id"`) allow compatibility with external APIs.  
+## Заметки
+- Все схемы наследуются от **Pydantic BaseModel**.  
+- Используются для **валидации**, **сериализации** и **документации OpenAPI**.  
+- Алиасы (например, "product-id") обеспечивают совместимость с внешними API.

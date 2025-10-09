@@ -13,6 +13,11 @@ router = APIRouter()
 
 @router.post("/auth/create-user", response_model=UserOut, status_code=201, tags=["user"])
 async def create_user_endpoint(user_in: UserCreate, session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
+    """
+    Создает нового пользователя в системе.
+    Доступно только администраторам. Проверяет уникальность имени пользователя.
+    Возвращает данные созданного пользователя.
+    """
     existing = await get_user_by_username(session=session, username=user_in.username)
     if existing:
         raise HTTPException(status_code=400, detail="username already registered")
@@ -22,6 +27,11 @@ async def create_user_endpoint(user_in: UserCreate, session: AsyncSession = Depe
 
 @router.post("/auth/login", response_model=Token, tags=["user"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_session)):
+    """
+    Выполняет вход пользователя в систему.
+    Проверяет учетные данные и возвращает access и refresh токены.
+    Доступно без аутентификации.
+    """
     # form_data: expect { "username": "...", "password": "..." }
     user = await get_user_by_username(session, form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -34,9 +44,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         "token_type": "bearer"
     }
 
-
 @router.get("/auth/me", response_model=UserOut, tags=["user"])
 async def read_users_me(current_user = Depends(get_current_user)):
+    """
+    Возвращает данные текущего аутентифицированного пользователя.
+    Используется для получения информации о себе.
+    """
     return {
         "id": current_user.id,
         "username": current_user.username,
@@ -45,6 +58,10 @@ async def read_users_me(current_user = Depends(get_current_user)):
 
 @router.post("/auth/refresh", tags=["user"])
 async def refresh_token(data: RefreshTokenRequest):
+    """
+    Обновляет access-токен с помощью refresh-токена.
+    Возвращает новый access-токен без повторного входа.
+    """
     if not data.refresh_token:
         raise HTTPException(status_code=400, detail="Refresh token required")
     try:
@@ -56,9 +73,13 @@ async def refresh_token(data: RefreshTokenRequest):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-    
 @router.delete("/user/delete-user/{id}", status_code=204, tags=["user"])
 async def delete_user(id: int, session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
+    """
+    Удаляет пользователя по ID.
+    Доступно только администраторам. Нельзя удалить себя или другого администратора.
+    Возвращает сообщение об успешном удалении.
+    """
     deleting_user = await get_user_by_id(session, user_id=id)
     
     if not deleting_user:
@@ -77,6 +98,11 @@ async def delete_user(id: int, session: AsyncSession = Depends(get_session), cur
 
 @router.patch("/user/update-user/{id}", response_model=UserOut, tags=["user"])
 async def update_user(id: int, user_in: UserUpdate, session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
+    """
+    Обновляет данные пользователя по ID.
+    Доступно только администраторам. Нельзя обновлять администраторов.
+    Возвращает обновленные данные пользователя.
+    """
     updating_user = await get_user_by_id(session, user_id=id)
     
     if not updating_user:
@@ -98,11 +124,19 @@ async def update_user(id: int, user_in: UserUpdate, session: AsyncSession = Depe
 
 @router.get("/user/list-users", response_model=list[UserOut], tags=["user"])
 async def list_users(session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
+    """
+    Возвращает список всех пользователей системы.
+    Доступно только администраторам.
+    """
     users = await get_users(session)
     return users
 
 @router.get("/user/get-user/{id}", response_model=UserOut, tags=["user"])
 async def get_user(id: int, session: AsyncSession = Depends(get_session), current_user = Depends(require_admin_token)):
+    """
+    Возвращает данные пользователя по ID.
+    Доступно только администраторам.
+    """
     getting_user = await get_user_by_id(session, user_id=id)
     
     if not getting_user:

@@ -1,6 +1,6 @@
 """
-Product management router module.
-Provides endpoints for importing products from Afterbuy to Mirakl system.
+Модуль роутера управления продуктами.
+Предоставляет эндпоинты для импорта продуктов из Afterbuy в систему Mirakl.
 """
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -32,21 +32,7 @@ router = APIRouter()
 @router.post("/import-product/vente/{ean}/{delivery_days}", tags=["product vente"], response_model=MiraklImportResponse)
 async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Import a single product by EAN from Afterbuy to Mirakl.Uses EAN and optional fabric id for getting product
-    
-
-    Args:
-        ean (str): EAN code of the product to import.
-        afterbuy_fabric_id (int): Optional parameter if user wants to get exact product
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Mirakl API response for the imported product.
-
-    Raises:
-        HTTPException: 400 if EAN is invalid.
-        HTTPException: 500 if data fetch or mapping fails.
-        HTTPException: 404 if mapping or CSV creation fails.
+    Импорт одного продукта по EAN из Afterbuy в Mirakl. Использует EAN и опциональный fabric id для получения продукта.
     """
     if not is_valid_ean(ean):
         raise HTTPException(
@@ -55,6 +41,7 @@ async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int |
         )
     
     try:
+        # Получаем данные продукта из Afterbuy
         data = await get_product_data(ean=ean, afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)
         data["delivery_days"] = delivery_days
     except Exception as e:
@@ -66,6 +53,7 @@ async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int |
     
     logger.info(f"Fetched data for ean {ean}: {len(data)} items")
     try:
+        # Сопоставляем атрибуты для Mirakl
         mapped_data_result = await map_attributes(data=data, httpx_client=httpx_client)
         mapped_data = mapped_data_result.get('data_for_mirakl')
         logger.debug(f"MAPPED DATA IN THE MAP_ATTRIBUTES: {mapped_data}")
@@ -93,6 +81,7 @@ async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int |
             detail=f"Category: {data.get('category')}, does not have mapping in the system",
         )
 
+    # Создаем CSV для одного продукта
     csv_content = make_csv(mapped_data)
     
     if csv_content is None or csv_content in ["", {}, []]:
@@ -102,25 +91,14 @@ async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int |
             detail=f"Product with ean {ean} not found or make_csv failed",
         )
         
+    # Импортируем продукт в Mirakl
     return await import_product_mirakl(csv_content, httpx_client=httpx_client)
 
 
 @router.post("/import-products/vente", tags=["product vente"], response_model=ImportManyEanResponse)
 async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
-    Import multiple products by a list of EANs from Afterbuy to Mirakl.
-
-    Args:
-        eans (EansWithDeliveryRequest): List of EAN codes to import.
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Mirakl API response and list of EANs not imported.
-
-    Raises:
-        HTTPException: 400 if EAN list is empty.
-        HTTPException: 404 if CSV creation fails.
-        HTTPException: 500 if import to Mirakl fails.
+    Импорт нескольких продуктов по списку EAN из Afterbuy в Mirakl.
     """
     ean_list = eans.ean_list
     if not ean_list:
@@ -133,6 +111,7 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
     for idx, ean in enumerate(ean_list, start=1):
         async def wrapper(e=ean, i=idx):
             try:
+                # Получаем данные продукта
                 prod = await get_product_data(e, httpx_client)
                 logger.info(f"[{i}/{len(ean_list)}] Got product with EAN={e}")
                 
@@ -142,6 +121,7 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
                 logger.error(f"[{i}/{len(ean_list)}] Error processing product EAN={e}: {e}")
                 return e
         tasks.append(wrapper())
+    # Выполняем все задачи параллельно
     results = await asyncio.gather(*tasks, return_exceptions=True)    
     
     data = []
@@ -157,6 +137,7 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
         logger.info(f"Fetched data for ean {ean}")
         
         try:
+            # Сопоставляем атрибуты
             mapped_data_results = await map_attributes(data=single_product, httpx_client=httpx_client)
             mapped_data = mapped_data_results.get('data_for_mirakl')
         except Exception as e:
@@ -179,6 +160,7 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
         data.append(mapped_data)
 
 
+    # Создаем большой CSV для всех продуктов
     csv_content = make_big_csv(data)
     
     if not csv_content:
@@ -190,6 +172,7 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
         
         
     try:
+        # Импортируем все продукты в Mirakl
         mirakl_answer = await import_product_mirakl(csv_content, httpx_client=httpx_client)
     except Exception as e:
         logger.error(f"Error importing products to Mirakl: {e}")
@@ -209,24 +192,14 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
 @router.post("/import-products-by-fabric/vente", tags=["product vente"])
 async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     """
-    Import products by Afterbuy fabric ID from Afterbuy to Mirakl.
-
-    Args:
-        afterbuy_fabric_id (int): Afterbuy fabric ID to import products from.
-        httpx_client (httpx.AsyncClient): HTTP client dependency.
-
-    Returns:
-        dict: Mirakl API response, not added EANs, total not added, total EANs in fabric, and mapped data for CSV.
-
-    Raises:
-        HTTPException: 500 if data fetch or import to Mirakl fails.
-        HTTPException: 404 if no products found or CSV creation fails.
+    Импорт продуктов по ID фабрики Afterbuy из Afterbuy в Mirakl.
     """
     
     afterbuy_fabric_id = input_body.afterbuy_fabric_id
     delivery_days = input_body.delivery_days
     
     try:
+        # Получаем данные продуктов для фабрики
         data = await get_products_by_fabric(afterbuy_fabric_id=afterbuy_fabric_id, httpx_client=httpx_client)        
     except Exception as e:
         logger.error(f"Error fetching data for fabric {afterbuy_fabric_id}: {e}")
@@ -253,6 +226,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
     for idx, prod in enumerate(products, start=1):
         async def wrapper(p=prod, i=idx):
             try:
+                # Добавляем дни доставки и сопоставляем атрибуты
                 p["delivery_days"] = delivery_days
                 res = await map_attributes(p, httpx_client)
                 logger.info(f"[{i}/{len(products)}] Processed product with EAN={p.get('ean')}")
@@ -261,6 +235,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
                 logger.error(f"[{i}/{len(products)}] Error processing product EAN={p.get('ean')}: {e}")
                 return e
         tasks.append(wrapper())
+    # Выполняем параллельно
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
     data_for_csv = []
@@ -286,6 +261,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
         f"not_added_eans: {not_added_eans},\n total_not_added: {len(not_added_eans)}, \n total eans in fabric: {len(all_eans)}"
     )
     
+    # Создаем большой CSV
     csv_content = make_big_csv(data_for_csv)
     
     if not csv_content:
@@ -304,6 +280,7 @@ async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx
     #         detail=str(e),
     #     )
     
+    # Сохраняем данные фабрики в базу
     database_fabric_data = saveUploadedFabric(
         afterbuy_fabric_id=afterbuy_fabric_id,
         user_id=current_user.id,

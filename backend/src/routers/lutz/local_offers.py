@@ -66,29 +66,33 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
                 # Адаптируем структуру данных перед передачей в маппер
                 raw_item_for_mapping = adapt_local_item_for_mapping(local_item, market)
 
-                # Применяем стандартное сопоставление
+                # Применяем стандартное сопоставление для преобразования данных
                 mapped = await mapping_tools.map_product(
                     raw_item_for_mapping, mapping, fieldnames,
                     real_mapping_v12, color_mapping,
                     material_mapping, {}, brand_mapping, delivery_days
                 )
 
-                # Этот шаг может быть избыточным для офферов, но оставим для консистентности
+                # Обрабатываем изображения для продукта (хотя для офферов это может быть не обязательно)
                 mapped = await _process_images_for_product(mapped, raw_item_for_mapping)
 
-                # --- Логика специфичная для офферов ---
+                # --- Специфичная логика для создания офферов ---
+                # Получаем оригинальную цену из сырых данных
                 original_price_str = raw_item_for_mapping.get("price", "0.00")
                 original_price = 0.0
                 try:
-                    # В JSON цена может быть строкой с запятой
+                    # Преобразуем цену в float, заменяя запятую на точку если необходимо
                     original_price = float(original_price_str.replace(",", "."))
                 except (ValueError, TypeError):
                     logger.warning("Could not convert price '%s' to float for product EAN=%s. Defaulting to 0.0.",
                                  original_price_str, raw_item_for_mapping.get("ean"))
 
+                # Устанавливаем цену и референсную цену для оффера
                 mapped["price"] = f"{original_price:.2f}"
                 mapped["product_reference_price"] = f"{process_uvp(original_price):.2f}"
+                # Устанавливаем статус оффера (11 - активный)
                 mapped["state"] = 11
+                # Определяем количество на основе артикула
                 mapped["quantity"] = mapping_tools.product_quantity_check(raw_item_for_mapping.get("article", ""))
                 # --- Конец специфичной логики ---
 

@@ -1,6 +1,6 @@
 """
-Afterbuy API integration module.
-Handles authentication, product data retrieval, and brand information from Afterbuy API.
+Модуль интеграции с Afterbuy API.
+Обрабатывает аутентификацию, получение данных о продуктах и информации о брендах из Afterbuy API.
 """
 
 from fastapi import HTTPException
@@ -22,7 +22,11 @@ from src.services.lutz_services import afterbuy
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Global token management variables
+# Глобальные переменные для управления токенами
+# _access_token используется для хранения текущего токена доступа.
+# _access_token_expiry хранит время истечения токена в формате Unix.
+# _access_token_lock обеспечивает синхронизацию при обновлении токена.
+
 _access_token = None
 _access_token_expiry = 0  # Unix timestamp
 _access_token_lock = asyncio.Lock()
@@ -30,29 +34,29 @@ _access_token_lock = asyncio.Lock()
 
 async def get_access_token(httpx_client: httpx.AsyncClient):
     """
-    Retrieves and caches the Afterbuy API access token.
+    Получает и кэширует токен доступа к Afterbuy API.
 
-    The function uses global variables to store the token and its expiration time.
-    If a valid token already exists, the cached value is returned.
-    Otherwise, a new authentication request to the Afterbuy API is performed.
+    Функция использует глобальные переменные для хранения токена и времени его истечения.
+    Если токен уже существует и действителен, возвращается кэшированное значение.
+    В противном случае выполняется новый запрос на аутентификацию к API Afterbuy.
 
-    Args:
-        httpx_client (httpx.AsyncClient): Asynchronous HTTP client used for making requests.
+    Аргументы:
+        httpx_client (httpx.AsyncClient): Асинхронный HTTP-клиент для выполнения запросов.
 
-    Returns:
-        str: A valid access token.
+    Возвращает:
+        str: Действительный токен доступа.
 
-    Raises:
-        Exception: If the token cannot be retrieved due to a network error,
-            invalid response status, or empty response data.
+    Исключения:
+        Exception: Если токен не может быть получен из-за сетевой ошибки,
+            недействительного статуса ответа или пустых данных ответа.
     """
     
     global _access_token, _access_token_expiry
     
     async with _access_token_lock:
-        # If token exists and hasn't expired, return it
+        # Если токен существует и не истек, возвращаем его
         if _access_token and time.time() < _access_token_expiry:
-            logger.debug(f"Using cached access token, that will expire in {_access_token_expiry - time.time():.0f} seconds")
+            logger.debug(f"Используется кэшированный токен доступа, который истечет через {_access_token_expiry - time.time():.0f} секунд")
             return _access_token
 
         credentials = {
@@ -60,55 +64,54 @@ async def get_access_token(httpx_client: httpx.AsyncClient):
             "password": settings.afterbuy_password,
         }
 
-        logger.info("Requesting access token from Afterbuy")
+        logger.info("Запрос токена доступа к Afterbuy")
         
         try:
             response = await httpx_client.post(f"{settings.afterbuy_url}/v1/auth/login", json=credentials, timeout=40.0)
                 
         except Exception as e:
-            logger.error(f"Error while requesting access token: {e}")
-            raise Exception(f"Error while requesting access token from Afterbuy: {e}")
+            logger.error(f"Ошибка при запросе токена доступа: {e}")
+            raise Exception(f"Ошибка при запросе токена доступа у Afterbuy: {e}")
             
         if response.status_code != 200:
-            logger.error(f"Failed to get access token: {response.status_code} - {response.text}")
+            logger.error(f"Не удалось получить токен доступа: {response.status_code} - {response.text}")
             raise Exception(
-                f"Failed to obtain access token from Afterbuy: {response.status_code} - {response.text}"
+                f"Не удалось получить токен доступа у Afterbuy: {response.status_code} - {response.text}"
             )
         data = response.json()
         
         if not data:
-            logger.error("No data received when obtaining access token")
-            raise Exception("No data received when obtaining access token from Afterbuy")
+            logger.error("Не получены данные при получении токена доступа")
+            raise Exception("Не получены данные при получении токена доступа у Afterbuy")
         
         _access_token = data["access_token"]
         expires_in = 1000
-        _access_token_expiry = time.time() + expires_in - 10  # -10 seconds buffer for safety
+        _access_token_expiry = time.time() + expires_in - 10  # -10 секунд буфер для безопасности
 
         return _access_token
 
 
 async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_fabric_id: Optional[int] = None):
     """
-    Retrieves product data from the Afterbuy API by EAN.
+    Получает данные о продукте из Afterbuy API по EAN.
 
-    The function requests product information from Afterbuy, using a valid access token.
-    If enabled in settings, it also fetches the real HTML description for the product.
-    Otherwise, a sample HTML description is added.
-    If afterbuy_fabric_id is given is also fetches product filtering by EAN and FABRIC_ID
+    Функция запрашивает информацию о продукте из Afterbuy, используя действительный токен доступа.
+    Если в настройках включено, также запрашивается реальное HTML-описание продукта.
+    Если указан afterbuy_fabric_id, выполняется фильтрация продукта по EAN и FABRIC_ID.
 
-    Args:
-        ean (int): Product EAN (European Article Number).
-        httpx_client (httpx.AsyncClient): Asynchronous HTTP client used for API requests.
+    Аргументы:
+        ean (int): EAN продукта (Европейский артикул).
+        httpx_client (httpx.AsyncClient): Асинхронный HTTP-клиент для выполнения запросов.
 
-    Returns:
-        dict: Product data including metadata and optionally an HTML description.
+    Возвращает:
+        dict: Данные о продукте, включая метаданные и, опционально, HTML-описание.
 
-    Raises:
-        Exception: If the access token cannot be retrieved,
-            if the request to Afterbuy fails,
-            if the response status is not 200,
-            if no product data is returned,
-            or if fetching the HTML description fails.
+    Исключения:
+        Exception: Если токен доступа не может быть получен,
+            запрос к Afterbuy не удался,
+            статус ответа не 200,
+            данные о продукте отсутствуют
+            или получение HTML-описания завершилось ошибкой.
     """
     
     try:
@@ -128,7 +131,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
 
     limit = 100
     
-    logger.debug(f"Got access token, making request for ean {ean}")
+    logger.debug(f"Получен токен доступа, выполняется запрос для ean {ean}")
     
     try:
         response = await httpx_client.post(
@@ -136,26 +139,26 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
         )
         logger.debug(f"{settings.afterbuy_url}/v1/products/filter?limit={limit} _-------------- {data}")
     except Exception as e:
-        logger.error(f"Error while requesting product data: {e}")
+        logger.error(f"Ошибка при запросе данных о продукте: {e}")
         raise Exception(
-            f"Error while requesting product data from Afterbuy: {e}",
+            f"Ошибка при запросе данных о продукте у Afterbuy: {e}",
         )
 
     if response.status_code != 200:
-        logger.error(f"Failed to get product data: {response.status_code} - {response.text}")
+        logger.error(f"Не удалось получить данные о продукте: {response.status_code} - {response.text}")
         raise Exception(
-            f"Error retrieving data from Afterbuy: {response.status_code} - {response.text}",
+            f"Ошибка получения данных у Afterbuy: {response.status_code} - {response.text}",
         )
 
     data = response.json()
     
     if not data:
-        logger.error(f"Product with ean {ean} not found in Afterbuy")
+        logger.error(f"Продукт с ean {ean} не найден в Afterbuy")
         raise Exception(
-            f"Product with ean {ean} not found in Afterbuy",
+            f"Продукт с ean {ean} не найден в Afterbuy",
         )
     
-    logger.debug(f"Response data contains for ean {ean}: {data}")   
+    logger.debug(f"Данные ответа содержат для ean {ean}: {data}")   
     
     if isinstance(data, list) and data[0].get('id'):
         try:
@@ -163,7 +166,7 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
         except Exception as e:
             raise e
         
-        logger.debug(f"Successfully fetched product data for product_num: {data[0].get('product_num')} with EAN: {data[0].get('ean')}")
+        logger.debug(f"Успешно получены данные о продукте для product_num: {data[0].get('product_num')} с EAN: {data[0].get('ean')}")
         
     elif isinstance(data, dict) and data.get('id'):
         try:
@@ -171,11 +174,11 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
         except Exception as e:
             raise e
         
-        logger.debug(f"Successfully fetched product data for product_num: {data.get('product_num')} with EAN: {data.get('ean')}")
+        logger.debug(f"Успешно получены данные о продукте для product_num: {data.get('product_num')} с EAN: {data.get('ean')}")
         
     else:
         raise Exception(
-            f"Could not fetch html description for product with ean {ean}",
+            f"Не удалось получить html-описание для продукта с ean {ean}",
         )
     
     return data[0] if isinstance(data, list) else data
@@ -183,29 +186,29 @@ async def get_product_data(ean: int, httpx_client: httpx.AsyncClient, afterbuy_f
 
 async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient):
     """
-    Retrieves all products associated with a specific fabric ID from the Afterbuy API.
+    Получает все продукты, связанные с определенным идентификатором ткани, из Afterbuy API.
 
-    The function first resolves the internal fabric ID from the provided Afterbuy fabric ID.
-    It then requests all related products from Afterbuy, applying retry logic for reliability.
-    For each product, it optionally enriches the data with an HTML description, fetched
-    in parallel with a semaphore to limit concurrency.
+    Функция сначала определяет внутренний идентификатор ткани по предоставленному идентификатору ткани Afterbuy.
+    Затем она запрашивает все связанные продукты у Afterbuy, применяя логику повторных попыток для надежности.
+    Для каждого продукта, при необходимости, данные дополнительно обогащаются HTML-описанием, полученным
+    параллельно с использованием семафора для ограничения параллельности.
 
-    Args:
-        afterbuy_fabric_id (int): The fabric identifier used in Afterbuy.
-        httpx_client (httpx.AsyncClient): Asynchronous HTTP client for making API requests.
+    Аргументы:
+        afterbuy_fabric_id (int): Идентификатор ткани, используемый в Afterbuy.
+        httpx_client (httpx.AsyncClient): Асинхронный HTTP-клиент для выполнения запросов к API.
 
-    Returns:
-        dict: A dictionary containing:
-            - "products" (list[dict]): Successfully retrieved and enriched product data.
-            - "not_added_eans" (list[str]): List of EANs for products that failed to process.
+    Возвращает:
+        dict: Словарь, содержащий:
+            - "products" (list[dict]): Успешно полученные и обогащенные данные о продуктах.
+            - "not_added_eans" (list[str]): Список EAN для продуктов, которые не удалось обработать.
 
-    Raises:
-        Exception: If access token retrieval fails,
-            if the request to Afterbuy repeatedly fails,
-            if no products are returned,
-            or if product enrichment encounters unrecoverable errors.
+    Исключения:
+        Exception: Если не удается получить токен доступа,
+            если запрос к Afterbuy многократно не удается,
+            если продукты отсутствуют,
+            или если обогащение продукта сталкивается с необработанными ошибками.
     """
-    logger.info(f"get_products_and_data_by_fabric with afterbuy_fabric_id: {afterbuy_fabric_id} was accessed")
+    logger.info(f"get_products_and_data_by_fabric с afterbuy_fabric_id: {afterbuy_fabric_id} был вызван")
     
     fabric_data = await get_fabric_id_by_afterbuy_id(afterbuy_fabric_id, httpx_client)
     fabric_id = fabric_data.get("id")
@@ -224,9 +227,9 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
 
     limit = 3000
     
-    logger.debug(f"Got access token, making request for fabric_id {fabric_id}")
+    logger.debug(f"Получен токен доступа, выполняется запрос для fabric_id {fabric_id}")
     
-    # Retry logic for main request
+    # Логика повторных попыток для основного запроса
     for attempt in range(3):
         try:
             response = await httpx_client.post(
@@ -235,36 +238,36 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
             if response.status_code == 200:
                 break
         except Exception as e:
-            if attempt == 2:  # Last attempt
-                logger.error(f"Error while requesting products by fabric_id: {e}")
-                raise Exception(f"Error while requesting products by fabric_id from Afterbuy: {e}")
-            await asyncio.sleep(1 * (attempt + 1))  # Exponential backoff
+            if attempt == 2:  # Последняя попытка
+                logger.error(f"Ошибка при запросе продуктов по fabric_id: {e}")
+                raise Exception(f"Ошибка при запросе продуктов по fabric_id у Afterbuy: {e}")
+            await asyncio.sleep(1 * (attempt + 1))  # Экспоненциальная задержка
     else:
-        logger.error(f"Failed to get products by fabric_id: {response.status_code} - {response.text}")
-        raise Exception(f"Error retrieving data from Afterbuy by fabric_id: {response.status_code} - {response.text}")
+        logger.error(f"Не удалось получить продукты по fabric_id: {response.status_code} - {response.text}")
+        raise Exception(f"Ошибка получения данных у Afterbuy по fabric_id: {response.status_code} - {response.text}")
 
     data = response.json()
     
     if not data:
-        logger.error(f"No products found for fabric_id {fabric_id} in Afterbuy")
-        raise Exception(f"No products found for fabric_id {fabric_id} in Afterbuy")
+        logger.error(f"Продукты не найдены для fabric_id {fabric_id} в Afterbuy")
+        raise Exception(f"Продукты не найдены для fabric_id {fabric_id} в Afterbuy")
     
-    logger.debug(f"Response data contains {len(data)} products for fabric_id {fabric_id}")
+    logger.debug(f"Данные ответа содержат {len(data)} продуктов для fabric_id {fabric_id}")
     
     full_data = []
     not_added_eans = []
     
     if isinstance(data, list):
         
-        semaphore = asyncio.Semaphore(10)  # Limit to 10 concurrent requests
+        semaphore = asyncio.Semaphore(10)  # Ограничение до 10 параллельных запросов
         
         async def enrich_product(product):
-            product_ean = product.get("ean", "No EAN")
+            product_ean = product.get("ean", "Нет EAN")
             if not product.get("id"):
                 return (product_ean, None)
             try:
                 async with semaphore:
-                    # Retry logic for product description
+                    # Логика повторных попыток для описания продукта
                     for attempt in range(3):
                         try:
                             product["html_description"] = await _get_product_html_desc(product["id"], httpx_client)
@@ -275,7 +278,7 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
                             await asyncio.sleep(0.5 * (attempt + 1))
                 return (product_ean, product)
             except Exception as e:
-                logger.error(f"Error fetching html desc for product {product.get('id')}: {e}")
+                logger.error(f"Ошибка при получении html-описания для продукта {product.get('id')}: {e}")
                 return (product_ean, e)
                 
         
@@ -285,17 +288,17 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
         for product_ean, res in results:
             if isinstance(res, Exception) or res is None:
                 not_added_eans.append(product_ean)
-                logger.error(f"Error in ean: {product_ean}")
+                logger.error(f"Ошибка в ean: {product_ean}")
             elif res:
                 full_data.append(res)
                 
         logger.info(
-            f"Fetched {len(full_data)} products successfully, {len(not_added_eans)} errors occurred for fabric_id {fabric_id}"
+            f"Успешно получено {len(full_data)} продуктов, произошла ошибка для {len(not_added_eans)} продуктов с fabric_id {fabric_id}"
         )
                 
     else:
         raise Exception(
-            f"Could not fetch data for product with fabric {fabric_id}",
+            f"Не удалось получить данные для продукта с тканью {fabric_id}",
         )   
     
     return {
@@ -307,9 +310,9 @@ async def get_products_by_fabric(afterbuy_fabric_id: int, httpx_client: httpx.As
 
 async def _get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClient):
     """
-    Retrieves HTML description for a specific product from Afterbuy API.
+    Получает HTML-описание для конкретного продукта из Afterbuy API.
     """
-    logger.debug(f"get_product_html_desc with product_id: {product_id} was accessed")
+    logger.debug(f"get_product_html_desc с product_id: {product_id} был вызван")
     
     try:
         access_token = await get_access_token(httpx_client=httpx_client) 
@@ -318,7 +321,7 @@ async def _get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClien
     
     headers = {"access-token": access_token}
     
-    logger.debug(f"Got access token, making request for product_id {product_id}")
+    logger.debug(f"Получен токен доступа, выполняется запрос для product_id {product_id}")
     
     for attempt in range(3):
         try:
@@ -328,63 +331,63 @@ async def _get_product_html_desc(product_id: int, httpx_client: httpx.AsyncClien
             if response.status_code == 200:
                 break
         except Exception as e:
-            if attempt == 2:  # Last attempt
-                logger.error(f"Error while requesting product html description: {e}")
-                raise Exception(f"Error while requesting product html description from Afterbuy: {e}")
-            await asyncio.sleep(0.5 * (attempt + 1))  # Wait before retry
+            if attempt == 2:  # Последняя попытка
+                logger.error(f"Ошибка при запросе HTML-описания продукта: {e}")
+                raise Exception(f"Ошибка при запросе HTML-описания продукта у Afterbuy: {e}")
+            await asyncio.sleep(0.5 * (attempt + 1))  # Ждем перед повтором
             continue
         
-        # Handle non-200 status codes
-        if attempt == 2:  # Last attempt
-            logger.error(f"Failed to get product data: {response.status_code} - {response.text}")
-            raise Exception(f"Error retrieving data from Afterbuy: {response.status_code} - {response.text}")
-        await asyncio.sleep(0.5 * (attempt + 1))  # Wait before retry
+        # Обработка статусов, отличных от 200
+        if attempt == 2:  # Последняя попытка
+            logger.error(f"Не удалось получить данные о продукте: {response.status_code} - {response.text}")
+            raise Exception(f"Ошибка получения данных у Afterbuy: {response.status_code} - {response.text}")
+        await asyncio.sleep(0.5 * (attempt + 1))  # Ждем перед повтором
 
     data = response.json()
     
     if not data:
-        logger.error(f"Product with product_id {product_id} not found in Afterbuy")
-        raise Exception(f"Product with product_id {product_id} not found in Afterbuy")
+        logger.error(f"Продукт с product_id {product_id} не найден в Afterbuy")
+        raise Exception(f"Продукт с product_id {product_id} не найден в Afterbuy")
     
     only_html = None
     
     if isinstance(data, list):
         only_html = data[0]['html_description']
-        logger.debug(f"Successfully fetched html description for product_num: {data[0].get('product_num')} with EAN: {data[0].get('ean')}")
+        logger.debug(f"Успешно получено html-описание для product_num: {data[0].get('product_num')} с EAN: {data[0].get('ean')}")
         
     elif isinstance(data, dict):
         only_html = data.get('html_description')
-        logger.debug(f"Successfully fetched html description for product_num: {data.get('product_num')} with EAN: {data.get('ean')}")
+        logger.debug(f"Успешно получено html-описание для product_num: {data.get('product_num')} с EAN: {data.get('ean')}")
         
     else:
-        logger.warning(f"Product with ean {data.get('ean')}, cannot fetch html description")
+        logger.warning(f"Продукт с ean {data.get('ean')}, не удалось получить html-описание")
     
     if not only_html:
-        raise Exception(f"Product with product_id {product_id} has no html description")
+        raise Exception(f"Продукт с product_id {product_id} не имеет html-описания")
     
     return only_html
 
 
 async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: httpx.AsyncClient):
     """
-    Retrieves the internal fabric ID for product search based on the Afterbuy fabric ID.
+    Получает внутренний идентификатор ткани для поиска продукта на основе идентификатора ткани Afterbuy.
 
-    The function requests the fabric information from the Afterbuy API using the provided
-    Afterbuy fabric ID. Retry logic is applied for reliability. If multiple or single fabric
-    objects are returned, the corresponding internal fabric ID is extracted.
+    Функция запрашивает информацию о ткани у Afterbuy API, используя предоставленный
+    идентификатор ткани Afterbuy. Применяется логика повторных попыток для надежности. Если возвращаются несколько или один объект ткани,
+    извлекается соответствующий внутренний идентификатор ткани.
 
-    Args:
-        afterbuy_fabric_id (int): Fabric identifier in the Afterbuy system.
-        httpx_client (httpx.AsyncClient): Asynchronous HTTP client for API requests.
+    Аргументы:
+        afterbuy_fabric_id (int): Идентификатор ткани в системе Afterbuy.
+        httpx_client (httpx.AsyncClient): Асинхронный HTTP-клиент для выполнения запросов к API.
 
-    Returns:
-        int: The internal fabric ID used in the parser.
+    Возвращает:
+        int: Внутренний идентификатор ткани, используемый в парсере.
 
-    Raises:
-        Exception: If the access token cannot be retrieved,
-            if the API request repeatedly fails,
-            if no fabric data is returned,
-            or if the fabric ID cannot be extracted from the response.
+    Исключения:
+        Exception: Если токен доступа не может быть получен,
+            если запрос к API многократно не удается,
+            если данные о ткани отсутствуют,
+            или если идентификатор ткани не может быть извлечен из ответа.
     """
     
     try:
@@ -394,7 +397,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
     
     headers = {"access-token": access_token}
     
-    logger.debug(f"Got access token, making request for afterbuy_fabric_id {afterbuy_fabric_id}")
+    logger.debug(f"Получен токен доступа, выполняется запрос для afterbuy_fabric_id {afterbuy_fabric_id}")
     
     data = {
         "afterbuy_id": str(afterbuy_fabric_id)
@@ -409,54 +412,54 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
                 break
         except Exception as e:
             if attempt == 2:
-                logger.error(f"Error while requesting fabric from Afterbuy: {e}")
+                logger.error(f"Ошибка при запросе ткани у Afterbuy: {e}")
                 raise Exception(
-                    f"Error while requesting product fabric from Afterbuy: {e}",
+                    f"Ошибка при запросе ткани у Afterbuy: {e}",
                 )
             await asyncio.sleep(0.5 * (attempt+1))
             continue
         
-        # Handle non-200 status codes
-        if attempt == 2:  # Last attempt
-            logger.error(f"Failed to get fabric by afterbuy_fabric_id: {response.status_code} - {response.text}")
-            raise Exception(f"Error retrieving fabric from Afterbuy by afterbuy_fabric_id: {response.status_code} - {response.text}")
+        # Обработка статусов, отличных от 200
+        if attempt == 2:  # Последняя попытка
+            logger.error(f"Не удалось получить ткань по afterbuy_fabric_id: {response.status_code} - {response.text}")
+            raise Exception(f"Ошибка получения ткани у Afterbuy по afterbuy_fabric_id: {response.status_code} - {response.text}")
         await asyncio.sleep(0.5 * (attempt + 1)) 
         
     data = response.json()
     
     if not data:
-        logger.error(f"No fabric found for afterbuy_fabric_id {afterbuy_fabric_id} in Afterbuy")
+        logger.error(f"Ткань не найдена для afterbuy_fabric_id {afterbuy_fabric_id} в Afterbuy")
         raise Exception(
-            f"No fabric found for afterbuy_fabric_id {afterbuy_fabric_id} in Afterbuy",
+            f"Ткань не найдена для afterbuy_fabric_id {afterbuy_fabric_id} в Afterbuy",
         )
     
-    logger.debug(f"Response data contains {len(data)} products for afterbuy_fabric_id {afterbuy_fabric_id}")
+    logger.debug(f"Данные ответа содержат {len(data)} продукты для afterbuy_fabric_id {afterbuy_fabric_id}")
     
     only_id = None
     
     if isinstance(data, list):
         only_id = data[0]['id']
         name = data[0]['name']
-        logger.debug(f"Successfully fetched fabric id for afterbuy_fabric_id: {afterbuy_fabric_id}")
+        logger.debug(f"Успешно получен идентификатор ткани для afterbuy_fabric_id: {afterbuy_fabric_id}")
         
     elif isinstance(data, dict):
         only_id = data.get('id')
         name = data.get('name')
-        logger.debug(f"Successfully fetched fabric id for afterbuy_fabric_id: {afterbuy_fabric_id}")
+        logger.debug(f"Успешно получен идентификатор ткани для afterbuy_fabric_id: {afterbuy_fabric_id}")
         
     else:
-        logger.warning(f"Fabric with afterbuy_fabric_id: {afterbuy_fabric_id}, cannot fetch fabric id")
+        logger.warning(f"Ткань с afterbuy_fabric_id: {afterbuy_fabric_id}, не удалось получить идентификатор ткани")
     
     if not only_id:
         raise Exception(
-            f"Fabric with afterbuy_fabric_id {afterbuy_fabric_id} has no fabric id",
+            f"Ткань с afterbuy_fabric_id {afterbuy_fabric_id} не имеет идентификатора ткани",
         )
     
     for ban_word in ban_keywords_for_fabrics:
         if ban_word in name.casefold().strip():
             raise HTTPException(
                 status_code=403,
-                detail=f"It is banned fabric, you cannot upload it to Mirakl! Fabric name: {name}"
+                detail=f"Это запрещенная ткань, вы не можете загрузить ее в Mirakl! Название ткани: {name}"
             )
     
     return {
@@ -467,7 +470,7 @@ async def get_fabric_id_by_afterbuy_id(afterbuy_fabric_id: int, httpx_client: ht
     
     
     
-# FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ИЗ ФАЙЛА !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 async def get_products_by_fabric_from_file(afterbuy_fabric_id: int, market: str):
@@ -480,28 +483,28 @@ async def get_products_by_fabric_from_file(afterbuy_fabric_id: int, market: str)
     if afterbuy_fabric_name is None:
         afterbuy_fabric_name = fabric_data.get(str(afterbuy_fabric_id))
         if afterbuy_fabric_name is None:
-            raise Exception(f"Fabric with afterbuy_fabric_id {afterbuy_fabric_id} not found in fabric_id.json")
+            raise Exception(f"Ткань с afterbuy_fabric_id {afterbuy_fabric_id} не найдена в fabric_id.json")
 
     with open(f"src/const/import_data/fabrics_{market}/{afterbuy_fabric_name}.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     
     if not data:
-        logger.error(f"No products found for fabric_name {afterbuy_fabric_name} in mock")
-        raise Exception(f"No products found for fabric_name {afterbuy_fabric_name} in mock")
+        logger.error(f"Продукты не найдены для fabric_name {afterbuy_fabric_name} в mock")
+        raise Exception(f"Продукты не найдены для fabric_name {afterbuy_fabric_name} в mock")
 
     fabric_products_with_html = []
     not_added_eans = []
 
-    # add html
+    # добавляем html
     for prod in data:
         fname = Path(f"src/const/import_data/HTML_{market}/{prod['EAN']}.html")
         prod['html_description'] = fname.read_text(encoding="utf-8")
         fabric_products_with_html.append(prod)
     
-    logger.info(f"Fetched {len(fabric_products_with_html)} products for fabric {afterbuy_fabric_name}")
+    logger.info(f"Получено {len(fabric_products_with_html)} продуктов для ткани {afterbuy_fabric_name}")
     
     return {
         "products": fabric_products_with_html,
         "not_added_eans": not_added_eans,
         "fabric_name": afterbuy_fabric_name
-    }   
+    }

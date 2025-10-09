@@ -15,17 +15,18 @@ from typing import Literal
 
 router = APIRouter()
 
-
 @router.get("/uploaded-fabrics", tags=["fabric management"])
 async def get_uploaded_fabrics(session: AsyncSession = Depends(get_session),
                                current_user = Depends(get_current_user),
                                limit: int = Query(10, ge=1, le=100),
                                offset: int = Query(0, ge=0)
                                ):
+    """
+    Возвращает список всех загруженных фабрик с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     fabrics = await get_all_uploaded_fabrics(session=session, limit=limit, offset=offset)
     return fabrics
-
-
 
 @router.get("/uploaded-fabrics/fabrics-by-status", tags=["fabric management"])
 async def get_fabrics_by_status(status: str = Query("pending", pattern="^(pending|processed|error)$"),
@@ -34,6 +35,10 @@ async def get_fabrics_by_status(status: str = Query("pending", pattern="^(pendin
                                 limit: int = Query(10, ge=1, le=100),
                                 offset: int = Query(0, ge=0)
                                 ):
+    """
+    Возвращает фабрики, отфильтрованные по статусу обработки, с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     data = fabricsByStatusRequest(status=status)
     fabrics = await get_filtered_uploaded_fabrics(session=session, data=data, limit=limit, offset=offset)
     return fabrics
@@ -45,6 +50,10 @@ async def get_fabrics_by_shop(shop: str = Query(..., pattern="^(vente|xxxlutz)$"
                                limit: int = Query(10, ge=1, le=100),
                                offset: int = Query(0, ge=0)
                                ):
+    """
+    Возвращает фабрики по названию магазина с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     fabrics = await get_uploaded_fabrics_by_shop(session=session, shop=shop, limit=limit, offset=offset)
     return fabrics
 
@@ -56,6 +65,10 @@ async def get_eans_by_status(afterbuy_fabric_id: int,
                              limit: int = Query(10, ge=1, le=100),
                              offset: int = Query(0, ge=0)
                              ):
+    """
+    Возвращает EAN'ы, отфильтрованные по ID фабрики и статусу, с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     data = eansByStatusRequest(afterbuy_fabric_id=afterbuy_fabric_id, status=status)
     eans = await get_filtered_uploaded_eans(session, data=data, limit=limit, offset=offset)
     return eans
@@ -67,6 +80,10 @@ async def get_fabrics_by_user(user_id: int,
                               limit: int = Query(10, ge=1, le=100),
                               offset: int = Query(0, ge=0)
                               ):
+    """
+    Возвращает фабрики, загруженные конкретным пользователем, с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     if not await user.get_user_by_id(session, user_id):
         raise HTTPException(status_code=404, detail="User not found")
     fabrics = await get_users_uploaded_fabrics(session, user_id=user_id, limit=limit, offset=offset)
@@ -74,6 +91,10 @@ async def get_fabrics_by_user(user_id: int,
 
 @router.patch("/uploaded-fabrics/update-ean-status", tags=["fabric management"])
 async def update_ean_status(data: changeEanStatusRequest, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    """
+    Обновляет статус EAN и автоматически пересчитывает статус фабрики.
+    Доступно аутентифицированным пользователям.
+    """
     try:
         ean_obj = await change_ean_status(session, data=data)
     except ValueError:
@@ -82,6 +103,10 @@ async def update_ean_status(data: changeEanStatusRequest, session: AsyncSession 
 
 @router.delete("/uploaded-fabrics/vente/delete-fabric", tags=["fabric management"])
 async def delete_fabric_vente(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    """
+    Удаляет фабрику для магазина vente по ID из Afterbuy.
+    Доступно аутентифицированным пользователям.
+    """
     result = await delete_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="vente")
     if not result:
         raise HTTPException(status_code=404, detail="Fabric not found")
@@ -89,14 +114,21 @@ async def delete_fabric_vente(afterbuy_fabric_id: int, session: AsyncSession = D
 
 @router.delete("/uploaded-fabrics/xxxlutz/delete-fabric", tags=["fabric management"])
 async def delete_fabric_xxxlutz(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    """
+    Удаляет фабрику для магазина xxxlutz по ID из Afterbuy.
+    Доступно аутентифицированным пользователям.
+    """
     result = await delete_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="xxxlutz")
     if not result:
         raise HTTPException(status_code=404, detail="Fabric not found")
     return {"detail": "Fabric deleted successfully"}
 
-
 @router.get("/uploaded-fabrics/vente/{afterbuy_fabric_id}", tags=["fabric management"])
 async def get_uploaded_fabric_vente(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    """
+    Возвращает данные фабрики для магазина vente по ID из Afterbuy.
+    Доступно аутентифицированным пользователям.
+    """
     fabric = await get_uploaded_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="vente")
     if not fabric:
         raise HTTPException(status_code=404, detail="Fabric not found")
@@ -104,6 +136,10 @@ async def get_uploaded_fabric_vente(afterbuy_fabric_id: int, session: AsyncSessi
 
 @router.get("/uploaded-fabrics/xxxlutz/{afterbuy_fabric_id}", tags=["fabric management"])
 async def get_uploaded_fabric_xxxlutz(afterbuy_fabric_id: int, session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    """
+    Возвращает данные фабрики для магазина xxxlutz по ID из Afterbuy.
+    Доступно аутентифицированным пользователям.
+    """
     fabric = await get_uploaded_fabric_by_afterbuy_id_and_shop(session, afterbuy_fabric_id=afterbuy_fabric_id, shop="xxxlutz")
     if not fabric:
         raise HTTPException(status_code=404, detail="Fabric not found")
@@ -116,6 +152,10 @@ async def get_uploaded_fabric_eans_vente(afterbuy_fabric_id: int,
                                    limit: int = Query(10, ge=1, le=100),
                                    offset: int = Query(0, ge=0)
                                    ):
+    """
+    Возвращает EAN'ы для фабрики в магазине vente по ID из Afterbuy с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     eans = await get_eans_by_afterbuy_fabric_id_and_shop(session=session,
                                                   afterbuy_fabric_id=afterbuy_fabric_id,
                                                   shop="vente",
@@ -133,6 +173,10 @@ async def get_uploaded_fabric_eans_xxxlutz(afterbuy_fabric_id: int,
                                    limit: int = Query(10, ge=1, le=100),
                                    offset: int = Query(0, ge=0)
                                    ):
+    """
+    Возвращает EAN'ы для фабрики в магазине xxxlutz по ID из Afterbuy с пагинацией.
+    Доступно аутентифицированным пользователям.
+    """
     eans = await get_eans_by_afterbuy_fabric_id_and_shop(session=session,
                                                   afterbuy_fabric_id=afterbuy_fabric_id,
                                                   shop="xxxlutz",

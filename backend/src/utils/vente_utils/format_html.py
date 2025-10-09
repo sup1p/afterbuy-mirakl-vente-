@@ -1,6 +1,6 @@
 """
-HTML processing utilities module.
-Extracts product descriptions and properties from HTML content.
+Модуль для обработки HTML.
+Извлекает описания и свойства продуктов из HTML-контента.
 """
 
 from bs4 import BeautifulSoup
@@ -15,23 +15,24 @@ logger = logging.getLogger(__name__)
 
 def extract_product_description_from_html(html: str) -> str:
     """
-    Extracts text description from 'Produktbeschreibung' block.
+    Извлекает текстовое описание из блока 'Produktbeschreibung'.
+    Если блок или описание отсутствуют, возвращает пустую строку.
     """
-    logger.debug(f"Extracting product description from HTML of length {len(html) if html else 0}")
-    
+    logger.debug(f"Извлечение описания продукта из HTML длиной {len(html) if html else 0}")
+
     soup = BeautifulSoup(html, "html.parser")
 
-    # Find "Produktbeschreibung" heading
+    # Ищем заголовок "Produktbeschreibung"
     heading = soup.find("div", class_="panel-heading", string="Produktbeschreibung")
     if not heading:
         return ""
 
-    # Description block immediately after heading
+    # Блок описания сразу после заголовка
     description_block = heading.find_next("div", class_="text-section")
     if not description_block:
         return ""
 
-    # Remove <img>, <script>, <style> tags and clean up whitespace
+    # Удаляем теги <img>, <script>, <style> и очищаем пробелы
     for tag in description_block.find_all(["img", "script", "style"]):
         tag.decompose()
 
@@ -41,20 +42,20 @@ def extract_product_description_from_html(html: str) -> str:
 
 def extract_product_properties_from_html(html: str) -> str:
     """
-    Extracts product properties from HTML tab content and returns them as a single string.
-    Example output:
+    Извлекает свойства продукта из содержимого вкладки HTML и возвращает их в виде строки.
+    Пример вывода:
     "Höhe: 2066 mm Tiefe: 626 mm Breite: 1300 mm Farbe: Farbwahl Material: Holzwerkstoff Lieferzustand: Zerlegt"
     """
     clean_html = re.sub(r"^<!\[CDATA\[|\]\]>$", "", html.strip())
     soup = BeautifulSoup(clean_html, "html.parser")
     tab1 = soup.find("div", {"id": "tab-content1"})
     if not tab1:
-        logger.warning("No tab1-content found in html")
+        logger.warning("Содержимое tab1 не найдено в HTML")
         return ""
 
     details = []
 
-    # Разбиваем по <br/> внутри абзацев
+    # Разбиваем содержимое по тегу <br/> внутри абзацев
     for p in tab1.find_all("p"):
         parts = p.decode_contents().split("<br/>")
         for part in parts:
@@ -64,7 +65,6 @@ def extract_product_properties_from_html(html: str) -> str:
             clean_text = re.sub(r"\s+", " ", clean_text).strip()
             details.append(clean_text)
 
-    # Соединяем в одну строку
-
-    logger.info(f"Product extracted from html properties: {details}")
+    # Логируем извлеченные свойства
+    logger.info(f"Свойства продукта, извлеченные из HTML: {details}")
     return "\n".join(details)
