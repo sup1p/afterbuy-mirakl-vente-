@@ -73,7 +73,7 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
                     material_mapping, {}, brand_mapping, delivery_days
                 )
 
-                # Обрабатываем изображения для продукта (хотя для офферов это может быть не обязательно)
+                # Обрабатываем изобр    ажения для продукта (хотя для офферов это может быть не обязательно)
                 mapped = await _process_images_for_product(mapped, raw_item_for_mapping)
 
                 # --- Специфичная логика для создания офферов ---
