@@ -162,10 +162,12 @@ export function FileManager() {
       const formData = new FormData()
       formData.append('file', file)
 
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type)
+      console.log('FormData entries:', Array.from(formData.entries()))
+
       const response = await apiClient.request(endpoints[category], {
         method: 'POST',
-        body: formData,
-        headers: {} // Let browser set Content-Type for FormData
+        body: formData
       })
 
       setSuccess(`File ${file.name} uploaded successfully to ${category}`)
