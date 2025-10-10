@@ -1,6 +1,7 @@
 # app/routers/local_importer.py
 import json
 import logging
+import re
 from fastapi import HTTPException, APIRouter, Depends
 import os
 
@@ -39,8 +40,19 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
         "PictureURL", "pictureurls", "Description", "EAN", "Fabric"
     }
     properties = {k: v for k, v in local_item.items() if k not in core_fields}
-    properties["EAN"] = local_item.get("EAN", "")
-    ean = local_item.get("EAN", "")
+    
+    # --- Новая логика получения EAN ---
+    ean = local_item.get("EAN", "").strip()
+
+    if not ean:  # Если EAN пустой или отсутствует
+        hersteller_nummer = local_item.get("Herstellernummer", "")
+        if hersteller_nummer:
+            # Извлекаем только цифры из Herstellernummer
+            numeric_part = re.search(r'\d+', hersteller_nummer)
+            if numeric_part:
+                ean = numeric_part.group(0)
+
+    properties["EAN"] = ean
 
     html_description = ""
     if ean:
