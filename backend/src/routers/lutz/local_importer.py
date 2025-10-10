@@ -1,13 +1,12 @@
 # app/routers/local_importer.py
-from ctypes.wintypes import tagSIZE
 import json
 import logging
 from fastapi import HTTPException, APIRouter, Depends
-from pydantic import BaseModel
 import os
 
 from src.core.dependencies import get_current_user
-from src.services.lutz_services import mirakl  # We only need mirakl, not afterbuy
+from src.schemas.product_schemas import FabricWithDeliveryAndMarketRequest
+from src.services.lutz_services import mirakl
 from src.utils.lutz_utils.image_processing import _process_images_for_product
 from src.utils.lutz_utils import mapping_tools, csv_tools
 from src.const.constants_lutz import mapping, real_mapping_v12, color_mapping, material_mapping, brand_mapping
@@ -24,7 +23,6 @@ router = APIRouter()
 
 
 # Define the paths to the local data files
-DATA_DIR = "app/new data"
 DATA_DIR = "src/const/import_data"
 FABRICS_DIR = os.path.join(DATA_DIR, "fabrics_jv")
 FABRIC_ID_FILE = os.path.join(DATA_DIR, "fabric_id.json")
@@ -35,20 +33,15 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
     Адаптирует НОВУЮ ПЛОСКУЮ структуру локального элемента JSON к структуре,
     ожидаемой основной функцией сопоставления (map_product).
     """
-    # В новой структуре все атрибуты находятся на верхнем уровне.
-    # Собираем их в словарь 'properties'.
-    # Основные поля, которые не являются свойствами
     core_fields = {
         "Artikelbeschreibung", "Currency", "Startpreis", "Typ", "Menge",
         "SofortkaufenPreis", "CategoryID", "Category2ID", "GalleryURL",
         "PictureURL", "pictureurls", "Description", "EAN", "Fabric"
     }
     properties = {k: v for k, v in local_item.items() if k not in core_fields}
-    # Добавляем EAN в properties, так как он используется и там
     properties["EAN"] = local_item.get("EAN", "")
     ean = local_item.get("EAN", "")
 
-    # --- Получение описания из HTML ---
     html_description = ""
     if ean:
         html_path = os.path.join(DATA_DIR, f"HTML_{market}", f"{ean}.html")
@@ -71,7 +64,6 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
         "html_description": html_description,
     }
 
-    # --- FIX for extract_dimensions ---
     for key, value in adapted_item["properties"].items():
         if "maße" in key.lower() and isinstance(value, str):
             adapted_item["properties"][key] = [value]
@@ -80,24 +72,21 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
     return adapted_item
 
 
-class LocalFabricRequest(BaseModel):
-    fabric_id: str
-
-
 @router.post("/import-local-fabric", tags=["lutz"])
-async def import_local_fabric(request: LocalFabricRequest, current_user = Depends(get_current_user)):
+async def import_local_fabric(request: FabricWithDeliveryAndMarketRequest):
     """Импорт всех продуктов по fabric_id из локальных данных"""
+    afterbuy_fabric_id = request.afterbuy_fabric_id
+    delivery_days = request.delivery_days
+    market = request.market
+
     try:
-        # 1. Find fabric name from fabric_id
         with open(FABRIC_ID_FILE, "r", encoding="utf-8") as f:
             fabric_id_map = json.load(f)
 
-        fabric_name = fabric_id_map.get(str(request.fabric_id))
+        fabric_name = fabric_id_map.get(str(afterbuy_fabric_id))
         if not fabric_name:
-            raise HTTPException(status_code=404, detail=f"Fabric ID {request.fabric_id} не найден в fabric_id.json.")
+            raise HTTPException(status_code=404, detail=f"Fabric ID {afterbuy_fabric_id} не найден в fabric_id.json.")
 
-        # 2. Load the correct product file based on fabric name
-        # Заменяем символы, недопустимые в именах файлов
         safe_fabric_name = fabric_name.replace("/", "_").replace("\\", "_")
         products_file_path = os.path.join(FABRICS_DIR, f"{safe_fabric_name}.json")
 
@@ -107,45 +96,40 @@ async def import_local_fabric(request: LocalFabricRequest, current_user = Depend
         if not products_to_process:
             raise HTTPException(status_code=404, detail=f"Файл {products_file_path} пуст или не содержит продуктов.")
 
-        # 3. Process and map products
         all_mapped = []
         for local_item in products_to_process:
             try:
-                # Адаптируем структуру данных перед передачей в маппер
-                raw_item_for_mapping = adapt_local_item_for_mapping(local_item)
+                raw_item_for_mapping = adapt_local_item_for_mapping(local_item, market)
 
-                # The logic from the original router
                 if "properties" in raw_item_for_mapping and isinstance(raw_item_for_mapping["properties"], str):
                     try:
                         raw_item_for_mapping["properties"] = json.loads(raw_item_for_mapping["properties"])
                     except json.JSONDecodeError:
                         raw_item_for_mapping["properties"] = {}
 
-                # Теперь передаем адаптированные данные в маппер
                 mapped = await mapping_tools.map_product(
                     raw_item_for_mapping, mapping, fieldnames,
                     real_mapping_v12, color_mapping,
-                    material_mapping, {}, brand_mapping
+                    material_mapping, {}, brand_mapping,
+                    delivery_days
                 )
 
                 mapped = await _process_images_for_product(mapped, raw_item_for_mapping)
                 all_mapped.append(mapped)
 
             except Exception as e:
-                # Use a more descriptive log for which product failed
                 product_identifier = local_item.get('EAN') or local_item.get('Herstellernummer') or 'Unknown'
                 logger.error("Error processing local product %s: %s", product_identifier, e)
 
         if not all_mapped:
             raise HTTPException(status_code=400, detail="Нет продуктов для импорта после обработки.")
 
-        # 4. Create CSV and upload to Mirakl
         csv_content = csv_tools.write_csv(fieldnames, all_mapped)
         result = await mirakl.upload_csv(csv_content)
 
         return {
             "status": "success",
-            "fabric_id": request.fabric_id,
+            "fabric_id": afterbuy_fabric_id,
             "fabric_name": fabric_name,
             "processed_products": len(all_mapped),
             "mirakl_response": result,
@@ -155,5 +139,5 @@ async def import_local_fabric(request: LocalFabricRequest, current_user = Depend
         logger.exception("Data file not found: %s", e.filename)
         raise HTTPException(status_code=500, detail=f"Файл с данными не найден: {e.filename}")
     except Exception as e:
-        logger.exception("Error importing local products for fabric_id: %s", request.fabric_id)
+        logger.exception("Error importing local products for fabric_id: %s", afterbuy_fabric_id)
         raise HTTPException(status_code=500, detail=str(e))
