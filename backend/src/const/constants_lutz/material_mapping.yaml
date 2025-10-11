@@ -62,10 +62,15 @@ kirschbaumholz: cherry_wood
 bambusholz: Bamboo
 paraffin: paraffin
 acryl: acryl
-MDF/Spanplatte: wood
+mdf/spanplatte: wood
 holzfurnier: wood
-Aluminium: metal
 aluminium: metal
-Holz & Glas: wood
+holz & glas: wood
+holz & gewebe: wood
 leinen: animalSkin
-#MDF: wood
+harz: plastic
+jute: textile
+stoff: textile
+lärche: wood
+edelstahl: metal
+mdf: wood
