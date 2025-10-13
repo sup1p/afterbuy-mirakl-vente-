@@ -1,6 +1,9 @@
 # app/mappings/brand_mapping.yaml
 
 jv möbel: "brand_MKT1371"
+JV moebel: "brand_MKT1371"
+JVmoebel: "brand_MKT1371"
+JVMöbel: "brand_MKT1371"
 accadueodesign_(IT): "brand_MKT1371"
 Bellavista: "brand_MKT1637"
 Mehr als 6: "brand_MKT1371"

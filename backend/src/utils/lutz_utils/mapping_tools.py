@@ -144,16 +144,25 @@ def to_code(prefix: str, label: str) -> str:
 
 
 def to_color_code(label: str) -> str:
-    """Генерация кода для цветов: color_grayBrown"""
+    """
+    Генерация кода для цветов в формате camelCase с префиксом color_.
+    Примеры: "Gray" -> "color_gray", "Gray Brown" -> "color_grayBrown", "darkGray" -> "color_darkGray"
+    """
     if not label:
         return ""
-    parts = re.split(r"[^a-zA-Z0-9]+", label)
-    parts = [p for p in parts if p]
-    if not parts:
+    
+    # Удаляем пробелы, чтобы "Gray Brown" стало "GrayBrown"
+    s = label.replace(" ", "")
+    
+    if not s:
         return ""
-    base = parts[0].lower()
-    rest = [p.capitalize() for p in parts[1:]]
-    return "color_" + base + "".join(rest)
+        
+    # Преобразуем первый символ в нижний регистр, а остальное оставляем как есть
+    # "GrayBrown" -> "g" + "rayBrown" = "grayBrown"
+    # "darkGray" -> "d" + "arkGray" = "darkGray"
+    camel_case_part = s[0].lower() + s[1:]
+    
+    return f"color_{camel_case_part}"
 
 
 # --------------------- Material Mapper ---------------------

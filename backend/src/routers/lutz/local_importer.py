@@ -34,6 +34,17 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
     Адаптирует НОВУЮ ПЛОСКУЮ структуру локального элемента JSON к структуре,
     ожидаемой основной функцией сопоставления (map_product).
     """
+    def get_clean_ean(value: str) -> str:
+        """Извлекает из строки только цифры."""
+        if not value:
+            return ""
+        numeric_part = re.search(r'\d+', str(value))
+        return numeric_part.group(0) if numeric_part else ""
+
+    def is_valid_ean_length(ean_str: str) -> bool:
+        """Проверяет, что EAN состоит из 8 или 13 цифр."""
+        return len(ean_str) in (8, 13) and ean_str.isdigit()
+
     core_fields = {
         "Artikelbeschreibung", "Currency", "Startpreis", "Typ", "Menge",
         "SofortkaufenPreis", "CategoryID", "Category2ID", "GalleryURL",
@@ -42,15 +53,31 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
     properties = {k: v for k, v in local_item.items() if k not in core_fields}
     
     # --- Новая логика получения EAN ---
-    ean = local_item.get("EAN", "").strip()
+    ean_candidate = ""
+    source_value_for_error = ""
 
-    if not ean:  # Если EAN пустой или отсутствует
-        hersteller_nummer = local_item.get("Herstellernummer", "")
-        if hersteller_nummer:
-            # Извлекаем только цифры из Herstellernummer
-            numeric_part = re.search(r'\d+', hersteller_nummer)
-            if numeric_part:
-                ean = numeric_part.group(0)
+    # Попытка 1: из поля EAN
+    raw_ean = local_item.get("EAN", "").strip()
+    source_value_for_error = raw_ean
+    if is_valid_ean_length(raw_ean):
+        ean_candidate = raw_ean
+    
+    # Попытка 2: из поля Herstellernummer, если первая не удалась
+    if not ean_candidate:
+        raw_hersteller = local_item.get("Herstellernummer", "")
+        if not source_value_for_error: # если поле EAN было пустым
+             source_value_for_error = raw_hersteller
+        
+        clean_hersteller_ean = get_clean_ean(raw_hersteller)
+        if is_valid_ean_length(clean_hersteller_ean):
+            ean_candidate = clean_hersteller_ean
+
+    # Попытка 3: Формирование строки с ошибкой
+    if not ean_candidate:
+        clean_source_value = get_clean_ean(source_value_for_error)
+        ean = f"{source_value_for_error} (wrong length: {len(clean_source_value)})"
+    else:
+        ean = ean_candidate
 
     properties["EAN"] = ean
 
@@ -69,7 +96,7 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
         "article": local_item.get("Artikelbeschreibung", ""),
         "price": local_item.get("Startpreis", "0.00"),
         "category": local_item.get("CategoryID", ""),
-        "pic_main": local_item.get("GalleryURL", ""),
+        "pic_main": local_item.get("GalleryURL", "") or local_item.get("PictureURL", ""),
         "pics": local_item.get("pictureurls", ""),
         "ean": ean,
         "properties": properties,
@@ -109,9 +136,21 @@ async def import_local_fabric(request: FabricWithDeliveryAndMarketRequest):
             raise HTTPException(status_code=404, detail=f"Файл {products_file_path} пуст или не содержит продуктов.")
 
         all_mapped = []
+        skipped_products = []
         for local_item in products_to_process:
             try:
                 raw_item_for_mapping = adapt_local_item_for_mapping(local_item, market)
+
+                # Проверка на валидный EAN и наличие HTML описания
+                if "(wrong length:" in raw_item_for_mapping.get("ean", ""):
+                    logger.warning(f"Skipping product due to invalid EAN: {raw_item_for_mapping.get('ean')}")
+                    skipped_products.append(local_item.get('EAN') or local_item.get('Herstellernummer'))
+                    continue
+                
+                if not raw_item_for_mapping.get("html_description"):
+                    logger.warning(f"Skipping product with EAN {raw_item_for_mapping.get('ean')} due to missing HTML description.")
+                    skipped_products.append(raw_item_for_mapping.get('ean'))
+                    continue
 
                 if "properties" in raw_item_for_mapping and isinstance(raw_item_for_mapping["properties"], str):
                     try:
@@ -144,6 +183,8 @@ async def import_local_fabric(request: FabricWithDeliveryAndMarketRequest):
             "fabric_id": afterbuy_fabric_id,
             "fabric_name": fabric_name,
             "processed_products": len(all_mapped),
+            "skipped_products_count": len(skipped_products),
+            "skipped_products": skipped_products,
             "mirakl_response": result,
         }
 

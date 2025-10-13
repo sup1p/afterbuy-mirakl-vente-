@@ -61,10 +61,22 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
 
         # 3. Process each product to create an offer
         offers = []
+        skipped_products = []
         for local_item in products_to_process:
             try:
                 # Адаптируем структуру данных перед передачей в маппер
                 raw_item_for_mapping = adapt_local_item_for_mapping(local_item, market)
+
+                # Проверка на валидный EAN и наличие HTML описания
+                if "(wrong length:" in raw_item_for_mapping.get("ean", ""):
+                    logger.warning(f"Skipping product due to invalid EAN: {raw_item_for_mapping.get('ean')}")
+                    skipped_products.append(local_item.get('EAN') or local_item.get('Herstellernummer'))
+                    continue
+
+                if not raw_item_for_mapping.get("html_description"):
+                    logger.warning(f"Skipping product with EAN {raw_item_for_mapping.get('ean')} due to missing HTML description.")
+                    skipped_products.append(raw_item_for_mapping.get('ean'))
+                    continue
 
                 # Применяем стандартное сопоставление для преобразования данных
                 mapped = await mapping_tools.map_product(
@@ -161,6 +173,8 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
             "fabric_id": afterbuy_fabric_id,
             "fabric_name": fabric_name,
             "processed_offers": len(offers),
+            "skipped_products_count": len(skipped_products),
+            "skipped_products": skipped_products,
             "mirakl_response": result,
             "database_status": database_created,
             "csv_preview": offers  # Возвращаем первые 500 символов CSV для проверки
