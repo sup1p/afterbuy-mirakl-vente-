@@ -208,7 +208,7 @@ def extract_dimensions(properties: dict) -> dict:
 # --------------------- Special material overrides ---------------------
 SPECIAL_MATERIALS = {
     "acryl": ("Acryl", "material_plastic"),
-    "mdf/spanplatte": ("MDF/Spanplatte", "materialImitation_MDF"),
+    # "mdf/spanplatte": ("MDF/Spanplatte", "materialImitation_MDF"),
 }
 
 
