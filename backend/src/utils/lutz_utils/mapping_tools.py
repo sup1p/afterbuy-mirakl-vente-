@@ -165,6 +165,13 @@ def to_color_code(label: str) -> str:
     return f"color_{camel_case_part}"
 
 
+def is_valid_color_string(color: str) -> bool:
+    """Проверяет, что в строке цвета нет цифр."""
+    if not color:
+        return True # Пустой цвет - это не ошибка формата, а отсутствие данных
+    return not any(char.isdigit() for char in color)
+
+
 # --------------------- Material Mapper ---------------------
 def map_material(data: dict, material_mapping: dict):
     for key in ["Material", "Gestellmaterial", "Füllmaterial", "Polsterstoff"]:

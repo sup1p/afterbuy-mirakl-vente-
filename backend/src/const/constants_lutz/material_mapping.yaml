@@ -57,7 +57,7 @@ akazienholz: Acacia
 eichenholz: Oak
 teakholz: Teak
 zedernholz: Cedar
-mangoholz: Mango_Wood
+mangoholz: Mango_wood
 kirschbaumholz: cherry_wood
 bambusholz: Bamboo
 paraffin: paraffin
@@ -86,3 +86,23 @@ rattan: naturalMaterials
 holz & metall: wood
 marmor: stone
 kunstleder: plastic
+polyester: textile
+timber: wood
+samt: textile
+textilleder: leather
+beton: stone
+mango_wood: Mango_wood
+latex: plastic
+metall mit textil: metal
+leder mit messing: metal
+marble: stone
+messing: metal
+mokka gebeizte eiche.: Oak
+leder mit  messing: metal
+holz / edelstahl: wood
+holz / textil: wood
+holz / glas: wood
+holz / edelstahl / kunststoff: wood
+holz / edelstahl / glas: wood
+holz \ edelstahl: wood
+edelstahl / holz: wood

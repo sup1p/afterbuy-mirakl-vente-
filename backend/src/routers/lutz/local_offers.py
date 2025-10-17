@@ -67,7 +67,13 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
                 # Адаптируем структуру данных перед передачей в маппер
                 raw_item_for_mapping = adapt_local_item_for_mapping(local_item, market)
 
-                # Проверка на валидный EAN и наличие HTML описания
+                # Проверка на валидный EAN, наличие HTML описания и валидность цвета
+                original_color = local_item.get("Farbe", "")
+                if not mapping_tools.is_valid_color_string(original_color):
+                    logger.warning(f"Skipping product with EAN {raw_item_for_mapping.get('ean')} due to invalid color value: '{original_color}'")
+                    skipped_products.append(raw_item_for_mapping.get('ean'))
+                    continue
+                
                 if "(wrong length:" in raw_item_for_mapping.get("ean", ""):
                     logger.warning(f"Skipping product due to invalid EAN: {raw_item_for_mapping.get('ean')}")
                     skipped_products.append(local_item.get('EAN') or local_item.get('Herstellernummer'))
