@@ -42,7 +42,7 @@ holz: wood
 massivholz: compositeWood
 holzwerkstoff: compositeWood
 karton: paperboard
-keramik: ceramics
+keramik: ceramic
 kunststoff: plastic
 leder: leather
 metall: metal
@@ -106,3 +106,14 @@ holz / edelstahl / kunststoff: wood
 holz / edelstahl / glas: wood
 holz \ edelstahl: wood
 edelstahl / holz: wood
+echtholz: wood
+holz/marmor: wood
+mdf/spanplatte - holz-effekt: compositeWood
+baumwolle: textile
+ceramics: ceramic
+chrom: metal
+chrome: metal
+formica: compositeWood
+stainless steel: metal
+henequen: naturalMaterials
+kiefer: wood

@@ -74,6 +74,11 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
                     skipped_products.append(raw_item_for_mapping.get('ean'))
                     continue
                 
+                if original_color.strip().lower() == "wie abgebildet":
+                    logger.warning(f"Skipping product with EAN {raw_item_for_mapping.get('ean')} because color is 'wie abgebildet'")
+                    skipped_products.append(raw_item_for_mapping.get('ean'))
+                    continue
+
                 if "(wrong length:" in raw_item_for_mapping.get("ean", ""):
                     logger.warning(f"Skipping product due to invalid EAN: {raw_item_for_mapping.get('ean')}")
                     skipped_products.append(local_item.get('EAN') or local_item.get('Herstellernummer'))
