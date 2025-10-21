@@ -117,3 +117,9 @@ formica: compositeWood
 stainless steel: metal
 henequen: naturalMaterials
 kiefer: wood
+texti: textile
+kristall: glass
+holz, epoxidharz: compositeWood
+epoxidharz: compositeWood
+Holz, Epoxidharz: compositeWood
+Epoxidharz: compositeWood
