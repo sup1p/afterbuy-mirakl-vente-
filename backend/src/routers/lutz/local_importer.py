@@ -153,6 +153,12 @@ async def import_local_fabric(request: FabricWithDeliveryAndMarketRequest):
                     skipped_products.append(raw_item_for_mapping.get('ean'))
                     continue
 
+                original_material = local_item.get("Material", "")
+                if not mapping_tools.is_valid_material_string(original_material):
+                    logger.warning(f"Skipping product with EAN {raw_item_for_mapping.get('ean')} due to invalid material value: '{original_material}'")
+                    skipped_products.append(raw_item_for_mapping.get('ean'))
+                    continue
+
                 if "(wrong length:" in raw_item_for_mapping.get("ean", ""):
                     logger.warning(f"Skipping product due to invalid EAN: {raw_item_for_mapping.get('ean')}")
                     skipped_products.append(local_item.get('EAN') or local_item.get('Herstellernummer'))

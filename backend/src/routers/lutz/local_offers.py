@@ -79,6 +79,12 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
                     skipped_products.append(raw_item_for_mapping.get('ean'))
                     continue
 
+                original_material = local_item.get("Material", "")
+                if not mapping_tools.is_valid_material_string(original_material):
+                    logger.warning(f"Skipping product with EAN {raw_item_for_mapping.get('ean')} due to invalid material value: '{original_material}'")
+                    skipped_products.append(raw_item_for_mapping.get('ean'))
+                    continue
+
                 if "(wrong length:" in raw_item_for_mapping.get("ean", ""):
                     logger.warning(f"Skipping product due to invalid EAN: {raw_item_for_mapping.get('ean')}")
                     skipped_products.append(local_item.get('EAN') or local_item.get('Herstellernummer'))
@@ -135,7 +141,12 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
             offer_fieldnames.append("product_reference_price")
 
         csv_content = csv_tools.write_csv(offer_fieldnames, offers)
-        result = await mirakl.upload_price_csv(csv_content)
+        
+        # --- Шаг 1: Отправка CSV для создания/обновления продуктов ---
+        product_upload_result = await mirakl.upload_csv(csv_content)
+        
+        # --- Шаг 2: Отправка CSV для обновления цен (как и было) ---
+        price_upload_result = await mirakl.upload_price_csv(csv_content)
         
         
         # DATABASE SAVING FABRIC
@@ -186,7 +197,8 @@ async def import_local_offers_by_fabric(request: FabricWithDeliveryAndMarketRequ
             "processed_offers": len(offers),
             "skipped_products_count": len(skipped_products),
             "skipped_products": skipped_products,
-            "mirakl_response": result,
+            "mirakl_product_response": product_upload_result,
+            "mirakl_offer_response": price_upload_result,
             "database_status": database_created,
             "csv_preview": offers  # Возвращаем первые 500 символов CSV для проверки
         }

@@ -49,8 +49,17 @@ async def upload_price_csv(csv_content: str) -> dict:
     }
     headers = {"Authorization": settings.mirakl_api_key_lutz,   "Accept": "application/json"}
 
+    logger.info(f"--- Offer Upload Request ---")
+    logger.info(f"URL: {settings.mirakl_price_url_lutz}")
+    logger.info(f"Payload: {payload}")
+
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(settings.mirakl_price_url_lutz, data=payload, files=files, headers=headers)
+        
+        logger.info(f"--- Offer Upload Response ---")
+        logger.info(f"Status Code: {response.status_code}")
+        logger.info(f"Body: {response.text}")
+
         if response.status_code != 201:
             logger.error("Ошибка импорта в Mirakl: %s", response.text)
             response.raise_for_status()

@@ -172,6 +172,13 @@ def is_valid_color_string(color: str) -> bool:
     return not any(char.isdigit() for char in color)
 
 
+def is_valid_material_string(material: str) -> bool:
+    """Проверяет, что в строке материала нет цифр."""
+    if not material:
+        return True # Пустое поле - не ошибка формата
+    return not any(char.isdigit() for char in material)
+
+
 # --------------------- Material Mapper ---------------------
 def map_material(data: dict, material_mapping: dict):
     for key in ["Material", "Gestellmaterial", "Füllmaterial", "Polsterstoff"]:
