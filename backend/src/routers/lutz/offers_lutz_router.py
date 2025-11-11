@@ -1,6 +1,7 @@
 # app/routers/import_products/product.py
 import json
 import logging
+import ast
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.lutz_services import afterbuy, mirakl
@@ -38,15 +39,22 @@ async def import_fabric_offers(request: FabricRequest, current_user = Depends(ge
                 # Обрабатываем поле properties, если оно строковое
                 if "properties" in raw_item and isinstance(raw_item["properties"], str):
                     try:
+                        # Сначала пытаемся стандартным парсером
                         raw_item["properties"] = json.loads(raw_item["properties"])
                     except json.JSONDecodeError:
-                        raw_item["properties"] = {}
+                        try:
+                            # Если не удалось, используем более гибкий ast.literal_eval
+                            raw_item["properties"] = ast.literal_eval(raw_item["properties"])
+                        except (ValueError, SyntaxError):
+                            # Если и это не помогло, оставляем пустым
+                            raw_item["properties"] = {}
 
                 # Применяем маппинг продукта
                 mapped = await mapping_tools.map_product(
                     raw_item, mapping, fieldnames,
                     real_mapping_v12, color_mapping,
-                    material_mapping, {}, brand_mapping
+                    material_mapping, {}, brand_mapping,
+                    request.delivery_days # Передаем delivery_days
                 )
 
                 # Обрабатываем изображения для продукта

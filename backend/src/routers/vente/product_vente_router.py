@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/import-product/vente/{ean}/{delivery_days}", tags=["product vente"], response_model=MiraklImportResponse)
+@router.post("/import-product/vente/{ean}/{delivery_days}", tags=["product vente"], response_model=MiraklImportResponse, include_in_schema=False)
 async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int | None = None, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Импорт одного продукта по EAN из Afterbuy в Mirakl. Использует EAN и опциональный fabric id для получения продукта.
@@ -95,7 +95,7 @@ async def import_product(ean: str, delivery_days: int, afterbuy_fabric_id: int |
     return await import_product_mirakl(csv_content, httpx_client=httpx_client)
 
 
-@router.post("/import-products/vente", tags=["product vente"], response_model=ImportManyEanResponse)
+@router.post("/import-products/vente", tags=["product vente"], response_model=ImportManyEanResponse, include_in_schema=False)
 async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), current_user = Depends(get_current_user)):
     """
     Импорт нескольких продуктов по списку EAN из Afterbuy в Mirakl.
@@ -189,7 +189,7 @@ async def import_products(eans: EansWithDeliveryRequest, httpx_client: httpx.Asy
 
 
 # @router.post("/import-products-by-fabric/vente", tags=["product vente"], response_model=ImportFabricProductsResponse)
-@router.post("/import-products-by-fabric/vente", tags=["product vente"])
+@router.post("/import-products-by-fabric/vente", tags=["product vente"], include_in_schema=False)
 async def import_products_by_fabric(input_body: FabricWithDeliveryRequest, httpx_client: httpx.AsyncClient = Depends(get_httpx_client), session: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     """
     Импорт продуктов по ID фабрики Afterbuy из Afterbuy в Mirakl.

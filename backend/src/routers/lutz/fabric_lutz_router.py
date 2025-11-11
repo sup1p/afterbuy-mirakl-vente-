@@ -22,7 +22,7 @@ fieldnames = csv_tools.build_fieldnames(mapping)
 router = APIRouter()
 
 
-@router.post("/import-fabric-lutz", tags=["lutz"])
+@router.post("/import-fabric-lutz", tags=["lutz"], include_in_schema=False)
 async def import_fabric(request: FabricRequest, current_user = Depends(get_current_user)):
     """Импорт всех продуктов по fabric_id"""
     try:

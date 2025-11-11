@@ -79,3 +79,5 @@ properties.Höhe:
 properties.Gesamthöhe:
   - "DimensionHeight"
   - "specifications.height_cm"
+
+logistic-class: "logistic-class"

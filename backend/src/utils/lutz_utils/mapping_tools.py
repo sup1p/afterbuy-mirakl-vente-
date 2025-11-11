@@ -277,7 +277,7 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                 value = value[:2997] + "..."
 
             article = data.get("article")
-            delivery_days = delivery_days
+            # delivery_days = delivery_days # This line is redundant, delivery_days is already a parameter
             properties = extract_dimensions(data.get("properties", {}))
 
             if not value:
@@ -321,9 +321,12 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
                 if ai_html_desc_de and ai_html_desc_en:
                     result["product_description"] = ai_html_desc_de
                     result["description [de]"] = ai_html_desc_de
-
-            result["product_description"] = value
-            result["description [de]"] = value
+                    result["offer-description"] = ai_html_desc_en
+            else:
+                # If AI is not used, use the raw extracted value
+                result["product_description"] = value
+                result["description [de]"] = value
+                result["offer-description"] = value
             continue
 
         if isinstance(dst, list) and (
@@ -437,10 +440,10 @@ async def map_product(data: dict, mapping: dict, fieldnames: list,
     result["price"] = str(data.get("price", "0.00"))
     result["state"] = 11
     result["quantity"] = product_quantity_check(article_val)
-    result["offer-description"] = ai_html_desc_en if settings.use_ai_description_generator and ai_html_desc_en else result.get("product_description", "")
     result["leadtime-to-ship"] = str(delivery_days) if delivery_days and delivery_days > 0 else "5"
 
     # --- Финальный проход: автозаполнение заглушками ---
+    result["logistic-class"] = "M"
     if ENABLE_DEFAULTS:
         for field in fieldnames:
             if not result.get(field):
@@ -472,3 +475,4 @@ def process_uvp(price: float) -> float:
 
     # Округляем до следующего десятка вверх
     return math.ceil(value / 10) * 10
+

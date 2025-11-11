@@ -28,18 +28,19 @@ async def import_product(request: ProductRequest, current_user = Depends(get_cur
         # Получаем сырые данные продукта из Afterbuy
         raw_item = await afterbuy.fetch_product(request.product_id)
 
-        # Обрабатываем поле properties, если оно строковое
-        if "properties" in raw_item and isinstance(raw_item["properties"], str):
-            try:
-                raw_item["properties"] = json.loads(raw_item["properties"])
-            except json.JSONDecodeError:
-                raw_item["properties"] = {}
+        logger.info("Raw properties from Afterbuy: %s", raw_item.get("properties"))
 
         # Применяем маппинг для преобразования данных продукта
         mapped = await mapping_tools.map_product(
-            raw_item, mapping, fieldnames,
-            real_mapping_v12, color_mapping,
-            material_mapping, {}, brand_mapping
+            raw_item,
+            mapping,
+            fieldnames,
+            real_mapping_v12,
+            color_mapping,
+            material_mapping,
+            {},
+            brand_mapping,
+            delivery_days=request.delivery_days
         )
 
         # Обрабатываем изображения для продукта

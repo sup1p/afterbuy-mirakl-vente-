@@ -111,7 +111,7 @@ def adapt_local_item_for_mapping(local_item: dict, market: str) -> dict:
     return adapted_item
 
 
-@router.post("/import-local-fabric", tags=["lutz"])
+@router.post("/import-local-fabric", tags=["lutz"], include_in_schema=False)
 async def import_local_fabric(request: FabricWithDeliveryAndMarketRequest):
     """Импорт всех продуктов по fabric_id из локальных данных"""
     afterbuy_fabric_id = request.afterbuy_fabric_id

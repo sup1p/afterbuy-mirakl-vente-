@@ -6,12 +6,11 @@ services:
     env_file:
       - backend/.env
     environment:
-      # значения берутся из .env, здесь оставлены дефолты для ясности
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-app_db}
-    ports:
-      - "8303:5432"
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

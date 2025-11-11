@@ -8,6 +8,7 @@ class ProductRequest(BaseModel):
 # Запрос для получения фабрики по ID (для Lutz)
 class FabricRequest(BaseModel):
     fabric_id: int
+    delivery_days: int # Количество дней доставки
 
 # Запрос для импорта нескольких EAN с днями доставки
 class EansWithDeliveryRequest(BaseModel):
@@ -76,6 +77,12 @@ class ProductResult(BaseModel):
 class MiraklImportResponse(BaseModel):
     status: str  # Статус импорта
     results: List[Dict[str, ProductResult]]  # Результаты импорта
+    model_config = {
+        "json_schema_extra": {
+            "deprecated": True,
+            "description": "⚠️ Эта модель устарела. Используй NewMiraklImportResponse."
+        }
+    }
 
 # Ответ на импорт нескольких EAN
 class ImportManyEanResponse(BaseModel):
